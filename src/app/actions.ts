@@ -89,6 +89,7 @@ export const useUi = create<{
   mediaInfoOpen: boolean;
   historyOpen: boolean;
   paletteOpen: boolean;
+  errorsOpen: boolean;
 }>()(() => ({
   findOpen: false,
   recentOpen: false,
@@ -100,6 +101,7 @@ export const useUi = create<{
   mediaInfoOpen: false,
   historyOpen: false,
   paletteOpen: false,
+  errorsOpen: false,
 }));
 
 const SUBTITLE_FILTER = { name: "Subtitles", extensions: SUBTITLE_EXTENSIONS };
@@ -396,6 +398,7 @@ export const openMediaInfo = () => {
 };
 export const openHistory = () => useUi.setState({ historyOpen: true });
 export const openCommandPalette = () => useUi.setState({ paletteOpen: true });
+export const toggleErrorsList = () => useUi.setState((s) => ({ errorsOpen: !s.errorsOpen }));
 export const addCueAtPlayhead = () => insertCue(clock.time);
 
 export async function copySubtitlePath() {

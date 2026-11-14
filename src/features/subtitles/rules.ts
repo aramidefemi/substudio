@@ -48,3 +48,27 @@ export function checkCue(cue: CueData, prev: CueData | undefined, rules = DEFAUL
   }
   return issues;
 }
+
+export type IssueColumn = keyof CueIssues;
+
+export interface ListedIssue {
+  /** Cue index in document order. */
+  index: number;
+  column: IssueColumn;
+  reason: string;
+}
+
+const COLUMN_ORDER: IssueColumn[] = ["start", "duration", "text"];
+
+/** Every problem `checkCue` flags, in document order (one row per cue and column). */
+export function listIssues(cues: readonly CueData[], rules = DEFAULT_RULES): ListedIssue[] {
+  const out: ListedIssue[] = [];
+  cues.forEach((cue, index) => {
+    const issues = checkCue(cue, cues[index - 1], rules);
+    for (const column of COLUMN_ORDER) {
+      const reason = issues[column];
+      if (reason) out.push({ index, column, reason });
+    }
+  });
+  return out;
+}

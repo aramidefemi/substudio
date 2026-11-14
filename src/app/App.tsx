@@ -10,6 +10,7 @@ import { Waveform } from "@/features/waveform/Waveform";
 import { CompareDialog } from "./CompareDialog";
 import { DropOverlay } from "./DropOverlay";
 import { EncodingDialog } from "./EncodingDialog";
+import { ErrorsPanel } from "./ErrorsPanel";
 import { CommandPalette } from "./commands/CommandPalette";
 import { FindDialog } from "./FindDialog";
 import { HistoryDialog } from "./HistoryDialog";
@@ -69,6 +70,7 @@ export default function App() {
       </div>
       <FindDialog />
       <ReplaceDialog />
+      <ErrorsPanel />
       <CommandPalette />
       <RecentDialog />
       <EncodingDialog />

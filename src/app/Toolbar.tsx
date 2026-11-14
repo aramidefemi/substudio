@@ -1,4 +1,4 @@
-import { ChevronDown, Clapperboard, FilePlus2, FolderOpen, Redo2, Save, Search, Settings2, Undo2 } from "lucide-react";
+import { ChevronDown, Clapperboard, FilePlus2, FolderOpen, Redo2, Save, Search, Settings2, TriangleAlert, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -35,9 +35,11 @@ import {
   type PreviewSize,
 } from "@/features/settings/preview";
 import { THEMES, type ThemePreference } from "@/features/settings/themes";
+import { listIssues } from "@/features/subtitles/rules";
 import { useSubtitles } from "@/features/subtitles/store";
 import type { TimecodeMode } from "@/features/subtitles/timecode";
 import { fileName } from "@/lib/tauri";
+import { useUi } from "./actions";
 import { commandTitle, runCommand } from "./commands/registry";
 
 /** Icon button bound to a registry command; the tooltip shows its shortcut. */
@@ -55,6 +57,30 @@ function ToolButton({ command, label, disabled, children }: { command: string; l
           className="[&_svg]:size-[18px]"
         >
           {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{title}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+/** Live problem count; opens the errors list. The icon and number carry the signal, not colour. */
+function ErrorsButton() {
+  const count = useSubtitles((s) => listIssues(s.cues).length);
+  const open = useUi((s) => s.errorsOpen);
+  const title = commandTitle("view.errors", count ? `${count} problem${count === 1 ? "" : "s"}: list errors` : "No problems: list errors");
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          aria-label={title}
+          aria-pressed={open}
+          onClick={() => runCommand("view.errors")}
+          className="gap-1 px-2 tabular-nums [&_svg]:size-[18px]"
+        >
+          <TriangleAlert className={count ? "text-destructive" : undefined} />
+          <span className="text-xs">{count}</span>
         </Button>
       </TooltipTrigger>
       <TooltipContent>{title}</TooltipContent>
@@ -95,6 +121,7 @@ export function Toolbar() {
       <ToolButton command="edit.find">
         <Search />
       </ToolButton>
+      <ErrorsButton />
       <Separator orientation="vertical" className="mx-1.5 h-6" />
       <ToolButton command="edit.undo" disabled={!canUndo}>
         <Undo2 />

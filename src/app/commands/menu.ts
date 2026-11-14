@@ -181,6 +181,8 @@ export const MENU: MenuGroup[] = [
           ["view.preview.lower", "Move Down"],
         ],
       },
+      "view.errors",
+      "-",
       "view.timecode",
       "view.formatting",
       "view.privacy",

@@ -174,7 +174,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
-| RUL-02 | List errors panel (every flagged cue, click to jump) | List errors | S | |
+| RUL-02 | List errors panel (every flagged cue, click to jump) | List errors | S | ✅ Non-modal panel (View › List errors, or the toolbar ⚠ count): one row per flagged cue and column with its reason; click jumps and seeks; recomputed live from `checkCue`. |
 | RUL-03 | Words-per-minute and gap columns (optional columns) | Grid columns | S | ✅ CPS + Gap columns (toggleable). WPM is M2. |
 
 ---

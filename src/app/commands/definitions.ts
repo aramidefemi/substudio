@@ -199,6 +199,7 @@ export const COMMANDS: Command[] = [
   { id: "view.column.cps", label: "Toggle CPS column", group: "View", run: a.toggleCpsColumn },
   { id: "view.column.gap", label: "Toggle gap column", group: "View", run: a.toggleGapColumn },
   { id: "view.formatting", label: "Toggle formatting in grid", group: "View", run: a.toggleFormattingInGrid },
+  { id: "view.errors", label: "List errors", group: "View", run: a.toggleErrorsList },
   { id: "view.privacy", label: "Screen privacy", group: "View", keys: ["$mod+Shift+KeyP"], run: a.togglePrivacyAction },
   { id: "view.preview.box", label: "Subtitle preview: background box", group: "View", run: () => setPreview({ background: "box" }) },
   { id: "view.preview.outline", label: "Subtitle preview: outline", group: "View", run: () => setPreview({ background: "outline" }) },
