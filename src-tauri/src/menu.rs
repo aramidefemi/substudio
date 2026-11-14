@@ -44,6 +44,47 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         .item(&item("file.mediaInfo", "Media Information…", None)?)
         .build()?;
 
+    let merge_previous = SubmenuBuilder::new(app, "Merge with Previous")
+        .item(&item("edit.mergePrevious", "Keep Breaks", Some("CmdOrCtrl+Shift+Left"))?)
+        .item(&item("edit.mergePrevious.unbreak", "Unbreak", None)?)
+        .item(&item("edit.mergePrevious.dialog", "As Dialog", None)?)
+        .build()?;
+    let merge_next = SubmenuBuilder::new(app, "Merge with Next")
+        .item(&item("edit.mergeNext", "Keep Breaks", Some("CmdOrCtrl+Shift+Right"))?)
+        .item(&item("edit.mergeNext.unbreak", "Unbreak", None)?)
+        .item(&item("edit.mergeNext.dialog", "As Dialog", None)?)
+        .build()?;
+    let merge_selected = SubmenuBuilder::new(app, "Merge Selected")
+        .item(&item("edit.mergeSelected", "Keep Breaks", Some("CmdOrCtrl+Shift+M"))?)
+        .item(&item("edit.mergeSelected.unbreak", "Unbreak", None)?)
+        .item(&item("edit.mergeSelected.dialog", "As Dialog", None)?)
+        .build()?;
+    let lines = SubmenuBuilder::new(app, "Lines")
+        .item(&item("edit.insertBefore", "Insert Before", Some("CmdOrCtrl+Shift+Insert"))?)
+        .item(&item("edit.insertAfter", "Insert After", Some("CmdOrCtrl+Insert"))?)
+        .item(&item("edit.insertAtEnd", "Insert at End", None)?)
+        .separator()
+        .item(&item("edit.deleteLines", "Delete", Some("CmdOrCtrl+Shift+Delete"))?)
+        .item(&item(
+            "edit.rippleDelete",
+            "Ripple Delete",
+            Some("CmdOrCtrl+Alt+Shift+Delete"),
+        )?)
+        .item(&item("edit.duplicate", "Duplicate", Some("CmdOrCtrl+D"))?)
+        .item(&item("edit.removeBlankLines", "Remove Blank Lines", None)?)
+        .separator()
+        .item(&item("edit.splitAtCursor", "Split at Cursor", Some("CmdOrCtrl+T"))?)
+        .item(&item(
+            "edit.splitAtVideo",
+            "Split at Video Position",
+            Some("CmdOrCtrl+Shift+T"),
+        )?)
+        .separator()
+        .item(&merge_previous)
+        .item(&merge_next)
+        .item(&merge_selected)
+        .build()?;
+
     // Undo/redo and clipboard are custom so they reach the subtitle list when
     // a text field isn't focused; the frontend falls back to native text ops.
     let edit = SubmenuBuilder::new(app, "Edit")
@@ -56,6 +97,8 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         .item(&item("edit.paste", "Paste", Some("CmdOrCtrl+V"))?)
         .item(&item("edit.selectAll", "Select All", Some("CmdOrCtrl+A"))?)
         .item(&item("edit.invertSelection", "Invert Selection", None)?)
+        .separator()
+        .item(&lines)
         .separator()
         .item(&item("edit.italic", "Italic", Some("CmdOrCtrl+I"))?)
         .item(&item("edit.toggleLineBreak", "Toggle Line Break", Some("CmdOrCtrl+Shift+L"))?)

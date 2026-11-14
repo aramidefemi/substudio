@@ -17,22 +17,32 @@ import {
 import { parseCues, serializeCues } from "@/features/subtitles/clipboard";
 import { toggleItalic } from "@/features/subtitles/format";
 import {
+  deleteSelected,
+  duplicateSelected,
   extendNextStartToCurrent,
   extendPreviousEndToCurrent,
   extendSelectedToNext,
   extendSelectedToPrevious,
+  insertAfterSelected,
+  insertAtEnd,
+  insertBeforeSelected,
   insertCue,
   invertSelection,
   loadDocument,
   mapSelectedTexts,
   markSaved,
+  mergeSelected,
+  mergeWithNext,
+  mergeWithPrevious,
   moveAllBy,
   moveSelectedBy,
   newDocument,
   nudgeSelectedEdgeBy,
   pasteCues,
   redo,
+  removeBlankLines,
   removeCues,
+  rippleDeleteSelected,
   selectAll,
   selectRelative,
   selectedCues,
@@ -46,10 +56,13 @@ import {
   setStartAndGoToNext,
   setVideo,
   snapAllTimesToFrames,
+  splitSelectedAtCursor,
+  splitSelectedAtTime,
   toggleTimecode,
   undo,
   updateCue,
   useSubtitles,
+  type MergeMode,
   type TimingStep,
 } from "@/features/subtitles/store";
 import type { NudgeMode } from "@/features/subtitles/timing";
@@ -587,6 +600,32 @@ export function trimWhitespaceAction() {
   mapSelectedTexts(trimWhitespace);
 }
 
+export const insertBeforeAction = () => insertBeforeSelected();
+export const insertAfterAction = () => insertAfterSelected();
+export const insertAtEndAction = () => insertAtEnd();
+export const deleteLinesAction = () => deleteSelected();
+export const rippleDeleteAction = () => rippleDeleteSelected();
+export const duplicateLinesAction = () => duplicateSelected();
+export const removeBlankLinesAction = () => removeBlankLines();
+
+export function splitAtCursorAction() {
+  const cue = primaryCue();
+  if (!cue) return;
+  const focused = cueTextSelection();
+  const cursor = focused ? focused.start : Math.floor(cue.text.length / 2);
+  splitSelectedAtCursor(cursor);
+  requestAnimationFrame(() => focusCueText());
+}
+
+export const splitAtVideoAction = () => {
+  splitSelectedAtTime(clock.time);
+  requestAnimationFrame(() => focusCueText());
+};
+
+export const mergePreviousAction = (mode: MergeMode = "keepBreaks") => mergeWithPrevious(mode);
+export const mergeNextAction = (mode: MergeMode = "keepBreaks") => mergeWithNext(mode);
+export const mergeSelectedAction = (mode: MergeMode = "keepBreaks") => mergeSelected(mode);
+
 /** Ids match the native menu items in `src-tauri/src/menu.rs`. */
 const ACTIONS: Record<string, () => unknown> = {
   "file.new": newFile,
@@ -625,6 +664,24 @@ const ACTIONS: Record<string, () => unknown> = {
   "edit.breakAtFirstSpace": breakAtFirstSpaceAction,
   "edit.toggleDialogDashes": toggleDialogDashesAction,
   "edit.trimWhitespace": trimWhitespaceAction,
+  "edit.insertBefore": insertBeforeAction,
+  "edit.insertAfter": insertAfterAction,
+  "edit.insertAtEnd": insertAtEndAction,
+  "edit.deleteLines": deleteLinesAction,
+  "edit.rippleDelete": rippleDeleteAction,
+  "edit.duplicate": duplicateLinesAction,
+  "edit.removeBlankLines": removeBlankLinesAction,
+  "edit.splitAtCursor": splitAtCursorAction,
+  "edit.splitAtVideo": splitAtVideoAction,
+  "edit.mergePrevious": () => mergePreviousAction("keepBreaks"),
+  "edit.mergePrevious.unbreak": () => mergePreviousAction("unbreak"),
+  "edit.mergePrevious.dialog": () => mergePreviousAction("dialog"),
+  "edit.mergeNext": () => mergeNextAction("keepBreaks"),
+  "edit.mergeNext.unbreak": () => mergeNextAction("unbreak"),
+  "edit.mergeNext.dialog": () => mergeNextAction("dialog"),
+  "edit.mergeSelected": () => mergeSelectedAction("keepBreaks"),
+  "edit.mergeSelected.unbreak": () => mergeSelectedAction("unbreak"),
+  "edit.mergeSelected.dialog": () => mergeSelectedAction("dialog"),
   "view.theme.system": () => setTheme("system"),
   "view.theme.light": () => setTheme("light"),
   "view.theme.dark": () => setTheme("dark"),

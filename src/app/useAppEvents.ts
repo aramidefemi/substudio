@@ -12,12 +12,22 @@ import {
   breakAtFirstSpaceAction,
   copyAction,
   cutAction,
+  deleteLinesAction,
+  duplicateLinesAction,
+  insertAfterAction,
+  insertBeforeAction,
+  mergeNextAction,
+  mergePreviousAction,
+  mergeSelectedAction,
   openFind,
   pasteAction,
   redoAction,
+  rippleDeleteAction,
   runAction,
   save,
   selectAllAction,
+  splitAtCursorAction,
+  splitAtVideoAction,
   timingExtendToNext,
   timingExtendToPrevious,
   timingMoveEnd,
@@ -95,6 +105,9 @@ export function useAppEvents() {
             e.preventDefault();
             selectAllAction();
           },
+          // Plain Delete/Backspace remove lines when the grid (not a field) has focus.
+          Backspace: outsideFields(deleteLinesAction),
+          Delete: outsideFields(deleteLinesAction),
           // Menu-owned accelerators (incl. timing) are bound only in the browser.
           ...(inTauri
             ? {}
@@ -172,6 +185,40 @@ export function useAppEvents() {
                 "$mod+Alt+Enter": (e: KeyboardEvent) => {
                   e.preventDefault();
                   breakAtFirstSpaceAction();
+                },
+                "$mod+KeyD": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  duplicateLinesAction();
+                },
+                "$mod+KeyT": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  splitAtCursorAction();
+                },
+                "$mod+Shift+KeyT": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  splitAtVideoAction();
+                },
+                "$mod+Insert": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  insertAfterAction();
+                },
+                "$mod+Shift+Insert": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  insertBeforeAction();
+                },
+                "$mod+Shift+Delete": outsideFields(deleteLinesAction),
+                "$mod+Alt+Shift+Delete": outsideFields(rippleDeleteAction),
+                "$mod+Shift+ArrowLeft": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  mergePreviousAction();
+                },
+                "$mod+Shift+ArrowRight": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  mergeNextAction();
+                },
+                "$mod+Shift+KeyM": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  mergeSelectedAction();
                 },
               }),
         },

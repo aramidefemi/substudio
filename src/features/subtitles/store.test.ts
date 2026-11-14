@@ -1,20 +1,32 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  deleteSelected,
+  duplicateSelected,
+  insertAfterSelected,
+  insertAtEnd,
+  insertBeforeSelected,
   insertCue,
   invertSelection,
   loadDocument,
+  mergeSelected,
+  mergeWithNext,
+  mergeWithPrevious,
   moveSelectedBy,
   newDocument,
   nudgeSelectedEdgeBy,
   pasteCues,
   redo,
+  removeBlankLines,
   removeCues,
+  rippleDeleteSelected,
   select,
   selectAll,
   selectRangeTo,
   setEndAddNewAndGoToNew,
   setVideo,
   snapAllTimesToFrames,
+  splitSelectedAtCursor,
+  splitSelectedAtTime,
   toggleSelect,
   restoreHistoryTo,
   undo,
@@ -166,5 +178,106 @@ describe("timing by keyboard", () => {
     const c = useSubtitles.getState().cues[0]!;
     expect(c.start * 25).toBeCloseTo(Math.round(c.start * 25));
     expect(c.end * 25).toBeCloseTo(Math.round(c.end * 25));
+  });
+});
+
+describe("line operations", () => {
+  it("inserts before, after, and at end", () => {
+    const [a] = useSubtitles.getState().cues;
+    select(a!.id);
+    insertBeforeSelected();
+    expect(useSubtitles.getState().cues).toHaveLength(3);
+    expect(useSubtitles.getState().cues[0]!.text).toBe("");
+    select(useSubtitles.getState().cues[1]!.id);
+    insertAfterSelected();
+    expect(useSubtitles.getState().cues).toHaveLength(4);
+    insertAtEnd();
+    expect(useSubtitles.getState().cues.at(-1)!.text).toBe("");
+  });
+
+  it("deletes, duplicates, and ripple-deletes", () => {
+    loadDocument(
+      [
+        { start: 0, end: 1, text: "A" },
+        { start: 2, end: 3, text: "B" },
+        { start: 4, end: 5, text: "C" },
+      ],
+      null,
+    );
+    const [a, b] = useSubtitles.getState().cues;
+    select(a!.id);
+    duplicateSelected();
+    expect(texts()[1]).toBe("A");
+    select(b!.id);
+    deleteSelected();
+    expect(texts()).toEqual(["A", "A", "C"]);
+
+    loadDocument(
+      [
+        { start: 0, end: 1, text: "A" },
+        { start: 2, end: 3, text: "B" },
+        { start: 4, end: 5, text: "C" },
+      ],
+      null,
+    );
+    select(useSubtitles.getState().cues[1]!.id);
+    rippleDeleteSelected();
+    const s = useSubtitles.getState();
+    expect(texts()).toEqual(["A", "C"]);
+    // C moves earlier by B's span (end−start), not into B's former start.
+    expect(s.cues[1]!.start).toBeCloseTo(3);
+  });
+
+  it("splits at cursor and at time", () => {
+    const a = useSubtitles.getState().cues[0]!;
+    updateCue(a.id, { text: "aa bb", end: 2 });
+    select(a.id);
+    splitSelectedAtCursor(2);
+    expect(texts().slice(0, 2)).toEqual(["aa", "bb"]);
+
+    loadDocument([{ start: 0, end: 4, text: "hello" }], null);
+    const c = useSubtitles.getState().cues[0]!;
+    select(c.id);
+    splitSelectedAtTime(2);
+    expect(useSubtitles.getState().cues[0]!.text).toBe("hello");
+    expect(useSubtitles.getState().cues[1]!.text).toBe("");
+    expect(useSubtitles.getState().cues[0]!.end).toBeCloseTo(2);
+  });
+
+  it("merges with next/previous and selected", () => {
+    select(useSubtitles.getState().cues[0]!.id);
+    mergeWithNext("keepBreaks");
+    expect(texts()).toEqual(["A\nB"]);
+    undo();
+    select(useSubtitles.getState().cues[1]!.id);
+    mergeWithPrevious("unbreak");
+    expect(texts()).toEqual(["A B"]);
+
+    loadDocument(
+      [
+        { start: 0, end: 1, text: "A" },
+        { start: 2, end: 3, text: "B" },
+        { start: 4, end: 5, text: "C" },
+      ],
+      null,
+    );
+    const cues = useSubtitles.getState().cues;
+    select(cues[0]!.id);
+    selectRangeTo(cues[2]!.id);
+    mergeSelected("dialog");
+    expect(texts()).toEqual(["- A\n- B\n- C"]);
+  });
+
+  it("removes blank lines", () => {
+    loadDocument(
+      [
+        { start: 0, end: 1, text: "A" },
+        { start: 2, end: 3, text: "  " },
+        { start: 4, end: 5, text: "C" },
+      ],
+      null,
+    );
+    removeBlankLines();
+    expect(texts()).toEqual(["A", "C"]);
   });
 });

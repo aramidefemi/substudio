@@ -117,7 +117,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
 | EDT-01 | **Set start / Set end at playhead** shortcuts (+ "set end and go to next") | Set start/end (F9–F12) | S | This is core to how SE users time on the fly. |
-| EDT-02 | Insert before/after, delete, merge with next/previous, split at cursor/playhead | Grid context menu, split/join | M | |
+| EDT-02 | Insert before/after, delete, merge with next/previous, split at cursor/playhead | Grid context menu, split/join | M | ✅ Insert before/after/end; delete; duplicate; split at cursor/video; merge prev/next/selected (keep breaks / unbreak / dialog). Context menu later (WAV-06). |
 | EDT-03 | Multi-select in the list (Shift/⌘-click) for bulk delete, shift times, merge | Grid selection | M | ✅ Multi-select, select all, invert; bulk delete via cut. Shift/merge later (EDT-02). |
 | EDT-04 | Find & replace (whole word, case, regex), find next/prev | Find / Replace | M | |
 | EDT-05 | Go to line number (⌘G) | Go to line | S | |
@@ -141,7 +141,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
-| EDT-10 | Ripple delete; duplicate line; remove blank lines; trim whitespace | RippleDeleteSelectedLines… | S | 🟡 Trim whitespace done; ripple/duplicate/blank lines later. |
+| EDT-10 | Ripple delete; duplicate line; remove blank lines; trim whitespace | RippleDeleteSelectedLines… | S | ✅ |
 | EDT-11 | Move first/last word between neighbouring cues; move text from cursor to next cue (and play) | MoveFirstWord*, MoveTextFromCursorToNext* | M | Re-split dialogue without retyping. |
 | EDT-12 | Toggle dialog dashes; break at first space from cursor | ToggleDialogDashes, BreakAtFirstSpaceFromCursor | S | ✅ |
 | NAV-01 | Go to next/previous **error**, next empty line, next line from video position | GoToNextError… | S | |

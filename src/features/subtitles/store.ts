@@ -2,6 +2,15 @@ import { applyPatches, enablePatches, produceWithPatches, type Draft, type Patch
 import { create } from "zustand";
 import type { TimecodeMode, TimeFormat } from "./timecode";
 import {
+  fitCueInGap,
+  mergeMany,
+  mergeTexts,
+  rippleSpan,
+  splitCueAtCursor,
+  splitCueAtTime,
+  type MergeMode,
+} from "./lineOps";
+import {
   CUSTOM_STEP,
   MS_STEP,
   MIN_GAP,
@@ -23,6 +32,8 @@ import {
   type SetStartOpts,
 } from "./timing";
 import type { Cue, CueData } from "./types";
+
+export type { MergeMode };
 
 enablePatches();
 
@@ -556,4 +567,239 @@ export function pasteCues(incoming: readonly CueData[]) {
     doc.cues.sort(byStart);
   });
   setSelection(ids, ids[0]!, ids[0]!);
+}
+
+const DEFAULT_DURATION = 2;
+
+function insertFitted(after: number, before: number | null, duration = DEFAULT_DURATION): string | null {
+  const fit = fitCueInGap(after, before, duration);
+  if (!fit) return null;
+  const id = newId();
+  edit((doc) => {
+    let i = doc.cues.findIndex((c) => c.start > fit.start);
+    if (i === -1) i = doc.cues.length;
+    doc.cues.splice(i, 0, { id, start: fit.start, end: fit.end, text: "" });
+  });
+  select(id);
+  return id;
+}
+
+/** Make room from `fromIndex` onward so a cue of `duration` fits starting at `after`. */
+function insertWithPush(fromIndex: number, after: number, duration = DEFAULT_DURATION): string {
+  const id = newId();
+  const needEnd = after + duration;
+  edit((doc) => {
+    const blocker = doc.cues[fromIndex];
+    if (blocker && blocker.start < needEnd + MIN_GAP) {
+      const shift = needEnd + MIN_GAP - blocker.start;
+      for (let j = fromIndex; j < doc.cues.length; j++) {
+        doc.cues[j]!.start += shift;
+        doc.cues[j]!.end += shift;
+      }
+    }
+    doc.cues.splice(fromIndex, 0, { id, start: after, end: after + duration, text: "" });
+  });
+  select(id);
+  return id;
+}
+
+/** Insert an empty cue in the gap before the primary selection. */
+export function insertBeforeSelected(): string | null {
+  const i = primaryIndex();
+  if (i < 0) return null;
+  const s = get();
+  const cur = s.cues[i]!;
+  const prev = s.cues[i - 1];
+  const after = prev ? prev.end + MIN_GAP : 0;
+  return insertFitted(after, cur.start) ?? insertWithPush(i, after);
+}
+
+/** Insert an empty cue in the gap after the primary selection. */
+export function insertAfterSelected(): string | null {
+  const i = primaryIndex();
+  if (i < 0) return insertAtEnd();
+  const s = get();
+  const cur = s.cues[i]!;
+  const next = s.cues[i + 1];
+  const after = cur.end + MIN_GAP;
+  return insertFitted(after, next ? next.start : null) ?? insertWithPush(i + 1, after);
+}
+
+/** Insert an empty cue after the last line (or at 0 if empty). */
+export function insertAtEnd(): string {
+  const s = get();
+  const last = s.cues.at(-1);
+  return insertFitted(last ? last.end + MIN_GAP : 0, null) ?? insertCue(last ? last.end + MIN_GAP : 0);
+}
+
+/** Delete the current selection (no ripple). */
+export function deleteSelected() {
+  const ids = get().selectedIds;
+  if (!ids.length) return;
+  removeCues(ids);
+}
+
+/**
+ * Delete selected cues and shift later cues earlier by the deleted span
+ * so the hole closes (Subtitle Edit "ripple delete").
+ */
+export function rippleDeleteSelected() {
+  const indices = selectedIndices();
+  if (!indices.length) return;
+  const s = get();
+  const lo = Math.min(...indices);
+  const amount = rippleSpan(s.cues, indices);
+  const remove = new Set(indices.map((i) => s.cues[i]!.id));
+  let neighbour: string | null = null;
+  for (let i = lo + 1; i < s.cues.length; i++) {
+    if (!remove.has(s.cues[i]!.id)) {
+      neighbour = s.cues[i]!.id;
+      break;
+    }
+  }
+  if (!neighbour) {
+    for (let i = lo - 1; i >= 0; i--) {
+      if (!remove.has(s.cues[i]!.id)) {
+        neighbour = s.cues[i]!.id;
+        break;
+      }
+    }
+  }
+  const afterIds = s.cues.filter((c, i) => i > Math.max(...indices) && !remove.has(c.id)).map((c) => c.id);
+  edit((doc) => {
+    doc.cues = doc.cues.filter((c) => !remove.has(c.id));
+    if (!amount) return;
+    const shift = new Set(afterIds);
+    for (const c of doc.cues) {
+      if (!shift.has(c.id)) continue;
+      c.start = Math.max(0, c.start - amount);
+      c.end = Math.max(c.start + MIN_GAP, c.end - amount);
+    }
+  });
+  select(neighbour);
+}
+
+/** Duplicate the selected block immediately after it, preserving relative timing. */
+export function duplicateSelected() {
+  const indices = selectedIndices();
+  if (!indices.length) return;
+  const s = get();
+  const block = indices.map((i) => s.cues[i]!);
+  const first = block[0]!;
+  const last = block[block.length - 1]!;
+  const offset = last.end + MIN_GAP - first.start;
+  const ids = block.map(() => newId());
+  edit((doc) => {
+    const insertAt = Math.max(...indices) + 1;
+    const copies = block.map((c, j) => ({
+      id: ids[j]!,
+      start: c.start + offset,
+      end: c.end + offset,
+      text: c.text,
+    }));
+    doc.cues.splice(insertAt, 0, ...copies);
+  });
+  setSelection(ids, ids[0]!, ids[0]!);
+}
+
+/** Remove cues whose text is empty/whitespace. */
+export function removeBlankLines() {
+  const blanks = get().cues.filter((c) => !c.text.trim()).map((c) => c.id);
+  if (!blanks.length) return;
+  removeCues(blanks);
+}
+
+/** Split the primary cue at the text caret; times follow character weight. */
+export function splitSelectedAtCursor(cursor: number): string | null {
+  const i = primaryIndex();
+  if (i < 0) return null;
+  const cue = get().cues[i]!;
+  const parts = splitCueAtCursor(cue, cursor);
+  if (!parts) return null;
+  const rightId = newId();
+  edit((doc) => {
+    const c = doc.cues[i]!;
+    c.end = parts.left.end;
+    c.text = parts.left.text;
+    doc.cues.splice(i + 1, 0, { id: rightId, ...parts.right });
+  });
+  select(rightId);
+  return rightId;
+}
+
+/** Split the primary cue at `t`; all text stays on the left, right is empty. */
+export function splitSelectedAtTime(t: number): string | null {
+  const i = primaryIndex();
+  if (i < 0) return null;
+  const cue = get().cues[i]!;
+  const parts = splitCueAtTime(cue, t, cue.text, "");
+  if (!parts) return null;
+  const rightId = newId();
+  edit((doc) => {
+    const c = doc.cues[i]!;
+    c.end = parts.left.end;
+    c.text = parts.left.text;
+    doc.cues.splice(i + 1, 0, { id: rightId, ...parts.right });
+  });
+  select(rightId);
+  return rightId;
+}
+
+function mergePair(i: number, neighbor: number, mode: MergeMode): string | null {
+  const s = get();
+  const a = s.cues[Math.min(i, neighbor)];
+  const b = s.cues[Math.max(i, neighbor)];
+  if (!a || !b || Math.abs(i - neighbor) !== 1) return null;
+  const keepId = a.id;
+  const dropId = b.id;
+  edit((doc) => {
+    const left = doc.cues.find((c) => c.id === keepId)!;
+    const right = doc.cues.find((c) => c.id === dropId)!;
+    left.text = mergeTexts(left.text, right.text, mode);
+    left.end = right.end;
+    doc.cues = doc.cues.filter((c) => c.id !== dropId);
+  });
+  select(keepId);
+  return keepId;
+}
+
+export function mergeWithPrevious(mode: MergeMode = "keepBreaks") {
+  const i = primaryIndex();
+  if (i <= 0) return null;
+  return mergePair(i, i - 1, mode);
+}
+
+export function mergeWithNext(mode: MergeMode = "keepBreaks") {
+  const i = primaryIndex();
+  if (i < 0 || i >= get().cues.length - 1) return null;
+  return mergePair(i, i + 1, mode);
+}
+
+/** Merge a contiguous multi-selection into one cue. */
+export function mergeSelected(mode: MergeMode = "keepBreaks") {
+  const indices = selectedIndices();
+  if (indices.length < 2) return mergeWithNext(mode);
+  const lo = Math.min(...indices);
+  const hi = Math.max(...indices);
+  for (let i = lo; i < hi; i++) {
+    if (!indices.includes(i)) return null; // non-contiguous
+  }
+  const s = get();
+  const keepId = s.cues[lo]!.id;
+  const block = indices.map((i) => s.cues[i]!);
+  const drop = block.slice(1).map((c) => c.id);
+  const text = mergeMany(
+    block.map((c) => c.text),
+    mode,
+  );
+  const end = block[block.length - 1]!.end;
+  edit((doc) => {
+    const keep = doc.cues.find((c) => c.id === keepId)!;
+    keep.text = text;
+    keep.end = end;
+    const remove = new Set(drop);
+    doc.cues = doc.cues.filter((c) => !remove.has(c.id));
+  });
+  select(keepId);
+  return keepId;
 }

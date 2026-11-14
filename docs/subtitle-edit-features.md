@@ -81,20 +81,20 @@ The **Plan** column maps each feature to our backlog (`docs/backlog.md`):
 
 | Feature | What it does | Plan |
 |---|---|---|
-| Insert line before / after / at end | Add cues | M1 |
+| Insert line before / after / at end | Add cues | ✅ |
 | Insert subtitle at video position (set end on key-up) | Hold a key while dialogue plays to create a timed cue | M1 ⭐ |
-| Delete selected lines / Ripple delete (shift later cues back) | Remove cues | M1 |
-| Duplicate selected lines | Copy cues | M1 |
-| Split at text cursor / at video position / both (± then play) | Split one cue into two | M1 |
-| Merge with previous / next (keep breaks, unbreak, as dialog) | Join cues | M1 |
-| Merge selected lines (unbreak, CJK, dialog, bilingual) | Bulk join | M1 |
+| Delete selected lines / Ripple delete (shift later cues back) | Remove cues | ✅ |
+| Duplicate selected lines | Copy cues | ✅ |
+| Split at text cursor / at video position / both (± then play) | Split one cue into two | ✅ (cursor / video; ± then play later) |
+| Merge with previous / next (keep breaks, unbreak, as dialog) | Join cues | ✅ |
+| Merge selected lines (unbreak, CJK, dialog, bilingual) | Bulk join | ✅ (keep breaks / unbreak / dialog; CJK/bilingual later) |
 | Move first word from next line up / last word to next line | Rebalance text across cues | M1 |
 | Move text before cursor to previous / from cursor to next (and play) | Fast re-splitting while listening | M1 |
 | Fetch first word from next subtitle | Pull words back | M1 |
 | Assisted split / Assisted move (ranked suggestions) | Smart split or move points | M2 |
 | Evenly distribute selected lines | Spread cues across a time range | M2 |
 | Recalculate duration (fit max CPS) | Auto durations | M2 |
-| Remove blank lines | Clean-up | M1 |
+| Remove blank lines | Clean-up | ✅ |
 | Renumber | Fix numbering | ✅ (implicit) |
 
 ## 5. Timing by keyboard
