@@ -8,6 +8,7 @@ import { CueEditor } from "@/features/subtitles/CueEditor";
 import { SubtitleList } from "@/features/subtitles/SubtitleList";
 import { Waveform } from "@/features/waveform/Waveform";
 import { BookmarkNoteDialog } from "./BookmarkNoteDialog";
+import { GoToLineDialog } from "./GoToLineDialog";
 import { BookmarksDialog } from "./BookmarksDialog";
 import { CompareDialog } from "./CompareDialog";
 import { DropOverlay } from "./DropOverlay";
@@ -75,6 +76,7 @@ export default function App() {
       <ErrorsPanel />
       <BookmarksDialog />
       <BookmarkNoteDialog />
+      <GoToLineDialog />
       <CommandPalette />
       <RecentDialog />
       <EncodingDialog />

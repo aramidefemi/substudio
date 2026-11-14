@@ -120,7 +120,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | EDT-02 | Insert before/after, delete, merge with next/previous, split at cursor/playhead | Grid context menu, split/join | M | ✅ Insert before/after/end; delete; duplicate; split at cursor/video; merge prev/next/selected (keep breaks / unbreak / dialog). Context menu later (WAV-06). |
 | EDT-03 | Multi-select in the list (Shift/⌘-click) for bulk delete, shift times, merge | Grid selection | M | ✅ Multi-select, select all, invert; bulk delete via cut. Shift/merge later (EDT-02). |
 | EDT-04 | Find & replace (whole word, case, regex), find next/prev | Find / Replace | M | ✅ ⌥⌘F non-modal dialog; ⌘G / ⇧⌘G find next/previous (wraps); match case, Unicode-aware whole word (tone marks stay in the word), regex with `$1` replacements and inline error; replace-all is one undo step. ⌘F palette unchanged. |
-| EDT-05 | Go to line number (⌘G) | Go to line | S | |
+| EDT-05 | Go to line number (⌘L) | Go to line | S | ✅ ⌘L opens a small Go to line dialog (prefilled with the current line, Enter goes, past the end clamps to the last line); selects and seeks. Edit › Go To › Line Number… (⌘G stays with find next). |
 | EDT-06 | Italic/bold toggles (⌘I) rendered in list and preview | Text editor | S | ✅ Italic toggle (⌘I); list + preview render. Bold is M2. |
 | EDT-07 | Auto-break / unbreak lines; balance two lines | Auto-break, toggle break | M | ✅ Auto-break, unbreak, balance, toggle line break. |
 | EDT-08 | Configurable shortcuts, with an "Import from Subtitle Edit" preset | Shortcuts | M | Her muscle memory is the selling point. ❓ Get her SE shortcut list. |

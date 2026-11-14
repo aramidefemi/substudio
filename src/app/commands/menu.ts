@@ -156,6 +156,8 @@ export const MENU: MenuGroup[] = [
       {
         submenu: "Go To",
         items: [
+          ["nav.goToLine", "Line Number…"],
+          "-",
           ["nav.nextError", "Next Error"],
           ["nav.previousError", "Previous Error"],
           ["nav.nextEmpty", "Next Empty Line"],

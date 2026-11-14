@@ -34,3 +34,12 @@ export function lineFromVideo(cues: readonly CueData[], t: number, dir: 1 | -1):
   for (let i = cues.length - 1; i >= 0; i--) if (cues[i]!.start < t - VIDEO_EPS) return i;
   return -1;
 }
+
+/** "12" → index 11 for a 1-based line number typed by hand; clamps past the end; null when not a line number. */
+export function parseLineNumber(input: string, count: number): number | null {
+  const text = input.trim().replace(/^#/, "");
+  if (!/^\d+$/.test(text) || count <= 0) return null;
+  const n = Number(text);
+  if (n < 1) return null;
+  return Math.min(n, count) - 1;
+}

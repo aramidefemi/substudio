@@ -20,6 +20,7 @@ import { enterOutsideText, WAVEFORM_COMMANDS } from "@/features/waveform/command
 import { focusCueText, focusSubtitleList, focusWaveform } from "@/lib/dom";
 import * as a from "../actions";
 import * as fr from "../findReplace";
+import { openGoToLine } from "../goToLine";
 import { defineCommands, type Command } from "./registry";
 
 type Dir = 1 | -1;
@@ -201,6 +202,7 @@ export const COMMANDS: Command[] = [
   { id: "nav.nextBookmark", label: "Next bookmark", group: "Navigate", keys: ["$mod+Alt+KeyB"], run: () => a.goToBookmark(1) },
   { id: "nav.previousBookmark", label: "Previous bookmark", group: "Navigate", keys: ["$mod+Alt+Shift+KeyB"], run: () => a.goToBookmark(-1) },
   { id: "nav.bookmarks", label: "Bookmarks…", group: "Navigate", run: a.openBookmarks },
+  { id: "nav.goToLine", label: "Go to line number…", group: "Navigate", keys: ["$mod+KeyL"], run: openGoToLine },
   // Global, so they also get her out of the text box.
   { id: "nav.focusList", label: "Focus subtitle list", group: "Navigate", keys: ["$mod+Digit1"], run: focusSubtitleList },
   { id: "nav.focusTextBox", label: "Focus text box", group: "Navigate", keys: ["$mod+Digit2"], run: focusCueText },

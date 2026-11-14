@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findEmpty, findError, lineFromVideo } from "./navigation";
+import { findEmpty, findError, lineFromVideo, parseLineNumber } from "./navigation";
 import type { CueData } from "./types";
 
 const cue = (start: number, end: number, text = "Fine."): CueData => ({ start, end, text });
@@ -45,5 +45,23 @@ describe("lineFromVideo", () => {
     expect(lineFromVideo(cues, 3.5, -1)).toBe(1);
     expect(lineFromVideo(cues, 3, -1)).toBe(0);
     expect(lineFromVideo(cues, 1, -1)).toBe(-1);
+  });
+});
+
+describe("parseLineNumber", () => {
+  it("turns a 1-based line number into an index", () => {
+    expect(parseLineNumber("1", 10)).toBe(0);
+    expect(parseLineNumber(" 12 ", 20)).toBe(11);
+    expect(parseLineNumber("#3", 20)).toBe(2);
+  });
+
+  it("clamps past the end and rejects anything else", () => {
+    expect(parseLineNumber("99", 10)).toBe(9);
+    expect(parseLineNumber("0", 10)).toBeNull();
+    expect(parseLineNumber("-2", 10)).toBeNull();
+    expect(parseLineNumber("1.5", 10)).toBeNull();
+    expect(parseLineNumber("abc", 10)).toBeNull();
+    expect(parseLineNumber("", 10)).toBeNull();
+    expect(parseLineNumber("1", 0)).toBeNull();
   });
 });
