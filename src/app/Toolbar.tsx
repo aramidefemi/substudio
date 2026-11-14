@@ -9,12 +9,16 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   setDensity,
+  setPreview,
   setShowCpsColumn,
   setShowFormattingInGrid,
   setShowGapColumn,
@@ -22,6 +26,14 @@ import {
   useSettings,
   type Density,
 } from "@/features/settings/store";
+import {
+  PREVIEW_BACKGROUNDS,
+  PREVIEW_POSITIONS,
+  PREVIEW_SIZES,
+  type PreviewBackground,
+  type PreviewPosition,
+  type PreviewSize,
+} from "@/features/settings/preview";
 import { THEMES, type ThemePreference } from "@/features/settings/themes";
 import { useSubtitles } from "@/features/subtitles/store";
 import type { TimecodeMode } from "@/features/subtitles/timecode";
@@ -62,6 +74,7 @@ export function Toolbar() {
   const showGap = useSettings((s) => s.showGapColumn);
   const showFormatting = useSettings((s) => s.showFormattingInGrid);
   const privacy = useSettings((s) => s.privacy);
+  const preview = useSettings((s) => s.preview);
   const hideNames = privacy === "names" || privacy === "text";
 
   return (
@@ -141,6 +154,44 @@ export function Toolbar() {
             <DropdownMenuRadioItem value="frames">Frames (hh:mm:ss:ff)</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="ms">Milliseconds (hh:mm:ss,mmm)</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>Subtitle preview</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-48">
+              <DropdownMenuLabel>Text size</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={preview.size} onValueChange={(v) => setPreview({ size: v as PreviewSize })}>
+                {PREVIEW_SIZES.map((o) => (
+                  <DropdownMenuRadioItem key={o.id} value={o.id}>
+                    {o.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Style</DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={preview.background}
+                onValueChange={(v) => setPreview({ background: v as PreviewBackground })}
+              >
+                {PREVIEW_BACKGROUNDS.map((o) => (
+                  <DropdownMenuRadioItem key={o.id} value={o.id}>
+                    {o.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Position</DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={preview.position}
+                onValueChange={(v) => setPreview({ position: v as PreviewPosition })}
+              >
+                {PREVIEW_POSITIONS.map((o) => (
+                  <DropdownMenuRadioItem key={o.id} value={o.id}>
+                    {o.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => runCommand("view.privacy")}>
             Screen privacy{privacy !== "off" ? ` (${privacy})` : ""}…

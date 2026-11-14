@@ -1,6 +1,6 @@
 import { clock } from "@/features/playback/clock";
 import { jump, stepFrame } from "@/features/playback/transport";
-import { setDensity, setTheme } from "@/features/settings/store";
+import { setDensity, setPreview, setTheme, stepPreviewPosition, stepPreviewSize } from "@/features/settings/store";
 import { selectRelative, toggleTimecode } from "@/features/subtitles/store";
 import type { NudgeMode } from "@/features/subtitles/timing";
 import type { TimingStep } from "@/features/subtitles/store";
@@ -193,6 +193,12 @@ export const COMMANDS: Command[] = [
   { id: "view.column.gap", label: "Toggle gap column", group: "View", run: a.toggleGapColumn },
   { id: "view.formatting", label: "Toggle formatting in grid", group: "View", run: a.toggleFormattingInGrid },
   { id: "view.privacy", label: "Screen privacy", group: "View", keys: ["$mod+Shift+KeyP"], run: a.togglePrivacyAction },
+  { id: "view.preview.box", label: "Subtitle preview: background box", group: "View", run: () => setPreview({ background: "box" }) },
+  { id: "view.preview.outline", label: "Subtitle preview: outline", group: "View", run: () => setPreview({ background: "outline" }) },
+  { id: "view.preview.bigger", label: "Subtitle preview: bigger text", group: "View", run: () => stepPreviewSize(1) },
+  { id: "view.preview.smaller", label: "Subtitle preview: smaller text", group: "View", run: () => stepPreviewSize(-1) },
+  { id: "view.preview.higher", label: "Subtitle preview: move up", group: "View", run: () => stepPreviewPosition(1) },
+  { id: "view.preview.lower", label: "Subtitle preview: move down", group: "View", run: () => stepPreviewPosition(-1) },
 
   /* ---------- Timing ---------- */
   ...edgeCommands("start"),

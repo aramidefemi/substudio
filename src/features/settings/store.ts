@@ -1,6 +1,14 @@
 import { load } from "@tauri-apps/plugin-store";
 import { create } from "zustand";
 import { inTauri } from "@/lib/tauri";
+import {
+  DEFAULT_PREVIEW,
+  normalizePreview,
+  PREVIEW_POSITIONS,
+  PREVIEW_SIZES,
+  stepOption,
+  type PreviewStyle,
+} from "./preview";
 import type { ThemePreference } from "./themes";
 
 export type Density = "compact" | "comfortable";
@@ -28,6 +36,8 @@ export interface Settings {
   /** When true, render italic/bold in the grid; when false, strip tags. */
   showFormattingInGrid: boolean;
   privacy: PrivacyMode;
+  /** Subtitle drawn over the video: size, box or outline, vertical position. */
+  preview: PreviewStyle;
 }
 
 const DEFAULTS: Settings = {
@@ -41,6 +51,7 @@ const DEFAULTS: Settings = {
   showGapColumn: true,
   showFormattingInGrid: true,
   privacy: "off",
+  preview: DEFAULT_PREVIEW,
 };
 
 const RECENT_LIMIT = 12;
@@ -54,6 +65,17 @@ export const setShowGapColumn = (showGapColumn: boolean) => useSettings.setState
 export const setShowFormattingInGrid = (showFormattingInGrid: boolean) =>
   useSettings.setState({ showFormattingInGrid });
 export const setPrivacy = (privacy: PrivacyMode) => useSettings.setState({ privacy });
+
+export const setPreview = (patch: Partial<PreviewStyle>) =>
+  useSettings.setState((s) => ({ preview: { ...s.preview, ...patch } }));
+
+/** One size step bigger (+1) or smaller (−1). */
+export const stepPreviewSize = (delta: number) =>
+  setPreview({ size: stepOption(PREVIEW_SIZES, useSettings.getState().preview.size, delta) });
+
+/** One position step higher (+1) or lower (−1); the list runs low → top. */
+export const stepPreviewPosition = (delta: number) =>
+  setPreview({ position: stepOption(PREVIEW_POSITIONS, useSettings.getState().preview.position, delta) });
 
 /** Cycles off → names → text → off. */
 export function cyclePrivacy(): PrivacyMode {
@@ -97,7 +119,7 @@ export async function loadSettings() {
   try {
     const store = await load("settings.json", { defaults: {}, autoSave: 200 });
     const saved = await store.get<Partial<Settings>>("settings");
-    if (saved) useSettings.setState({ ...DEFAULTS, ...saved });
+    if (saved) useSettings.setState({ ...DEFAULTS, ...saved, preview: normalizePreview(saved.preview) });
     useSettings.subscribe((s) => void store.set("settings", s));
   } catch (err) {
     console.error("Could not load settings", err);

@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { openVideo } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { previewLayout } from "@/features/settings/preview";
 import { useSettings } from "@/features/settings/store";
+import { cn } from "@/lib/utils";
 import { formatRuns } from "@/features/subtitles/format";
 import { cueIndexAt, selectTimeFormat, useSubtitles } from "@/features/subtitles/store";
 import { formatTime } from "@/features/subtitles/timecode";
@@ -29,6 +31,7 @@ function paintCueOverlay(el: HTMLElement, text: string) {
 export function VideoPanel() {
   const videoPath = useSubtitles((s) => s.videoPath);
   const playing = usePlaying();
+  const preview = previewLayout(useSettings((s) => s.preview));
   const [volume, setVolume] = useState(0.8);
   const boxRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -71,7 +74,7 @@ export function VideoPanel() {
 
   return (
     <div ref={boxRef} className="flex h-full flex-col overflow-hidden rounded-xl bg-video">
-      <div className="relative min-h-0 flex-1">
+      <div className="relative min-h-0 flex-1 [container-type:size]">
         {videoPath ? (
           <video ref={videoRef} src={convertFileSrc(videoPath)} playsInline className="absolute inset-0 size-full object-contain" />
         ) : (
@@ -86,10 +89,18 @@ export function VideoPanel() {
             <span className="text-sm">Open a video</span>
           </button>
         )}
-        <div className="pointer-events-none absolute inset-x-0 bottom-[8%] flex justify-center px-[6%]">
+        {/* Preview style (PLY-06): size follows the video height via cqh; box or outline; vertical anchor. */}
+        <div
+          className="pointer-events-none absolute inset-x-0 flex justify-center px-[6%]"
+          style={preview.anchor === "top" ? { top: preview.margin } : { bottom: preview.margin }}
+        >
           <span
             ref={overlayRef}
-            className="rounded-md bg-(--preview-box) px-3 py-1 text-center text-[clamp(14px,2vw,22px)] leading-snug font-semibold whitespace-pre-line text-(--preview-text)"
+            style={{ fontSize: preview.fontSize }}
+            className={cn(
+              "rounded-md px-[0.5em] py-[0.15em] text-center leading-snug font-semibold whitespace-pre-line text-(--preview-text)",
+              preview.box ? "bg-(--preview-box)" : "preview-outline",
+            )}
           />
         </div>
       </div>

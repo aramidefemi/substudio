@@ -24,7 +24,7 @@ Themes live in `src/styles/themes/<id>.css` and are registered in `src/features/
 |---|---|
 | `row-selected`, `row-hover` | Subtitle list rows |
 | `cell-error-bg`, `cell-error-fg` | Problem cells (timing, reading speed) |
-| `video-bg`, `preview-text`, `preview-box` | Video area and the subtitle drawn over it |
+| `video-bg`, `preview-text`, `preview-box`, `preview-outline` | Video area and the subtitle drawn over it (box or outline style) |
 | `timeline-bg`, `timeline-fg`, `timeline-muted` | Waveform background, cue labels, ruler |
 | `waveform-a`, `waveform-b`, `waveform-selected` | Audio outside cues / inside cues / inside the selected cue |
 | `cue-region`, `cue-region-selected`, `cue-edge`, `cue-edge-selected`, `cue-error` | Cue boxes on the waveform |

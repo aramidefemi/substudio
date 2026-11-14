@@ -82,3 +82,17 @@
     -webkit-user-select: text;
   }
 }
+
+/* Subtitle preview "outline" style (PLY-06): an 8-way text shadow reads like a stroke without hiding the glyph. */
+@utility preview-outline {
+  --o: 0.07em;
+  text-shadow:
+    var(--o) 0 0 var(--preview-outline),
+    calc(var(--o) * -1) 0 0 var(--preview-outline),
+    0 var(--o) 0 var(--preview-outline),
+    0 calc(var(--o) * -1) 0 var(--preview-outline),
+    var(--o) var(--o) 0 var(--preview-outline),
+    calc(var(--o) * -1) var(--o) 0 var(--preview-outline),
+    var(--o) calc(var(--o) * -1) 0 var(--preview-outline),
+    calc(var(--o) * -1) calc(var(--o) * -1) 0 var(--preview-outline);
+}

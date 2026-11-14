@@ -109,7 +109,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | PLY-03 | Playback speed that keeps pitch | Speed | S | 🟡 speed exists; check pitch on WebKit. |
 | PLY-04 | Proxy playback: see MED-02 | — | — | Moved to the media layer. |
 | PLY-05 | Audio track picker (multi-track files) | Audio tracks | M | |
-| PLY-06 | Subtitle preview style: font, size, outline, box | Subtitle preview properties | S | |
+| PLY-06 | Subtitle preview style: font, size, outline, box | Subtitle preview properties | S | ✅ Size (scales with the video height), background box or outline (`preview-outline` token), vertical position incl. top; persisted app setting; toolbar view menu + View › Subtitle Preview commands. Font family not offered (Inter only). |
 | PLY-08 | Seekable video progress bar (click/drag/hover time); clicking a subtitle row seeks the video; waveform recentres on off-screen seeks | Video player seek | S | ✅ |
 
 ### Editing
