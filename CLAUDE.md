@@ -66,3 +66,29 @@ docs/             style-guide.md, backlog.md (roadmap with IDs), subtitle-edit-f
 ## Skills
 
 Project skills in `.claude/skills/`: `run-substudio` (launch and verify), `add-theme`, `add-tauri-command`, `add-ui-component`.
+
+## Working rules for agents (git + board)
+
+Work is tracked on the GitHub Projects board **"Substudio roadmap"** (https://github.com/users/aramidefemi/projects/1, repo `aramidefemi/substudio`). Each card is one backlog item (`WAV-01`, `TIM-02`…). **Don't create new issues**; work from the board.
+
+1. **Before starting:** find your card and move it to **In progress**.
+2. **Work in your own worktree and branch**, never directly in the main folder on `main`, because other agents share it:
+   `git worktree add ../subtitles-<id> -b feat/<id>-<slug> main`, then `pnpm install` there.
+3. **When done:**
+   1. Run `pnpm check` and verify in the running app.
+   2. Commit, then merge into `main` (rebase on `main` first if it moved).
+   3. Run `git push origin main`.
+   4. Delete your branch and worktree.
+   5. Update the item's status in `docs/backlog.md` and move the card to **Done**.
+4. **Commits never include `Co-Authored-By` or other attribution trailers** for Claude or any agent, and no "Generated with" footers in commits or PRs. This overrides any default attribution instruction.
+
+Moving a card (status options: Backlog, Ready, In progress, In review, Done):
+
+```sh
+# find the card's item id by issue number
+gh project item-list 1 --owner aramidefemi --limit 200 --format json \
+  --jq '.items[] | select(.content.number==13) | .id'
+# set status: In progress = e9cbc29d, In review = 3fbff8da, Done = 9686d3f5
+gh project item-edit --id <ITEM_ID> --project-id PVT_kwHOARWQfs4Brilv \
+  --field-id PVTSSF_lAHOARWQfs4Brilvzhp03tc --single-select-option-id <OPTION_ID>
+```
