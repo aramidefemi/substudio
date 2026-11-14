@@ -280,7 +280,17 @@ export const MENU: MenuGroup[] = [
   },
   {
     submenu: "Waveform",
-    items: ["waveform.createFromRegion", "waveform.clearRegion"],
+    items: [
+      "waveform.createFromRegion",
+      "waveform.clearRegion",
+      "-",
+      "waveform.seekSilenceBack",
+      "waveform.seekSilenceForward",
+      "-",
+      "waveform.guessStart",
+      "waveform.guessEnd",
+      "waveform.guessTimes",
+    ],
   },
 ];
 

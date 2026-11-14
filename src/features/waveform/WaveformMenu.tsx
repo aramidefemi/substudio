@@ -46,6 +46,7 @@ export function WaveformMenu({ target, hasRegion }: { target: MenuTarget | null;
       )}
       <Item id="waveform.insertHere" label="Insert subtitle here" disabled={!target?.canInsert} />
       <Item id="waveform.splitHere" label="Split at this position" disabled={!target?.canSplit} />
+      <Item id="waveform.guessTimes" label="Guess start and end from waveform" disabled={!onCue} />
       <ContextMenuSeparator />
       <Item id="edit.mergePrevious" label="Merge with previous" disabled={!target?.canMergePrevious} />
       <Item id="edit.mergeNext" label="Merge with next" disabled={!target?.canMergeNext} />

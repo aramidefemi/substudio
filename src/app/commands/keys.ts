@@ -19,6 +19,8 @@ const NAMED_KEYS: Record<string, { accel: string; mac: string; other: string }> 
   Insert: { accel: "Insert", mac: "Ins", other: "Insert" },
   Home: { accel: "Home", mac: "↖", other: "Home" },
   End: { accel: "End", mac: "↘", other: "End" },
+  BracketLeft: { accel: "BracketLeft", mac: "[", other: "[" },
+  BracketRight: { accel: "BracketRight", mac: "]", other: "]" },
 };
 
 type Modifier = "Control" | "Alt" | "Shift" | "$mod" | "Meta";
