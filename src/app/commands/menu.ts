@@ -268,6 +268,10 @@ export const MENU: MenuGroup[] = [
       "timing.snapAllToFrames",
     ],
   },
+  {
+    submenu: "Waveform",
+    items: ["waveform.createFromRegion", "waveform.clearRegion"],
+  },
 ];
 
 /** Mirrors `MenuSpec` in `src-tauri/src/menu.rs`. */

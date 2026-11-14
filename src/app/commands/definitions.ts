@@ -4,7 +4,7 @@ import { setDensity, setPreview, setTheme, stepPreviewPosition, stepPreviewSize 
 import { selectRelative, toggleTimecode } from "@/features/subtitles/store";
 import type { NudgeMode } from "@/features/subtitles/timing";
 import type { TimingStep } from "@/features/subtitles/store";
-import { focusCueText } from "@/lib/dom";
+import { enterOutsideText, WAVEFORM_COMMANDS } from "@/features/waveform/commands";
 import * as a from "../actions";
 import * as fr from "../findReplace";
 import { defineCommands, type Command } from "./registry";
@@ -182,7 +182,7 @@ export const COMMANDS: Command[] = [
   /* ---------- Navigation & playback ---------- */
   { id: "nav.next", label: "Next subtitle", group: "Navigate", keys: ["ArrowDown"], scope: "outsideText", run: () => selectRelative(1) },
   { id: "nav.previous", label: "Previous subtitle", group: "Navigate", keys: ["ArrowUp"], scope: "outsideText", run: () => selectRelative(-1) },
-  { id: "nav.focusText", label: "Edit subtitle text", group: "Navigate", keys: ["Enter"], scope: "outsideText", hidden: true, run: focusCueText },
+  { id: "nav.focusText", label: "Edit subtitle text", group: "Navigate", keys: ["Enter"], scope: "outsideText", hidden: true, run: enterOutsideText },
   { id: "nav.toggleBookmark", label: "Toggle bookmark", group: "Navigate", keys: ["$mod+KeyB"], run: a.toggleBookmarkAction },
   { id: "nav.bookmarkNote", label: "Edit bookmark note…", group: "Navigate", keys: ["$mod+Shift+KeyB"], run: a.editBookmarkNote },
   { id: "nav.nextBookmark", label: "Next bookmark", group: "Navigate", keys: ["$mod+Alt+KeyB"], run: () => a.goToBookmark(1) },
@@ -231,6 +231,9 @@ export const COMMANDS: Command[] = [
   { id: "timing.extendPreviousEnd", label: "Extend previous end to selected", group: "Timing", run: a.timingExtendPreviousEnd },
   { id: "timing.extendNextStart", label: "Extend next start to selected", group: "Timing", run: a.timingExtendNextStart },
   { id: "timing.snapAllToFrames", label: "Snap all times to frames", group: "Timing", run: a.timingSnapAllToFrames },
+
+  /* ---------- Waveform ---------- */
+  ...WAVEFORM_COMMANDS,
 ];
 
 let registered = false;

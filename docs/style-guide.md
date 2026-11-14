@@ -28,6 +28,7 @@ Themes live in `src/styles/themes/<id>.css` and are registered in `src/features/
 | `timeline-bg`, `timeline-fg`, `timeline-muted` | Waveform background, cue labels, ruler |
 | `waveform-a`, `waveform-b`, `waveform-selected` | Audio outside cues / inside cues / inside the selected cue |
 | `cue-region`, `cue-region-selected`, `cue-edge`, `cue-edge-selected`, `cue-error` | Cue boxes on the waveform |
+| `wave-region`, `wave-region-edge` | Marked (not yet a cue) region on the waveform |
 | `playhead` | Playhead line |
 
 The waveform is a canvas and reads these via `src/features/waveform/tokens.ts` (cached, re-read on theme change). Add any new canvas colour there too.

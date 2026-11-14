@@ -17,6 +17,8 @@ interface Scene {
   cues: readonly Cue[];
   selectedIds: ReadonlySet<string>;
   hideText?: boolean;
+  /** Marked region (drag on empty space), not yet a cue. */
+  region?: { start: number; end: number } | null;
   /** Real audio peaks; null draws a flat line. */
   peaks: Peaks | null;
   /** Centred status text (no video, loading, error). */
@@ -84,6 +86,16 @@ export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
     ctx.fillStyle = issues.duration || issues.text ? k["cue-error"] : k["timeline-muted"];
     ctx.fillText(String(i + 1), x0 + 8, waveH - 8);
     ctx.restore();
+  }
+
+  if (s.region && s.region.end >= start && s.region.start <= end) {
+    const r0 = x(s.region.start);
+    const r1 = x(s.region.end);
+    ctx.fillStyle = k["wave-region"];
+    ctx.fillRect(r0, 0, r1 - r0, waveH);
+    ctx.fillStyle = k["wave-region-edge"];
+    ctx.fillRect(Math.round(r0), 0, 1, waveH);
+    ctx.fillRect(Math.round(r1) - 1, 0, 1, waveH);
   }
 
   // Ruler.

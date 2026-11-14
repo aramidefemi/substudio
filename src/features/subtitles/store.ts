@@ -407,6 +407,18 @@ export function mapSelectedTexts(fn: (text: string) => string) {
   });
 }
 
+/** Inserts an empty cue with exactly these times (sorted into place) and selects it. */
+export function addCue(start: number, end: number, text = ""): string {
+  const id = newId();
+  edit((doc) => {
+    let i = doc.cues.findIndex((c) => c.start > start);
+    if (i === -1) i = doc.cues.length;
+    doc.cues.splice(i, 0, { id, start, end, text });
+  });
+  select(id);
+  return id;
+}
+
 /** Inserts a cue at `t` (default 2 s, shortened to fit before the next cue) and selects it. */
 export function insertCue(t: number, duration = 2): string {
   const id = newId();

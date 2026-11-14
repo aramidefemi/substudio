@@ -11,6 +11,8 @@ const NAMES = [
   "cue-edge",
   "cue-edge-selected",
   "cue-error",
+  "wave-region",
+  "wave-region-edge",
   "playhead",
 ] as const;
 

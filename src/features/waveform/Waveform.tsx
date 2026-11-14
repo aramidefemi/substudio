@@ -6,6 +6,7 @@ import { useSubtitles } from "@/features/subtitles/store";
 import { drawWaveform } from "./draw";
 import { loadPeaks, usePeaks } from "./peaks";
 import { attachPointer } from "./pointer";
+import { createCueFromRegion, regionContains, useRegion } from "./region";
 import { canvasTokens, invalidateCanvasTokens } from "./tokens";
 import { centerOn, resetZoom, scrollBy, setAmplitude, setZoom, useWaveView } from "./view";
 
@@ -57,6 +58,7 @@ export function Waveform() {
         selectedIds: new Set(selectedIds),
         hideText,
         peaks,
+        region: useRegion.getState().region,
         message: waveformMessage(status, progress, error, useSubtitles.getState().videoPath),
         tokens: canvasTokens(),
       });
@@ -87,6 +89,7 @@ export function Waveform() {
       useSettings.subscribe(schedule),
       useWaveView.subscribe(schedule),
       usePeaks.subscribe(schedule),
+      useRegion.subscribe(schedule),
       onThemeChange(() => {
         invalidateCanvasTokens();
         schedule();
@@ -120,10 +123,14 @@ export function Waveform() {
     <div className="h-full overflow-hidden rounded-xl bg-timeline">
       <canvas
         ref={canvasRef}
-        aria-label="Waveform timeline. Click to seek; ⇧-click sets the selected subtitle's start, ⌘-click its end. Drag a subtitle's edges to retime it, its middle to move it (⌥-drag an edge moves the neighbour too). Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom."
+        aria-label="Waveform timeline. Click to seek; ⇧-click sets the selected subtitle's start, ⌘-click its end. Drag a subtitle's edges to retime it, its middle to move it (⌥-drag an edge moves the neighbour too). Drag on empty space to mark a region; Enter or double-click inside it creates a subtitle, Escape clears it. Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom."
         className="block size-full cursor-text touch-none"
         onDoubleClick={(e) => {
           const w = e.currentTarget.clientWidth;
+          if (!e.altKey && regionContains(useRegion.getState().region, timeAt(e.clientX))) {
+            createCueFromRegion();
+            return;
+          }
           if (e.altKey) {
             resetZoom({ centerTime: clock.time, widthPx: w });
             return;

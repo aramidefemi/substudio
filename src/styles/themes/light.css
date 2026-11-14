@@ -43,5 +43,7 @@
   --cue-edge: #475569;
   --cue-edge-selected: #a78bfa;
   --cue-error: #f87171;
+  --wave-region: rgb(147 197 253 / 0.22);
+  --wave-region-edge: #93c5fd;
   --playhead: #22d3ee;
 }
