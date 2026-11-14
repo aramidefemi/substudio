@@ -1,6 +1,7 @@
 import { checkCue } from "@/features/subtitles/rules";
 import { cueIndexAt } from "@/features/subtitles/store";
 import type { Cue } from "@/features/subtitles/types";
+import { peakBetween, type Peaks } from "./peaks";
 import type { CanvasTokens } from "./tokens";
 
 export const RULER_H = 20;
@@ -16,25 +17,11 @@ interface Scene {
   cues: readonly Cue[];
   selectedIds: ReadonlySet<string>;
   hideText?: boolean;
+  /** Real audio peaks; null draws a flat line. */
+  peaks: Peaks | null;
+  /** Centred status text (no video, loading, error). */
+  message: string | null;
   tokens: CanvasTokens;
-}
-
-const noise = (n: number) => {
-  const x = Math.sin(n * 12.9898) * 43758.5453;
-  return x - Math.floor(x);
-};
-
-/**
- * Placeholder amplitude in 0..1 until Rust-computed peaks exist: louder
- * inside cues, near-silent between them.
- */
-function sampleAmplitude(cues: readonly Cue[], t: number): number {
-  const i = cueIndexAt(cues, t);
-  const n = noise(Math.floor(t * 140));
-  if (i < 0) return 0.03 + 0.05 * n;
-  const c = cues[i]!;
-  const env = Math.sin((Math.PI * (t - c.start)) / Math.max(0.01, c.end - c.start));
-  return (0.25 + 0.75 * n) * (0.3 + 0.7 * Math.max(0, env)) * 0.9;
 }
 
 export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
@@ -54,12 +41,13 @@ export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
     ctx.fillRect(x(c.start), 0, x(c.end) - x(c.start), waveH);
   }
 
-  // Waveform: one 2px column per sample, coloured by whether it falls in a cue.
+  // Waveform: one 2px column per peak range, coloured by whether it falls in a cue.
   const paths = { a: new Path2D(), b: new Path2D(), sel: new Path2D() };
   for (let px = 0; px < w; px += 2) {
     const t = start + px / pps;
     const i = cueIndexAt(s.cues, t);
-    const amp = Math.min(maxAmp, sampleAmplitude(s.cues, t) * ampScale * maxAmp);
+    const level = s.peaks ? peakBetween(s.peaks, t, t + 2 / pps) : 0;
+    const amp = Math.max(0.5, Math.min(maxAmp, level * ampScale * maxAmp));
     const path = i < 0 ? paths.a : s.selectedIds.has(s.cues[i]!.id) ? paths.sel : paths.b;
     path.moveTo(px + 0.5, mid - amp);
     path.lineTo(px + 0.5, mid + amp);
@@ -107,6 +95,14 @@ export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
     ctx.fillRect(rx, waveH, 1, 5);
     const m = Math.floor(t / 60);
     ctx.fillText(`${m}:${String(t % 60).padStart(2, "0")}`, rx + 3, h - 5);
+  }
+
+  if (s.message) {
+    ctx.fillStyle = k["timeline-muted"];
+    ctx.font = "12px 'Inter Variable', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(s.message, w / 2, mid + 4);
+    ctx.textAlign = "start";
   }
 
   const px = x(s.time);

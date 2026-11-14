@@ -2,6 +2,7 @@ mod files;
 mod media;
 mod menu;
 mod subtitles;
+mod waveform;
 
 use files::BackupInfo;
 use media::MediaInfo;
@@ -87,6 +88,25 @@ async fn probe_media(path: String) -> Result<MediaInfo, String> {
         .map_err(|e| e.to_string())?
 }
 
+/// Waveform peaks for a media file as raw bytes (see `waveform::Peaks::to_bytes`),
+/// cached in the app cache dir. Progress (0–1) streams over `on_progress`.
+#[tauri::command]
+async fn waveform_peaks(
+    app: tauri::AppHandle,
+    path: String,
+    on_progress: tauri::ipc::Channel<f32>,
+) -> Result<tauri::ipc::Response, String> {
+    let cache_dir = app.path().app_cache_dir().map_err(|e| e.to_string())?;
+    let bytes = tauri::async_runtime::spawn_blocking(move || {
+        waveform::load_or_compute(&path, &cache_dir, |p| {
+            let _ = on_progress.send(p);
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
 /// Rebuilds the menu bar from the frontend command registry.
 #[tauri::command]
 fn set_menu(app: tauri::AppHandle, spec: Vec<menu::MenuSpec>) -> Result<(), String> {
@@ -108,6 +128,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             set_menu,
+            waveform_peaks,
             read_subtitles,
             read_subtitles_encoded,
             write_subtitles,

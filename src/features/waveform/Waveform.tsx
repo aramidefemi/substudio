@@ -4,8 +4,21 @@ import { onThemeChange } from "@/features/settings/appearance";
 import { useSettings } from "@/features/settings/store";
 import { select, useSubtitles } from "@/features/subtitles/store";
 import { drawWaveform } from "./draw";
+import { loadPeaks, usePeaks } from "./peaks";
 import { canvasTokens, invalidateCanvasTokens } from "./tokens";
 import { centerOn, resetZoom, scrollBy, setAmplitude, setZoom, useWaveView } from "./view";
+
+function waveformMessage(
+  status: string,
+  progress: number,
+  error: string | null,
+  videoPath: string | null,
+): string | null {
+  if (!videoPath) return "Open a video to see its waveform";
+  if (status === "loading") return `Reading audio… ${Math.round(progress * 100)}%`;
+  if (status === "error") return `Couldn't read the audio: ${error ?? "unknown error"}`;
+  return null;
+}
 
 /**
  * Canvas timeline. Draws outside React: every source (clock, document, view,
@@ -31,6 +44,7 @@ export function Waveform() {
       const { cues, selectedIds } = useSubtitles.getState();
       const { start, pps, amp } = useWaveView.getState();
       const hideText = useSettings.getState().privacy === "text";
+      const { peaks, status, progress, error } = usePeaks.getState();
       drawWaveform(ctx, {
         width: w,
         height: h,
@@ -41,6 +55,8 @@ export function Waveform() {
         cues,
         selectedIds: new Set(selectedIds),
         hideText,
+        peaks,
+        message: waveformMessage(status, progress, error, useSubtitles.getState().videoPath),
         tokens: canvasTokens(),
       });
     };
@@ -69,6 +85,7 @@ export function Waveform() {
       useSubtitles.subscribe(schedule),
       useSettings.subscribe(schedule),
       useWaveView.subscribe(schedule),
+      usePeaks.subscribe(schedule),
       onThemeChange(() => {
         invalidateCanvasTokens();
         schedule();
@@ -80,6 +97,14 @@ export function Waveform() {
       resize.disconnect();
       cancelAnimationFrame(frame);
     };
+  }, []);
+
+  // Decode (or fetch the cached) waveform whenever the video changes.
+  useEffect(() => {
+    void loadPeaks(useSubtitles.getState().videoPath);
+    return useSubtitles.subscribe((s, prev) => {
+      if (s.videoPath !== prev.videoPath) void loadPeaks(s.videoPath);
+    });
   }, []);
 
   const timeAt = (clientX: number) => {
