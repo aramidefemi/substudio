@@ -3,19 +3,24 @@ import {
   insertCue,
   invertSelection,
   loadDocument,
+  moveSelectedBy,
   newDocument,
+  nudgeSelectedEdgeBy,
   pasteCues,
   redo,
   removeCues,
   select,
   selectAll,
   selectRangeTo,
+  setEndAddNewAndGoToNew,
   setVideo,
+  snapAllTimesToFrames,
   toggleSelect,
   undo,
   updateCue,
   useSubtitles,
 } from "./store";
+import { MIN_GAP } from "./timing";
 
 const texts = () => useSubtitles.getState().cues.map((c) => c.text);
 
@@ -118,5 +123,36 @@ describe("multi-select", () => {
     expect(texts()).toEqual(["B"]);
     pasteCues([{ start: 0.1, end: 0.5, text: "Z" }]);
     expect(texts()).toEqual(["Z", "B"]);
+  });
+});
+
+describe("timing by keyboard", () => {
+  it("nudges start by one frame and moves selected lines", () => {
+    const a = useSubtitles.getState().cues[0]!;
+    select(a.id);
+    nudgeSelectedEdgeBy("start", "frame", 1);
+    expect(useSubtitles.getState().cues[0]!.start).toBeCloseTo(1 / 25);
+    moveSelectedBy("ms", 1);
+    expect(useSubtitles.getState().cues[0]!.start).toBeCloseTo(1 / 25 + 0.1);
+  });
+
+  it("sets end, adds new, and selects the new cue", () => {
+    const a = useSubtitles.getState().cues[0]!;
+    select(a.id);
+    const id = setEndAddNewAndGoToNew(0.5);
+    const s = useSubtitles.getState();
+    expect(id).toBeTruthy();
+    expect(s.selectedId).toBe(id);
+    expect(s.cues[0]!.end).toBeCloseTo(0.5);
+    expect(s.cues[1]!.start).toBeCloseTo(0.5 + MIN_GAP);
+  });
+
+  it("snaps all times to frames", () => {
+    const a = useSubtitles.getState().cues[0]!;
+    updateCue(a.id, { start: 0.03, end: 1.07 });
+    snapAllTimesToFrames();
+    const c = useSubtitles.getState().cues[0]!;
+    expect(c.start * 25).toBeCloseTo(Math.round(c.start * 25));
+    expect(c.end * 25).toBeCloseTo(Math.round(c.end * 25));
   });
 });

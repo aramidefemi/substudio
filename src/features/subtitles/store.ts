@@ -1,6 +1,27 @@
 import { applyPatches, enablePatches, produceWithPatches, type Draft, type Patch } from "immer";
 import { create } from "zustand";
 import type { TimecodeMode, TimeFormat } from "./timecode";
+import {
+  CUSTOM_STEP,
+  MS_STEP,
+  MIN_GAP,
+  extendNextStartToSelected,
+  extendPreviousEndToSelected,
+  extendToNext,
+  extendToPrevious,
+  frameStep,
+  nudgeEdge,
+  setEndAndStartOfNext,
+  setEndAt,
+  setStartAndEndOfPrevious,
+  setStartAt,
+  shiftAll,
+  shiftIndices,
+  snapAllToFrames,
+  type Edge,
+  type NudgeMode,
+  type SetStartOpts,
+} from "./timing";
 import type { Cue, CueData } from "./types";
 
 enablePatches();
@@ -298,13 +319,150 @@ export function insertCue(t: number, duration = 2): string {
     if (i === -1) i = doc.cues.length;
     const prev = doc.cues[i - 1];
     const next = doc.cues[i];
-    const start = prev && t < prev.end ? prev.end + 0.04 : t;
+    const start = prev && t < prev.end ? prev.end + MIN_GAP : t;
     let end = start + duration;
-    if (next && end > next.start - 0.04) end = Math.max(start + 0.3, next.start - 0.04);
+    if (next && end > next.start - MIN_GAP) end = Math.max(start + 0.3, next.start - MIN_GAP);
     doc.cues.splice(i, 0, { id, start, end, text: "" });
   });
   select(id);
   return id;
+}
+
+export type TimingStep = "frame" | "ms" | "custom";
+
+function stepSeconds(kind: TimingStep, fps: number): number {
+  if (kind === "frame") return frameStep(fps);
+  if (kind === "ms") return MS_STEP;
+  return CUSTOM_STEP;
+}
+
+function selectedIndices(): number[] {
+  const s = get();
+  const ids = new Set(s.selectedIds);
+  const out: number[] = [];
+  for (let i = 0; i < s.cues.length; i++) if (ids.has(s.cues[i]!.id)) out.push(i);
+  return out;
+}
+
+function primaryIndex(): number {
+  return selectSelectedIndex(get());
+}
+
+/** Global nudge of the primary cue's start or end. */
+export function nudgeSelectedEdge(edge: Edge, delta: number, mode: NudgeMode = "plain") {
+  const i = primaryIndex();
+  if (i < 0) return;
+  edit((doc) => nudgeEdge(doc.cues, i, edge, delta, mode));
+}
+
+export function nudgeSelectedEdgeBy(edge: Edge, kind: TimingStep, dir: 1 | -1, mode: NudgeMode = "plain") {
+  nudgeSelectedEdge(edge, dir * stepSeconds(kind, get().fps), mode);
+}
+
+export function moveSelectedBy(kind: TimingStep, dir: 1 | -1, withFollowing = false) {
+  const indices = selectedIndices();
+  if (!indices.length) return;
+  const delta = dir * stepSeconds(kind, get().fps);
+  edit((doc) => shiftIndices(doc.cues, indices, delta, withFollowing));
+}
+
+export function moveAllBy(kind: TimingStep, dir: 1 | -1) {
+  if (!get().cues.length) return;
+  const delta = dir * stepSeconds(kind, get().fps);
+  edit((doc) => shiftAll(doc.cues, delta));
+}
+
+export function setSelectedStartAt(t: number, opts?: SetStartOpts) {
+  const i = primaryIndex();
+  if (i < 0) return;
+  edit((doc) => setStartAt(doc.cues, i, t, opts));
+}
+
+export function setSelectedEndAt(t: number) {
+  const i = primaryIndex();
+  if (i < 0) return;
+  edit((doc) => setEndAt(doc.cues, i, t));
+}
+
+/** Set end at `t`, select next (if any). */
+export function setEndAndGoToNext(t: number) {
+  const i = primaryIndex();
+  if (i < 0) return;
+  edit((doc) => setEndAt(doc.cues, i, t));
+  selectRelative(1);
+}
+
+/** Set start at `t`, select next (if any). */
+export function setStartAndGoToNext(t: number, opts?: SetStartOpts) {
+  const i = primaryIndex();
+  if (i < 0) return;
+  edit((doc) => setStartAt(doc.cues, i, t, opts));
+  selectRelative(1);
+}
+
+/**
+ * Set end at `t`, insert a new cue after the minimum gap, select it.
+ * Returns the new cue id, or null if nothing was selected.
+ */
+export function setEndAddNewAndGoToNew(t: number): string | null {
+  const i = primaryIndex();
+  if (i < 0) return null;
+  let newIdOut: string | null = null;
+  edit((doc) => {
+    setEndAt(doc.cues, i, t);
+    const cur = doc.cues[i]!;
+    const start = cur.end + MIN_GAP;
+    const next = doc.cues[i + 1];
+    let end = start + 2;
+    if (next && end > next.start - MIN_GAP) end = Math.max(start + 0.3, next.start - MIN_GAP);
+    const id = newId();
+    newIdOut = id;
+    doc.cues.splice(i + 1, 0, { id, start, end, text: "" });
+  });
+  if (newIdOut) select(newIdOut);
+  return newIdOut;
+}
+
+export function setEndAndStartOfNextAfterGap(t: number) {
+  const i = primaryIndex();
+  if (i < 0) return;
+  edit((doc) => setEndAndStartOfNext(doc.cues, i, t));
+}
+
+export function setStartAndEndOfPreviousMinusGap(t: number) {
+  const i = primaryIndex();
+  if (i < 0) return;
+  edit((doc) => setStartAndEndOfPrevious(doc.cues, i, t));
+}
+
+export function extendSelectedToPrevious() {
+  const i = primaryIndex();
+  if (i < 0) return;
+  edit((doc) => extendToPrevious(doc.cues, i));
+}
+
+export function extendSelectedToNext() {
+  const i = primaryIndex();
+  if (i < 0) return;
+  edit((doc) => extendToNext(doc.cues, i));
+}
+
+export function extendPreviousEndToCurrent() {
+  const i = primaryIndex();
+  if (i < 0) return;
+  edit((doc) => extendPreviousEndToSelected(doc.cues, i));
+}
+
+export function extendNextStartToCurrent() {
+  const i = primaryIndex();
+  if (i < 0) return;
+  edit((doc) => extendNextStartToSelected(doc.cues, i));
+}
+
+export function snapAllTimesToFrames() {
+  const { cues, fps } = get();
+  if (!cues.length) return;
+  edit((doc) => snapAllToFrames(doc.cues, fps));
 }
 
 export function removeCue(id: string) {

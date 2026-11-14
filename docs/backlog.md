@@ -129,12 +129,12 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
 | TIM-01 | **Hold-to-time:** hold a key while the line is spoken; press creates the cue at the playhead, release sets its end | InsertSubtitleAtVideoPositionSetEndAtKeyUp | M | Works while playing, then focuses text. |
-| TIM-02 | **Set end, add new and go to new** / set start and go to next / set end and go to next | WaveformSetEndAddNewAndGoToNew etc. | S | One-key chain for timing a whole scene in real time. |
-| TIM-03 | Move start/end ±1 frame or ±X ms, with keep-gap and push-neighbour variants | MoveStart*/MoveEnd* | S | Global keys, not just in the time fields. |
-| TIM-04 | Shift selected lines / all lines by a frame, X ms, or custom steps | MoveSelectedLines*, MoveAllLines* | S | |
-| TIM-05 | Extend selected to previous/next cue; extend previous end or next start to selected | Extend* | S | |
-| TIM-06 | Set end and start of next after minimum gap; set start and end of previous minus gap | WaveformSetEndAndStartOfNextAfterGap | S | |
-| TIM-07 | Snap all times to frames; get frame rate from the video | SnapAllTimesToFrames, GetFrameRateFromVideoFile | S | |
+| TIM-02 | **Set end, add new and go to new** / set start and go to next / set end and go to next | WaveformSetEndAddNewAndGoToNew etc. | S | ✅ Timing menu + F10 / Shift+F10 / set-start-go-next. |
+| TIM-03 | Move start/end ±1 frame or ±X ms, with keep-gap and push-neighbour variants | MoveStart*/MoveEnd* | S | ✅ Global keys + Timing menu (plain / keepGap / push). |
+| TIM-04 | Shift selected lines / all lines by a frame, X ms, or custom steps | MoveSelectedLines*, MoveAllLines* | S | ✅ Incl. “+ following” variant. |
+| TIM-05 | Extend selected to previous/next cue; extend previous end or next start to selected | Extend* | S | ✅ Cue-to-cue; shot-change extend deferred (no shot detection). |
+| TIM-06 | Set end and start of next after minimum gap; set start and end of previous minus gap | WaveformSetEndAndStartOfNextAfterGap | S | ✅ |
+| TIM-07 | Snap all times to frames; get frame rate from the video | SnapAllTimesToFrames, GetFrameRateFromVideoFile | S | ✅ Snap done (project fps). Get fps from video still open. |
 
 ### Text moves & navigation
 

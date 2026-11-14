@@ -16,6 +16,16 @@ import {
   runAction,
   save,
   selectAllAction,
+  timingExtendToNext,
+  timingExtendToPrevious,
+  timingMoveEnd,
+  timingMoveSelected,
+  timingMoveStart,
+  timingSetEnd,
+  timingSetEndAddNew,
+  timingSetEndGoNext,
+  timingSetStart,
+  timingSetStartOffsetRest,
   togglePrivacyAction,
   undoAction,
 } from "./actions";
@@ -79,7 +89,7 @@ export function useAppEvents() {
             e.preventDefault();
             selectAllAction();
           },
-          // In the desktop app these come from the native menu accelerators.
+          // Menu-owned accelerators (incl. timing) are bound only in the browser.
           ...(inTauri
             ? {}
             : {
@@ -98,6 +108,40 @@ export function useAppEvents() {
                 "$mod+Shift+KeyZ": (e: KeyboardEvent) => {
                   e.preventDefault();
                   redoAction();
+                },
+                F9: (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  timingSetStartOffsetRest();
+                },
+                F10: (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  timingSetEndGoNext();
+                },
+                F11: (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  timingSetStart();
+                },
+                F12: (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  timingSetEnd();
+                },
+                "Shift+F10": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  timingSetEndAddNew();
+                },
+                "Alt+ArrowLeft": outsideFields(() => timingMoveStart("frame", -1)),
+                "Alt+ArrowRight": outsideFields(() => timingMoveStart("frame", 1)),
+                "Alt+Shift+ArrowLeft": outsideFields(() => timingMoveEnd("frame", -1)),
+                "Alt+Shift+ArrowRight": outsideFields(() => timingMoveEnd("frame", 1)),
+                "Alt+$mod+ArrowLeft": outsideFields(() => timingMoveSelected("frame", -1)),
+                "Alt+$mod+ArrowRight": outsideFields(() => timingMoveSelected("frame", 1)),
+                "Alt+Shift+KeyE": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  timingExtendToPrevious();
+                },
+                "$mod+Shift+KeyE": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  timingExtendToNext();
                 },
               }),
         },

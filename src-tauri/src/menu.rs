@@ -79,6 +79,146 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         )?)
         .build()?;
 
+    let move_start = SubmenuBuilder::new(app, "Move Start")
+        .item(&item("timing.moveStart.frame.-", "−1 Frame", Some("Alt+Left"))?)
+        .item(&item("timing.moveStart.frame.+", "+1 Frame", Some("Alt+Right"))?)
+        .item(&item("timing.moveStart.ms.-", "−100 ms", None)?)
+        .item(&item("timing.moveStart.ms.+", "+100 ms", None)?)
+        .item(&item("timing.moveStart.custom.-", "−Custom ms", None)?)
+        .item(&item("timing.moveStart.custom.+", "+Custom ms", None)?)
+        .separator()
+        .item(&item(
+            "timing.moveStart.keepGap.frame.-",
+            "−1 Frame (Keep Gap)",
+            None,
+        )?)
+        .item(&item(
+            "timing.moveStart.keepGap.frame.+",
+            "+1 Frame (Keep Gap)",
+            None,
+        )?)
+        .item(&item("timing.moveStart.push.frame.-", "−1 Frame (Push)", None)?)
+        .item(&item("timing.moveStart.push.frame.+", "+1 Frame (Push)", None)?)
+        .build()?;
+    let move_end = SubmenuBuilder::new(app, "Move End")
+        .item(&item("timing.moveEnd.frame.-", "−1 Frame", Some("Alt+Shift+Left"))?)
+        .item(&item("timing.moveEnd.frame.+", "+1 Frame", Some("Alt+Shift+Right"))?)
+        .item(&item("timing.moveEnd.ms.-", "−100 ms", None)?)
+        .item(&item("timing.moveEnd.ms.+", "+100 ms", None)?)
+        .item(&item("timing.moveEnd.custom.-", "−Custom ms", None)?)
+        .item(&item("timing.moveEnd.custom.+", "+Custom ms", None)?)
+        .separator()
+        .item(&item("timing.moveEnd.keepGap.frame.-", "−1 Frame (Keep Gap)", None)?)
+        .item(&item("timing.moveEnd.keepGap.frame.+", "+1 Frame (Keep Gap)", None)?)
+        .item(&item("timing.moveEnd.push.frame.-", "−1 Frame (Push)", None)?)
+        .item(&item("timing.moveEnd.push.frame.+", "+1 Frame (Push)", None)?)
+        .build()?;
+    let move_selected = SubmenuBuilder::new(app, "Move Selected")
+        .item(&item(
+            "timing.moveSelected.frame.-",
+            "−1 Frame",
+            Some("Alt+CmdOrCtrl+Left"),
+        )?)
+        .item(&item(
+            "timing.moveSelected.frame.+",
+            "+1 Frame",
+            Some("Alt+CmdOrCtrl+Right"),
+        )?)
+        .item(&item("timing.moveSelected.ms.-", "−100 ms", None)?)
+        .item(&item("timing.moveSelected.ms.+", "+100 ms", None)?)
+        .item(&item("timing.moveSelected.custom.-", "−Custom ms", None)?)
+        .item(&item("timing.moveSelected.custom.+", "+Custom ms", None)?)
+        .separator()
+        .item(&item(
+            "timing.moveSelectedFollowing.frame.-",
+            "−1 Frame + Following",
+            None,
+        )?)
+        .item(&item(
+            "timing.moveSelectedFollowing.frame.+",
+            "+1 Frame + Following",
+            None,
+        )?)
+        .item(&item(
+            "timing.moveSelectedFollowing.ms.-",
+            "−100 ms + Following",
+            None,
+        )?)
+        .item(&item(
+            "timing.moveSelectedFollowing.ms.+",
+            "+100 ms + Following",
+            None,
+        )?)
+        .build()?;
+    let move_all = SubmenuBuilder::new(app, "Move All")
+        .item(&item("timing.moveAll.frame.-", "−1 Frame", None)?)
+        .item(&item("timing.moveAll.frame.+", "+1 Frame", None)?)
+        .item(&item("timing.moveAll.ms.-", "−100 ms", None)?)
+        .item(&item("timing.moveAll.ms.+", "+100 ms", None)?)
+        .item(&item("timing.moveAll.custom.-", "−Custom ms", None)?)
+        .item(&item("timing.moveAll.custom.+", "+Custom ms", None)?)
+        .build()?;
+
+    let timing = SubmenuBuilder::new(app, "Timing")
+        .item(&move_start)
+        .item(&move_end)
+        .item(&move_selected)
+        .item(&move_all)
+        .separator()
+        .item(&item("timing.setStart", "Set Start at Video", Some("F11"))?)
+        .item(&item("timing.setEnd", "Set End at Video", Some("F12"))?)
+        .item(&item("timing.setStartGoNext", "Set Start and Go to Next", None)?)
+        .item(&item("timing.setEndGoNext", "Set End and Go to Next", Some("F10"))?)
+        .item(&item(
+            "timing.setStartKeepDuration",
+            "Set Start (Keep Duration)",
+            None,
+        )?)
+        .item(&item(
+            "timing.setStartOffsetRest",
+            "Set Start and Offset the Rest",
+            Some("F9"),
+        )?)
+        .item(&item(
+            "timing.setEndAddNew",
+            "Set End, Add New and Go to New",
+            Some("Shift+F10"),
+        )?)
+        .item(&item(
+            "timing.setEndAndNextAfterGap",
+            "Set End and Start of Next After Gap",
+            None,
+        )?)
+        .item(&item(
+            "timing.setStartAndPrevMinusGap",
+            "Set Start and End of Previous Minus Gap",
+            None,
+        )?)
+        .separator()
+        .item(&item(
+            "timing.extendToPrevious",
+            "Extend to Previous Cue",
+            Some("Alt+Shift+E"),
+        )?)
+        .item(&item(
+            "timing.extendToNext",
+            "Extend to Next Cue",
+            Some("CmdOrCtrl+Shift+E"),
+        )?)
+        .item(&item(
+            "timing.extendPreviousEnd",
+            "Extend Previous End to Selected",
+            None,
+        )?)
+        .item(&item(
+            "timing.extendNextStart",
+            "Extend Next Start to Selected",
+            None,
+        )?)
+        .separator()
+        .item(&item("timing.snapAllToFrames", "Snap All Times to Frames", None)?)
+        .build()?;
+
     let window = SubmenuBuilder::new(app, "Window").minimize().maximize().close_window().build()?;
 
     let mut menu = MenuBuilder::new(app);
@@ -97,7 +237,7 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             .build()?;
         menu = menu.item(&app_menu);
     }
-    let menu = menu.items(&[&file, &edit, &view, &window]).build()?;
+    let menu = menu.items(&[&file, &edit, &view, &timing, &window]).build()?;
     app.set_menu(menu)?;
     Ok(())
 }
