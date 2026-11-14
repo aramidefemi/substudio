@@ -18,15 +18,15 @@ The **Plan** column maps each feature to our backlog (`docs/backlog.md`):
 | Feature | What it does | Plan |
 |---|---|---|
 | New / Open / Save / Save as | Standard file handling; Open auto-detects 380+ formats | ✅ (SRT/VTT) |
-| New keeping video, Open keeping video | Start or open a subtitle without closing the video | M1 |
+| New keeping video, Open keeping video | Start or open a subtitle without closing the video | ✅ |
 | New window | Second editor window | P |
-| Reopen / Recent files / Clear recent | Recent subtitle and video lists | M1 |
-| Open containing folder, Open data folder | Reveal in Finder | M1 |
+| Reopen / Recent files / Clear recent | Recent subtitle and video lists | ✅ |
+| Open containing folder, Open data folder | Reveal in Finder | ✅ |
 | Copy subtitle path to clipboard | Utility | M2 |
-| Reload when changed outside the app | Detects external edits; reloads or asks | M1 |
-| Auto-save + auto-backup + Restore auto-backup | Periodic backups, kept 30 by default, restore UI | M1 |
+| Reload when changed outside the app | Detects external edits; reloads or asks | ✅ |
+| Auto-save + auto-backup + Restore auto-backup | Periodic backups, kept 30 by default, restore UI | ✅ |
 | Show history (undo history panel) | Browse and restore earlier states | M2 |
-| Import with manually chosen encoding | For legacy-encoded files | M1 |
+| Import with manually chosen encoding | For legacy-encoded files | ✅ |
 | Import plain text (optional forced alignment to audio) | Turn a script into timed subtitles | M2 ❓ (her scripts) |
 | Import time codes from another file | Apply another file's timings to the current text | M2 |
 | Import formatting / styling from another file | Copy italics/bold/tags line by line | M3 |

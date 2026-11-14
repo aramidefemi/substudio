@@ -123,13 +123,30 @@ export function redo(): boolean {
 
 /* ---------- document ---------- */
 
-export function loadDocument(cues: CueData[], filePath: string | null) {
+export function loadDocument(cues: CueData[], filePath: string | null, keepVideo = false) {
   const withId = withIds(cues);
-  set({ cues: withId, selectedId: withId[0]?.id ?? null, filePath, dirty: false, past: [], future: [] });
+  set({
+    cues: withId,
+    selectedId: withId[0]?.id ?? null,
+    filePath,
+    dirty: false,
+    past: [],
+    future: [],
+    ...(keepVideo ? {} : { videoPath: null }),
+  });
 }
 
-export function newDocument() {
-  set({ cues: [], selectedId: null, filePath: null, dirty: false, past: [], future: [] });
+/** Clears the subtitle document. Pass `keepVideo` to leave the open video alone. */
+export function newDocument(keepVideo = false) {
+  set({
+    cues: [],
+    selectedId: null,
+    filePath: null,
+    dirty: false,
+    past: [],
+    future: [],
+    ...(keepVideo ? {} : { videoPath: null }),
+  });
 }
 
 export function markSaved(filePath: string) {
@@ -138,6 +155,17 @@ export function markSaved(filePath: string) {
 
 export function setVideo(videoPath: string | null) {
   set({ videoPath });
+}
+
+/** Known on-disk mtime (ms) for the open subtitle; used to detect external edits. */
+let knownMtimeMs: number | null = null;
+
+export function getKnownMtime() {
+  return knownMtimeMs;
+}
+
+export function setKnownMtime(ms: number | null) {
+  knownMtimeMs = ms;
 }
 
 export function toggleTimecode() {

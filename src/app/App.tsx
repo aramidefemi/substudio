@@ -7,9 +7,13 @@ import { VideoPanel } from "@/features/playback/VideoPanel";
 import { CueEditor } from "@/features/subtitles/CueEditor";
 import { SubtitleList } from "@/features/subtitles/SubtitleList";
 import { Waveform } from "@/features/waveform/Waveform";
+import { EncodingDialog } from "./EncodingDialog";
 import { FindDialog } from "./FindDialog";
+import { RecentDialog } from "./RecentDialog";
+import { RestoreBackupDialog } from "./RestoreBackupDialog";
 import { Toolbar } from "./Toolbar";
 import { useAppEvents } from "./useAppEvents";
+import { useFileSafety } from "./useFileSafety";
 
 /** Gaps between panels are the resize handles. */
 const Gap = ({ vertical }: { vertical?: boolean }) => (
@@ -18,6 +22,7 @@ const Gap = ({ vertical }: { vertical?: boolean }) => (
 
 export default function App() {
   useAppEvents();
+  useFileSafety();
   const main = useDefaultLayout({ id: "layout.main" });
   const top = useDefaultLayout({ id: "layout.top" });
   const left = useDefaultLayout({ id: "layout.left" });
@@ -56,6 +61,9 @@ export default function App() {
         <TransportBar />
       </div>
       <FindDialog />
+      <RecentDialog />
+      <EncodingDialog />
+      <RestoreBackupDialog />
       <Toaster position="bottom-center" />
     </TooltipProvider>
   );

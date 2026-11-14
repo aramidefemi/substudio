@@ -23,7 +23,7 @@ None of these involve AI. All 12 must be true before we hand her a full film.
 - [ ] **Timing operations**: drag, nudge, split, merge and shift subtitles
 - [ ] **Keyboard workflow**: advance, replay, set timings and edit without the mouse
 - [ ] **Text editing**: line breaks, italics, punctuation and dialogue dashes
-- [ ] **Undo and recovery**: reliable undo/redo, auto-save and crash recovery
+- [x] **Undo and recovery**: reliable undo/redo, auto-save and crash recovery (auto-backup done; undo was already in)
 - [ ] **Quality checks**: overlaps, reading speed, duration and line length
 - [ ] **Project persistence**: reopen a film and continue exactly where she stopped
 - [ ] **Script workflow**: import and work through prepared dialogue when she has it
@@ -153,11 +153,11 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
-| FIL-01 | **Autosave + crash recovery** | Auto-backup | M | Never lose more than a few seconds. Offers restore on launch. |
-| FIL-02 | Recent files; reopen the last project with its video | Recent files | S | |
+| FIL-01 | **Autosave + crash recovery** | Auto-backup | M | ✅ Periodic auto-backup (default 60s / keep 30); restore dialog + launch toast. |
+| FIL-02 | Recent files; reopen the last project with its video | Recent files | S | ✅ Recent subtitles (with video path) + videos; clear recent. |
 | FIL-03 | Project sidecar (video path, waveform cache, settings) next to the .srt | — | M | |
-| FIL-04 | Encoding detection for legacy files (Windows-1252, etc.) + manual encoding pick | Import with encoding | S | |
-| FIL-05 | Reload when changed outside the app | Reload when changed | S | |
+| FIL-04 | Encoding detection for legacy files (Windows-1252, etc.) + manual encoding pick | Import with encoding | S | ✅ Manual encoding pick (detection still open). |
+| FIL-05 | Reload when changed outside the app | Reload when changed | S | ✅ Mtime poll; ask to reload. |
 | FIL-06 | Drag and drop video/subtitle onto the window | — | S | |
 | FIL-07 | ❓ **Script / "original" column**: show a source document (her Google Doc script) beside each cue | Translation mode ("Open original subtitle") | L | SE's translation mode may be exactly what her Google Docs workflow needs. Confirm with her. |
 

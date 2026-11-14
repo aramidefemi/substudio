@@ -13,13 +13,29 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         }
     };
 
+    let recent = SubmenuBuilder::new(app, "Open Recent")
+        .item(&item("file.recent", "Recent Files…", None)?)
+        .item(&item("file.recent.clear", "Clear Recent", None)?)
+        .build()?;
+
     let file = SubmenuBuilder::new(app, "File")
         .item(&item("file.new", "New", Some("CmdOrCtrl+N"))?)
+        .item(&item("file.newKeepingVideo", "New Keeping Video", None)?)
+        .separator()
         .item(&item("file.open", "Open Subtitles…", Some("CmdOrCtrl+O"))?)
+        .item(&item("file.openKeepingVideo", "Open Keeping Video…", None)?)
+        .item(&item("file.importEncoding", "Import with Encoding…", None)?)
+        .item(&recent)
         .item(&item("file.openVideo", "Open Video…", Some("CmdOrCtrl+Shift+O"))?)
         .separator()
         .item(&item("file.save", "Save", Some("CmdOrCtrl+S"))?)
         .item(&item("file.saveAs", "Save As…", Some("CmdOrCtrl+Shift+S"))?)
+        .separator()
+        .item(&item("file.openContainingFolder", "Open Containing Folder", None)?)
+        .item(&item("file.openDataFolder", "Open Data Folder", None)?)
+        .item(&item("file.reload", "Reload", None)?)
+        .separator()
+        .item(&item("file.restoreBackup", "Restore Auto-backup…", None)?)
         .build()?;
 
     // Undo/redo are custom so they reach the subtitle history; the frontend

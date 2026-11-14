@@ -1,5 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { insertCue, loadDocument, redo, select, undo, updateCue, useSubtitles } from "./store";
+import {
+  insertCue,
+  loadDocument,
+  newDocument,
+  redo,
+  select,
+  setVideo,
+  undo,
+  updateCue,
+  useSubtitles,
+} from "./store";
 
 const texts = () => useSubtitles.getState().cues.map((c) => c.text);
 
@@ -39,6 +49,25 @@ describe("undo history", () => {
     select(a!.id);
     updateCue(a!.id, { text: "xy" }, `text:${a!.id}`);
     expect(useSubtitles.getState().past).toHaveLength(2);
+  });
+});
+
+describe("document / video", () => {
+  it("new and open clear video unless keepVideo", () => {
+    setVideo("/film.mp4");
+    newDocument();
+    expect(useSubtitles.getState().videoPath).toBeNull();
+
+    setVideo("/film.mp4");
+    newDocument(true);
+    expect(useSubtitles.getState().videoPath).toBe("/film.mp4");
+
+    loadDocument([{ start: 0, end: 1, text: "x" }], "/a.srt");
+    expect(useSubtitles.getState().videoPath).toBeNull();
+
+    setVideo("/film.mp4");
+    loadDocument([{ start: 0, end: 1, text: "y" }], "/b.srt", true);
+    expect(useSubtitles.getState().videoPath).toBe("/film.mp4");
   });
 });
 
