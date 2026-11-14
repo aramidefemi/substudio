@@ -110,6 +110,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | PLY-04 | Proxy playback: see MED-02 | — | — | Moved to the media layer. |
 | PLY-05 | Audio track picker (multi-track files) | Audio tracks | M | |
 | PLY-06 | Subtitle preview style: font, size, outline, box | Subtitle preview properties | S | |
+| PLY-08 | Seekable video progress bar (click/drag/hover time); clicking a subtitle row seeks the video; waveform recentres on off-screen seeks | Video player seek | S | ✅ |
 
 ### Editing
 

@@ -2,6 +2,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { TriangleAlert } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { clock } from "@/features/playback/clock";
 import { ROW_HEIGHT, useSettings } from "@/features/settings/store";
 import { focusCueText } from "@/lib/dom";
 import { cn } from "@/lib/utils";
@@ -132,7 +133,10 @@ export function SubtitleList() {
                 onMouseDown={(e) => {
                   if (e.shiftKey) selectRangeTo(cue.id);
                   else if (e.metaKey || e.ctrlKey) toggleSelect(cue.id);
-                  else select(cue.id);
+                  else {
+                    select(cue.id);
+                    clock.seek(cue.start);
+                  }
                 }}
                 onDoubleClick={focusCueText}
                 style={{ height: row.size, transform: `translateY(${row.start}px)`, gridTemplateColumns }}

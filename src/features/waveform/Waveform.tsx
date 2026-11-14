@@ -55,6 +55,9 @@ export function Waveform() {
       const t = clock.time;
       if (clock.playing && (t > start + span * 0.92 || t < start)) {
         useWaveView.setState({ start: Math.max(0, t - span * 0.08) });
+      } else if (!clock.playing && (t > start + span || t < start)) {
+        // A seek from elsewhere (seek bar, list) landed off-screen: centre on it.
+        useWaveView.setState({ start: Math.max(0, t - span / 2) });
       }
       schedule();
     };

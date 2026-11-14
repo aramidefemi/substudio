@@ -9,6 +9,7 @@ import { formatRuns } from "@/features/subtitles/format";
 import { cueIndexAt, selectTimeFormat, useSubtitles } from "@/features/subtitles/store";
 import { formatTime } from "@/features/subtitles/timecode";
 import { clock, usePlaying } from "./clock";
+import { SeekBar } from "./SeekBar";
 
 function paintCueOverlay(el: HTMLElement, text: string) {
   el.replaceChildren();
@@ -33,7 +34,6 @@ export function VideoPanel() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRef = useRef<HTMLSpanElement>(null);
   const timeRef = useRef<HTMLSpanElement>(null);
-  const progressRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     clock.attach(videoPath ? videoRef.current : null);
@@ -63,7 +63,6 @@ export function VideoPanel() {
       }
       const fmt = selectTimeFormat(s);
       if (timeRef.current) timeRef.current.textContent = `${formatTime(t, fmt)} / ${formatTime(clock.duration, fmt)}`;
-      if (progressRef.current) progressRef.current.style.width = `${(t / clock.duration) * 100}%`;
     };
     paint();
     const unsubs = [clock.onTick(paint), useSubtitles.subscribe(paint), useSettings.subscribe(paint)];
@@ -95,10 +94,8 @@ export function VideoPanel() {
         </div>
       </div>
 
-      <div className="h-0.5 bg-white/10">
-        <div ref={progressRef} className="h-full bg-primary" />
-      </div>
-      <div className="flex items-center gap-2 px-3 py-2 text-white">
+      <SeekBar />
+      <div className="flex items-center gap-2 px-3 pt-1 pb-2 text-white">
         <Button size="icon-sm" variant="ghost" aria-label={playing ? "Pause" : "Play"} onClick={() => clock.toggle()} className="text-white hover:bg-white/10 hover:text-white">
           {playing ? <Pause /> : <Play />}
         </Button>
