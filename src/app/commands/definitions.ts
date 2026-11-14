@@ -1,8 +1,10 @@
 import { clock } from "@/features/playback/clock";
 import {
   changeSpeed,
+  goToNextAndPlay,
   jump,
   playBeforeSelection,
+  playNeighbour,
   playSelection,
   resetSpeed,
   stepFrame,
@@ -201,6 +203,11 @@ export const COMMANDS: Command[] = [
   { id: "playback.playSelection", label: "Play selected line", group: "Playback", keys: ["F5"], run: () => playSelection() },
   { id: "playback.loopSelection", label: "Loop selected line", group: "Playback", keys: ["Shift+F5"], run: toggleLoopSelection },
   { id: "playback.playBefore", label: "Play from just before the line", group: "Playback", keys: ["F6"], run: playBeforeSelection },
+  { id: "playback.playPrevious", label: "Play previous line", group: "Playback", keys: ["F7"], run: () => playNeighbour(-1) },
+  { id: "playback.playNext", label: "Play next line", group: "Playback", keys: ["F8"], run: () => playNeighbour(1) },
+  { id: "playback.loopPrevious", label: "Loop previous line", group: "Playback", keys: ["Shift+F7"], run: () => playNeighbour(-1, true) },
+  { id: "playback.loopNext", label: "Loop next line", group: "Playback", keys: ["Shift+F8"], run: () => playNeighbour(1, true) },
+  { id: "nav.nextAndPlay", label: "Go to next line and play", group: "Navigate", keys: ["$mod+Shift+Enter"], run: goToNextAndPlay },
   ...stepCommands(),
   { id: "playback.speed.faster", label: "Faster playback", group: "Playback", run: () => changeSpeed(1) },
   { id: "playback.speed.slower", label: "Slower playback", group: "Playback", run: () => changeSpeed(-1) },

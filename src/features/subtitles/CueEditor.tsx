@@ -142,7 +142,8 @@ export function CueEditor() {
           onChange={(e) => cue && !hideText && updateCue(cue.id, { text: e.target.value }, `text:${cue.id}`)}
           onKeyDown={(e) => {
             if (e.key === "Escape") e.currentTarget.blur();
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            // ⌘↩ next line; ⌘⇧↩ is the "go to next line and play" command.
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
               e.preventDefault();
               selectRelative(1);
             }

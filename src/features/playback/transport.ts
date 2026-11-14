@@ -1,5 +1,6 @@
-import { selectedCues, selectSelectedCue, useSubtitles } from "@/features/subtitles/store";
+import { select, selectedCues, selectSelectedCue, selectSelectedIndex, useSubtitles } from "@/features/subtitles/store";
 import { stepFrames } from "@/features/subtitles/timing";
+import { focusCueText } from "@/lib/dom";
 import { clock } from "./clock";
 
 /** Step the playhead by whole frames at the project fps. Pauses first, like a jog wheel. */
@@ -51,4 +52,24 @@ export function toggleLoopSelection() {
 export function playBeforeSelection() {
   const cue = selectSelectedCue(useSubtitles.getState());
   if (cue) clock.playFrom(cue.start - PRE_ROLL);
+}
+
+/**
+ * Select the next (`delta` 1) or previous (-1) line and play it, stopping at
+ * its end or looping. With nothing selected, "next" starts at the first line.
+ * Returns false at either end of the document.
+ */
+export function playNeighbour(delta: 1 | -1, loop = false): boolean {
+  const s = useSubtitles.getState();
+  const i = selectSelectedIndex(s);
+  const cue = s.cues[i < 0 ? (delta > 0 ? 0 : -1) : i + delta];
+  if (!cue) return false;
+  select(cue.id);
+  clock.playRange(cue.start, cue.end, loop);
+  return true;
+}
+
+/** The listen-then-type loop: next line, play it, cursor in the text box. */
+export function goToNextAndPlay() {
+  if (playNeighbour(1)) requestAnimationFrame(() => focusCueText());
 }

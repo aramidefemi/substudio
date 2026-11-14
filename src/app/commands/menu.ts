@@ -211,6 +211,12 @@ export const MENU: MenuGroup[] = [
       "playback.loopSelection",
       "playback.playBefore",
       "-",
+      "playback.playPrevious",
+      "playback.playNext",
+      "playback.loopPrevious",
+      "playback.loopNext",
+      "nav.nextAndPlay",
+      "-",
       {
         submenu: "Step",
         items: [
