@@ -181,6 +181,16 @@ export const COMMANDS: Command[] = [
   { id: "edit.duplicate", label: "Duplicate lines", group: "Lines", keys: ["$mod+KeyD"], run: a.duplicateLinesAction },
   { id: "edit.removeBlankLines", label: "Remove blank lines", group: "Lines", run: a.removeBlankLinesAction },
   { id: "edit.splitAtCursor", label: "Split at cursor", group: "Lines", keys: ["$mod+KeyT"], run: a.splitAtCursorAction },
+  { id: "edit.moveFirstWordFromNext", label: "Move first word from next line", group: "Lines", run: a.moveFirstWordFromNextAction },
+  { id: "edit.moveLastWordToNext", label: "Move last word to next line", group: "Lines", run: a.moveLastWordToNextAction },
+  { id: "edit.moveTextToNext", label: "Move text after cursor to next line", group: "Lines", keys: ["$mod+Alt+KeyT"], run: () => a.moveTextFromCursorToNextAction() },
+  {
+    id: "edit.moveTextToNextAndPlay",
+    label: "Move text after cursor to next line and play",
+    group: "Lines",
+    keys: ["$mod+Alt+Shift+KeyT"],
+    run: () => a.moveTextFromCursorToNextAction(true),
+  },
   { id: "edit.splitAtVideo", label: "Split at video position", group: "Lines", keys: ["$mod+Shift+KeyT"], run: a.splitAtVideoAction },
   // ⌘⇧←/→ select to line start/end while typing, so merging only fires outside text.
   { id: "edit.mergePrevious", label: "Merge with previous", group: "Lines", keys: ["$mod+Shift+ArrowLeft"], scope: "outsideText", run: () => a.mergePreviousAction("keepBreaks") },

@@ -100,6 +100,11 @@ export const MENU: MenuGroup[] = [
           "edit.splitAtCursor",
           "edit.splitAtVideo",
           "-",
+          ["edit.moveFirstWordFromNext", "Move First Word from Next Line"],
+          ["edit.moveLastWordToNext", "Move Last Word to Next Line"],
+          ["edit.moveTextToNext", "Move Text After Cursor to Next Line"],
+          ["edit.moveTextToNextAndPlay", "Move Text After Cursor to Next Line and Play"],
+          "-",
           {
             submenu: "Merge with Previous",
             items: [

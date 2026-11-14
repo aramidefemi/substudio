@@ -3,6 +3,9 @@ import {
   autoBreak,
   balanceLines,
   breakAtFirstSpace,
+  moveFirstWordUp,
+  moveLastWordDown,
+  moveTextFromCursorDown,
   toggleDialogDashes,
   toggleLineBreak,
   trimWhitespace,
@@ -75,5 +78,31 @@ describe("toggleDialogDashes", () => {
 describe("trimWhitespace", () => {
   it("trims each line and outer blanks", () => {
     expect(trimWhitespace("  a  \n  b  \n")).toBe("a\nb");
+  });
+});
+
+describe("moving words between cues", () => {
+  it("moves the first word of the next cue up", () => {
+    expect(moveFirstWordUp("I am going", "home now.")).toEqual({ first: "I am going home", second: "now." });
+    expect(moveFirstWordUp("", "  Mama,\nplease.")).toEqual({ first: "Mama,", second: "please." });
+    expect(moveFirstWordUp("Last.", "Only")).toEqual({ first: "Last. Only", second: "" });
+    expect(moveFirstWordUp("Text", "  ")).toBeNull();
+  });
+
+  it("moves the last word down to the next cue", () => {
+    expect(moveLastWordDown("I am going home", "now.")).toEqual({ first: "I am going", second: "home now." });
+    expect(moveLastWordDown("Two\nlines here ", "")).toEqual({ first: "Two\nlines", second: "here" });
+    expect(moveLastWordDown("Alone", "next")).toEqual({ first: "", second: "Alone next" });
+    expect(moveLastWordDown(" ", "next")).toBeNull();
+  });
+
+  it("moves the text after the cursor to the next cue", () => {
+    expect(moveTextFromCursorDown("Have you eaten? Not yet.", 15, "Amen.")).toEqual({
+      first: "Have you eaten?",
+      second: "Not yet. Amen.",
+    });
+    expect(moveTextFromCursorDown("Hello there", 0, "")).toEqual({ first: "", second: "Hello there" });
+    expect(moveTextFromCursorDown("Hello", 5, "x")).toBeNull();
+    expect(moveTextFromCursorDown("Hello  ", 5, "x")).toBeNull();
   });
 });

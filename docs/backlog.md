@@ -142,7 +142,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
 | EDT-10 | Ripple delete; duplicate line; remove blank lines; trim whitespace | RippleDeleteSelectedLines… | S | ✅ |
-| EDT-11 | Move first/last word between neighbouring cues; move text from cursor to next cue (and play) | MoveFirstWord*, MoveTextFromCursorToNext* | M | Re-split dialogue without retyping. |
+| EDT-11 | Move first/last word between neighbouring cues; move text from cursor to next cue (and play) | MoveFirstWord*, MoveTextFromCursorToNext* | M | Re-split dialogue without retyping. ✅ Move first word from next line / last word to next line (Edit › Lines, palette), move text after the cursor to the next line ⌘⌥T, and the same then go to that line and play it ⌘⌥⇧T. One undo step each; pure functions in textOps.ts. |
 | EDT-12 | Toggle dialog dashes; break at first space from cursor | ToggleDialogDashes, BreakAtFirstSpaceFromCursor | S | ✅ |
 | NAV-01 | Go to next/previous **error**, next empty line, next line from video position | GoToNextError… | S | ✅ ⌘⌥↓/↑ next/previous error (anything `checkCue` flags), next empty line (menu/palette), ⌥↓/↑ next/previous line from the playhead (back goes to the current line's start first). Each selects and seeks; Edit › Go To. |
 | NAV-02 | Bookmarks (with note): toggle, list, next/previous | Bookmarks | M | ✅ ⌘B toggle, ⇧⌘B note, ⌥⌘B / ⇧⌥⌘B next/previous (wrap), searchable list (Edit › Bookmarks); stored on the cue in the subtitle store (undoable); bookmark icon in the list row. Persisted via FIL-03 sidecar. |

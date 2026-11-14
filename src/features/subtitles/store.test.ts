@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   beginHeldCue,
   endHeldCue,
+  setPairTexts,
   deleteSelected,
   duplicateSelected,
   insertAfterSelected,
@@ -311,6 +312,20 @@ describe("hold-to-time", () => {
     const id = beginHeldCue(4);
     undo();
     endHeldCue(id, 5);
+    expect(texts()).toEqual(["A", "B"]);
+  });
+});
+
+describe("setPairTexts", () => {
+  it("changes a line and the next in one undo step", () => {
+    setPairTexts(0, "A B", "");
+    expect(texts()).toEqual(["A B", ""]);
+    undo();
+    expect(texts()).toEqual(["A", "B"]);
+  });
+
+  it("does nothing without a next line", () => {
+    setPairTexts(1, "x", "y");
     expect(texts()).toEqual(["A", "B"]);
   });
 });

@@ -150,3 +150,39 @@ export function trimWhitespace(text: string): string {
     .join("\n")
     .replace(/^\n+|\n+$/g, "");
 }
+/* ---------- moving words between neighbouring cues (EDT-11) ---------- */
+
+/** New texts for a cue and the one after it. */
+export interface TextPair {
+  first: string;
+  second: string;
+}
+
+/** Join two text fragments with one space (either may be empty). */
+function joinWords(a: string, b: string): string {
+  const left = a.trimEnd();
+  const right = b.trimStart();
+  return left && right ? `${left} ${right}` : left || right;
+}
+
+/** First word of the next cue moves up to the end of this one. Null when the next cue is empty. */
+export function moveFirstWordUp(first: string, second: string): TextPair | null {
+  const m = /^\s*(\S+)\s*/.exec(second);
+  if (!m) return null;
+  return { first: joinWords(first, m[1]!), second: second.slice(m[0].length).trimEnd() };
+}
+
+/** Last word of this cue moves down to the start of the next. Null when this cue is empty. */
+export function moveLastWordDown(first: string, second: string): TextPair | null {
+  const m = /\s*(\S+)\s*$/.exec(first);
+  if (!m) return null;
+  return { first: first.slice(0, m.index), second: joinWords(m[1]!, second) };
+}
+
+/** Text from `cursor` to the end of this cue moves to the start of the next. Null when nothing is after the cursor. */
+export function moveTextFromCursorDown(first: string, cursor: number, second: string): TextPair | null {
+  const at = Math.max(0, Math.min(first.length, cursor));
+  const moved = first.slice(at).trim();
+  if (!moved) return null;
+  return { first: first.slice(0, at).trimEnd(), second: joinWords(moved, second) };
+}

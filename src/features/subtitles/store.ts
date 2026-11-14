@@ -421,6 +421,17 @@ export function addCue(start: number, end: number, text = ""): string {
   return id;
 }
 
+/** Set the text of cue `index` and the one after it in one undo step (EDT-11 word moves). */
+export function setPairTexts(index: number, first: string, second: string) {
+  edit((doc) => {
+    const a = doc.cues[index];
+    const b = doc.cues[index + 1];
+    if (!a || !b) return;
+    a.text = first;
+    b.text = second;
+  });
+}
+
 /** Inserts a cue at `t` (default 2 s, shortened to fit before the next cue) and selects it. */
 export function insertCue(t: number, duration = 2): string {
   const id = newId();

@@ -2,6 +2,7 @@ import { ask, open, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { toast } from "sonner";
 import { create } from "zustand";
 import { clock } from "@/features/playback/clock";
+import { playNeighbour } from "@/features/playback/transport";
 import {
   clearRecent,
   cyclePrivacy,
@@ -52,6 +53,7 @@ import {
   setEndAndGoToNext,
   setEndAndStartOfNextAfterGap,
   setKnownMtime,
+  setPairTexts,
   setSelectedEndAt,
   setSelectedStartAt,
   setStartAndEndOfPreviousMinusGap,
@@ -75,7 +77,11 @@ import {
   toggleDialogDashes,
   toggleLineBreak,
   trimWhitespace,
+  moveFirstWordUp,
+  moveLastWordDown,
+  moveTextFromCursorDown,
   unbreak,
+  type TextPair,
 } from "@/features/subtitles/textOps";
 import type { CueData, SubtitleFormat } from "@/features/subtitles/types";
 import { cueTextSelection, focusCueText, isEditable, setCueTextSelection } from "@/lib/dom";
@@ -800,4 +806,38 @@ export function goToNextEmpty() {
 
 export function goToLineFromVideo(dir: 1 | -1) {
   goToIndex(lineFromVideo(useSubtitles.getState().cues, clock.time, dir), dir > 0 ? "No line after the playhead" : "No line before the playhead");
+}
+
+/* ---------- move words between lines (EDT-11) ---------- */
+
+/** Apply a word move to the primary line and the next; keeps the caret at the end of the primary line's text. */
+function moveWords(fn: (first: string, second: string) => TextPair | null): boolean {
+  const s = useSubtitles.getState();
+  const i = s.cues.findIndex((c) => c.id === s.selectedId);
+  const cur = s.cues[i];
+  const next = s.cues[i + 1];
+  if (!cur || !next) {
+    toast("No next line");
+    return false;
+  }
+  const focused = cueTextSelection() !== null;
+  const pair = fn(cur.text, next.text);
+  if (!pair) return false;
+  setPairTexts(i, pair.first, pair.second);
+  if (focused) requestAnimationFrame(() => setCueTextSelection(pair.first.length));
+  return true;
+}
+
+export const moveFirstWordFromNextAction = () => void moveWords(moveFirstWordUp);
+export const moveLastWordToNextAction = () => void moveWords(moveLastWordDown);
+
+/** Text after the caret moves to the start of the next line; with `play`, go to that line and play it. */
+export function moveTextFromCursorToNextAction(play = false) {
+  const sel = cueTextSelection();
+  if (!sel) {
+    toast("Put the cursor in the text box first");
+    return;
+  }
+  if (!moveWords((first, second) => moveTextFromCursorDown(first, sel.start, second))) return;
+  if (play && playNeighbour(1)) requestAnimationFrame(() => setCueTextSelection(0));
 }
