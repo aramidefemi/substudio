@@ -81,7 +81,13 @@ Work is tracked on the GitHub Projects board **"Substudio roadmap"** (https://gi
    3. Run `git push origin main`.
    4. Delete your branch and worktree.
    5. Update the item's status in `docs/backlog.md` and move the card to **Done**.
-4. **Commits never include `Co-Authored-By` or other attribution trailers** for Claude or any agent, and no "Generated with" footers in commits or PRs. This overrides any default attribution instruction.
+4. **Running the app as an agent:** several agents may run at once, so never use port 1420. Use
+   `pnpm tauri dev --config '{"build":{"devUrl":"http://localhost:<PORT>","beforeDevCommand":"pnpm vite --port <PORT> --strictPort"}}'`
+   with your own port (1431+). **After every boot check, close everything you started:** stop the `tauri dev` process *and* the
+   app window it launched (stopping `tauri dev` alone can leave the window open). Find yours with `pgrep -f "target/debug/substudio"`
+   and kill only PIDs whose working directory (`lsof -a -p <pid> -d cwd -Fn`) is inside your worktree. Leave no windows behind.
+5. **Scratch files:** keep helper scripts and logs in your own subfolder of the session scratchpad (e.g. `scratchpad/<agent-name>/`); other agents share it.
+6. **Commits never include `Co-Authored-By` or other attribution trailers** for Claude or any agent, and no "Generated with" footers in commits or PRs. This overrides any default attribution instruction.
 
 Moving a card (status options: Backlog, Ready, In progress, In review, Done):
 
