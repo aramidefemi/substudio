@@ -22,7 +22,7 @@ None of these involve AI. All 12 must be true before we hand her a full film.
 - [ ] **Subtitle list**: create, edit, delete, select and reorder entries
 - [ ] **Timing operations**: drag, nudge, split, merge and shift subtitles
 - [ ] **Keyboard workflow**: advance, replay, set timings and edit without the mouse
-- [ ] **Text editing**: line breaks, italics, punctuation and dialogue dashes
+- [x] **Text editing**: line breaks, italics, punctuation and dialogue dashes
 - [x] **Undo and recovery**: reliable undo/redo, auto-save and crash recovery (auto-backup done; undo was already in)
 - [ ] **Quality checks**: overlaps, reading speed, duration and line length
 - [ ] **Project persistence**: reopen a film and continue exactly where she stopped
@@ -120,8 +120,8 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | EDT-03 | Multi-select in the list (Shift/⌘-click) for bulk delete, shift times, merge | Grid selection | M | ✅ Multi-select, select all, invert; bulk delete via cut. Shift/merge later (EDT-02). |
 | EDT-04 | Find & replace (whole word, case, regex), find next/prev | Find / Replace | M | |
 | EDT-05 | Go to line number (⌘G) | Go to line | S | |
-| EDT-06 | Italic/bold toggles (⌘I) rendered in list and preview | Text editor | S | |
-| EDT-07 | Auto-break / unbreak lines; balance two lines | Auto-break, toggle break | M | |
+| EDT-06 | Italic/bold toggles (⌘I) rendered in list and preview | Text editor | S | ✅ Italic toggle (⌘I); list + preview render. Bold is M2. |
+| EDT-07 | Auto-break / unbreak lines; balance two lines | Auto-break, toggle break | M | ✅ Auto-break, unbreak, balance, toggle line break. |
 | EDT-08 | Configurable shortcuts, with an "Import from Subtitle Edit" preset | Shortcuts | M | Her muscle memory is the selling point. ❓ Get her SE shortcut list. |
 
 ### Timing by keyboard (from SE's command set; this is how fast subtitlers actually work)
@@ -140,9 +140,9 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
-| EDT-10 | Ripple delete; duplicate line; remove blank lines; trim whitespace | RippleDeleteSelectedLines… | S | |
+| EDT-10 | Ripple delete; duplicate line; remove blank lines; trim whitespace | RippleDeleteSelectedLines… | S | 🟡 Trim whitespace done; ripple/duplicate/blank lines later. |
 | EDT-11 | Move first/last word between neighbouring cues; move text from cursor to next cue (and play) | MoveFirstWord*, MoveTextFromCursorToNext* | M | Re-split dialogue without retyping. |
-| EDT-12 | Toggle dialog dashes; break at first space from cursor | ToggleDialogDashes, BreakAtFirstSpaceFromCursor | S | |
+| EDT-12 | Toggle dialog dashes; break at first space from cursor | ToggleDialogDashes, BreakAtFirstSpaceFromCursor | S | ✅ |
 | NAV-01 | Go to next/previous **error**, next empty line, next line from video position | GoToNextError… | S | |
 | NAV-02 | Bookmarks (with note): toggle, list, next/previous | Bookmarks | M | |
 | NAV-03 | Focus shortcuts between list, text box and waveform | ToggleFocus* | S | |

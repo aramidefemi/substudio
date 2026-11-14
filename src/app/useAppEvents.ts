@@ -8,6 +8,8 @@ import { cueIndexAt, select, selectRelative, useSubtitles } from "@/features/sub
 import { focusCueText, isEditable } from "@/lib/dom";
 import { fileName, inTauri } from "@/lib/tauri";
 import {
+  autoBreakAction,
+  breakAtFirstSpaceAction,
   copyAction,
   cutAction,
   openFind,
@@ -26,7 +28,11 @@ import {
   timingSetEndGoNext,
   timingSetStart,
   timingSetStartOffsetRest,
+  toggleDialogDashesAction,
+  toggleItalicAction,
+  toggleLineBreakAction,
   togglePrivacyAction,
+  unbreakAction,
   undoAction,
 } from "./actions";
 
@@ -142,6 +148,30 @@ export function useAppEvents() {
                 "$mod+Shift+KeyE": (e: KeyboardEvent) => {
                   e.preventDefault();
                   timingExtendToNext();
+                },
+                "$mod+KeyI": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  toggleItalicAction();
+                },
+                "$mod+KeyR": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  autoBreakAction();
+                },
+                "$mod+Shift+KeyR": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  unbreakAction();
+                },
+                "$mod+Shift+KeyL": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  toggleLineBreakAction();
+                },
+                "$mod+Shift+KeyD": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  toggleDialogDashesAction();
+                },
+                "$mod+Alt+Enter": (e: KeyboardEvent) => {
+                  e.preventDefault();
+                  breakAtFirstSpaceAction();
                 },
               }),
         },

@@ -63,16 +63,16 @@ The **Plan** column maps each feature to our backlog (`docs/backlog.md`):
 | Feature | What it does | Plan |
 |---|---|---|
 | Text edit with chars/sec, line length, total chars | Core editor | ✅ |
-| Italic / bold / underline / colour / font / box toggles (line or selection) | Formatting | M1 (italic) · M2 (rest) |
+| Italic / bold / underline / colour / font / box toggles (line or selection) | Formatting | ✅ italic · M2 (rest) |
 | Remove formatting (all, or italic/bold/colour/font/alignment) | Strip tags | M2 |
 | Alignment {\an1–9} picker | Position tags | M3 |
-| Toggle line break / Unbreak / Auto-break / balance | Line breaking | M1 |
-| Break at first space from cursor (and go to next) | Fast re-breaking | M1 |
-| Toggle dialog dashes | "- Line / - Line" dialogs | M1 |
+| Toggle line break / Unbreak / Auto-break / balance | Line breaking | ✅ |
+| Break at first space from cursor (and go to next) | Fast re-breaking | ✅ |
+| Toggle dialog dashes | "- Line / - Line" dialogs | ✅ |
 | Toggle casing; selection to UPPER / lower / Sentence | Casing | M2 |
 | Surround with 1–8 (custom wrappers, e.g. ♪ … ♪) | Snippets | M2 |
 | Insert Unicode symbol | Symbol picker (♪ etc.) | M2 |
-| Trim whitespace (selected lines) | Clean-up | M1 |
+| Trim whitespace (selected lines) | Clean-up | ✅ |
 | Google it / look up in dictionary / custom search 1–5 | Look up selected text on the web | M2 |
 | Single-letter shortcuts in text box, tag colouring, live spell check | Editor niceties | M2 |
 | Record speech to text box | Dictate into the box | M4 |

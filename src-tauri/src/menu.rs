@@ -50,6 +50,23 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         .item(&item("edit.selectAll", "Select All", Some("CmdOrCtrl+A"))?)
         .item(&item("edit.invertSelection", "Invert Selection", None)?)
         .separator()
+        .item(&item("edit.italic", "Italic", Some("CmdOrCtrl+I"))?)
+        .item(&item("edit.toggleLineBreak", "Toggle Line Break", Some("CmdOrCtrl+Shift+L"))?)
+        .item(&item("edit.unbreak", "Unbreak", Some("CmdOrCtrl+Shift+R"))?)
+        .item(&item("edit.autoBreak", "Auto-break", Some("CmdOrCtrl+R"))?)
+        .item(&item("edit.balanceLines", "Balance Lines", None)?)
+        .item(&item(
+            "edit.breakAtFirstSpace",
+            "Break at First Space",
+            Some("CmdOrCtrl+Alt+Return"),
+        )?)
+        .item(&item(
+            "edit.toggleDialogDashes",
+            "Toggle Dialog Dashes",
+            Some("CmdOrCtrl+Shift+D"),
+        )?)
+        .item(&item("edit.trimWhitespace", "Trim Whitespace", None)?)
+        .separator()
         .item(&item("edit.find", "Find…", Some("CmdOrCtrl+F"))?)
         .build()?;
 

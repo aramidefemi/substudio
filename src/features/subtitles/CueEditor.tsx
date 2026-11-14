@@ -1,7 +1,11 @@
+import { Italic } from "lucide-react";
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { toggleItalicAction } from "@/app/actions";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSettings } from "@/features/settings/store";
 import { CUE_TEXT_ID } from "@/lib/dom";
 import { cn } from "@/lib/utils";
@@ -102,9 +106,28 @@ export function CueEditor() {
 
       <div className="flex min-w-0 flex-col gap-1">
         <div className="flex items-center justify-between text-xs">
-          <label htmlFor={CUE_TEXT_ID} className="font-medium">
-            Text
-          </label>
+          <div className="flex items-center gap-1">
+            <label htmlFor={CUE_TEXT_ID} className="font-medium">
+              Text
+            </label>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label="Italic (⌘I)"
+                  disabled={disabled}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={toggleItalicAction}
+                  className="size-6"
+                >
+                  <Italic className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Italic (⌘I)</TooltipContent>
+            </Tooltip>
+          </div>
           {stats && (
             <span className={cn("tabular-nums text-muted-foreground", stats.cps > DEFAULT_RULES.maxCps && "font-medium text-destructive")}>
               Chars: {stats.chars} / {stats.cps.toFixed(1)} cps

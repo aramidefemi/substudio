@@ -311,6 +311,17 @@ export function updateCue(id: string, patch: Partial<CueData>, key?: string) {
   }, key);
 }
 
+/** Map text of every selected cue (document order). */
+export function mapSelectedTexts(fn: (text: string) => string) {
+  const ids = new Set(get().selectedIds);
+  if (!ids.size) return;
+  edit((doc) => {
+    for (const cue of doc.cues) {
+      if (ids.has(cue.id)) cue.text = fn(cue.text);
+    }
+  });
+}
+
 /** Inserts a cue at `t` (default 2 s, shortened to fit before the next cue) and selects it. */
 export function insertCue(t: number, duration = 2): string {
   const id = newId();

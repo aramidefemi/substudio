@@ -5,9 +5,25 @@ import { openVideo } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useSettings } from "@/features/settings/store";
+import { formatRuns } from "@/features/subtitles/format";
 import { cueIndexAt, selectTimeFormat, useSubtitles } from "@/features/subtitles/store";
 import { formatTime } from "@/features/subtitles/timecode";
 import { clock, usePlaying } from "./clock";
+
+function paintCueOverlay(el: HTMLElement, text: string) {
+  el.replaceChildren();
+  const lines = text.split("\n");
+  lines.forEach((line, li) => {
+    if (li > 0) el.append(document.createElement("br"));
+    for (const run of formatRuns(line)) {
+      const span = document.createElement("span");
+      span.textContent = run.text;
+      if (run.italic) span.style.fontStyle = "italic";
+      if (run.bold) span.style.fontWeight = "700";
+      el.append(span);
+    }
+  });
+}
 
 export function VideoPanel() {
   const videoPath = useSubtitles((s) => s.videoPath);
@@ -37,8 +53,13 @@ export function VideoPanel() {
       const hideText = useSettings.getState().privacy === "text";
       if (overlayRef.current) {
         const text = hideText ? (cue?.text ? "••••" : "") : (cue?.text ?? "");
-        overlayRef.current.textContent = text;
-        overlayRef.current.hidden = !text;
+        if (!text) {
+          overlayRef.current.replaceChildren();
+          overlayRef.current.hidden = true;
+        } else {
+          paintCueOverlay(overlayRef.current, text);
+          overlayRef.current.hidden = false;
+        }
       }
       const fmt = selectTimeFormat(s);
       if (timeRef.current) timeRef.current.textContent = `${formatTime(t, fmt)} / ${formatTime(clock.duration, fmt)}`;

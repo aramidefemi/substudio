@@ -15,6 +15,7 @@ import {
   useSettings,
 } from "@/features/settings/store";
 import { parseCues, serializeCues } from "@/features/subtitles/clipboard";
+import { toggleItalic } from "@/features/subtitles/format";
 import {
   extendNextStartToCurrent,
   extendPreviousEndToCurrent,
@@ -23,6 +24,7 @@ import {
   insertCue,
   invertSelection,
   loadDocument,
+  mapSelectedTexts,
   markSaved,
   moveAllBy,
   moveSelectedBy,
@@ -32,6 +34,7 @@ import {
   redo,
   removeCues,
   selectAll,
+  selectRelative,
   selectedCues,
   setEndAddNewAndGoToNew,
   setEndAndGoToNext,
@@ -45,12 +48,22 @@ import {
   snapAllTimesToFrames,
   toggleTimecode,
   undo,
+  updateCue,
   useSubtitles,
   type TimingStep,
 } from "@/features/subtitles/store";
 import type { NudgeMode } from "@/features/subtitles/timing";
+import {
+  autoBreak,
+  balanceLines,
+  breakAtFirstSpace,
+  toggleDialogDashes,
+  toggleLineBreak,
+  trimWhitespace,
+  unbreak,
+} from "@/features/subtitles/textOps";
 import type { SubtitleFormat } from "@/features/subtitles/types";
-import { isEditable } from "@/lib/dom";
+import { cueTextSelection, focusCueText, isEditable, setCueTextSelection } from "@/lib/dom";
 import { commands, fileName, inTauri, stripExtension } from "@/lib/tauri";
 
 /** Transient UI state that several components toggle. */
@@ -440,6 +453,71 @@ export const timingSnapAllToFrames = () => {
   toast.success("Snapped all times to frames");
 };
 
+/* ---------- text box ---------- */
+
+function primaryCue() {
+  const { cues, selectedId } = useSubtitles.getState();
+  return cues.find((c) => c.id === selectedId) ?? null;
+}
+
+/** Apply a text transform to the primary cue; restore caret when the text box is focused. */
+function editPrimaryText(
+  fn: (text: string, sel: { start: number; end: number }) => { text: string; start: number; end: number },
+) {
+  const cue = primaryCue();
+  if (!cue) return;
+  const focused = cueTextSelection();
+  const sel = focused ?? { start: 0, end: cue.text.length };
+  const next = fn(cue.text, sel);
+  if (next.text === cue.text && next.start === sel.start && next.end === sel.end) return;
+  updateCue(cue.id, { text: next.text });
+  if (focused) requestAnimationFrame(() => setCueTextSelection(next.start, next.end));
+}
+
+export function toggleItalicAction() {
+  editPrimaryText((text, sel) => toggleItalic(text, sel.start, sel.end));
+}
+
+export function toggleLineBreakAction() {
+  editPrimaryText((text, sel) => {
+    const cursor = sel.start === sel.end ? sel.start : Math.max(sel.start, sel.end);
+    const next = toggleLineBreak(text, cursor);
+    return { text: next.text, start: next.cursor, end: next.cursor };
+  });
+}
+
+export function unbreakAction() {
+  mapSelectedTexts(unbreak);
+}
+
+export function autoBreakAction() {
+  mapSelectedTexts(autoBreak);
+}
+
+export function balanceLinesAction() {
+  mapSelectedTexts(balanceLines);
+}
+
+export function breakAtFirstSpaceAction() {
+  const cue = primaryCue();
+  if (!cue) return;
+  const focused = cueTextSelection();
+  const cursor = focused ? focused.start : 0;
+  const next = breakAtFirstSpace(cue.text, cursor);
+  if (!next) return;
+  updateCue(cue.id, { text: next.text });
+  selectRelative(1);
+  requestAnimationFrame(() => focusCueText());
+}
+
+export function toggleDialogDashesAction() {
+  mapSelectedTexts(toggleDialogDashes);
+}
+
+export function trimWhitespaceAction() {
+  mapSelectedTexts(trimWhitespace);
+}
+
 /** Ids match the native menu items in `src-tauri/src/menu.rs`. */
 const ACTIONS: Record<string, () => unknown> = {
   "file.new": newFile,
@@ -464,6 +542,14 @@ const ACTIONS: Record<string, () => unknown> = {
   "edit.selectAll": selectAllAction,
   "edit.invertSelection": invertSelectionAction,
   "edit.find": openFind,
+  "edit.italic": toggleItalicAction,
+  "edit.toggleLineBreak": toggleLineBreakAction,
+  "edit.unbreak": unbreakAction,
+  "edit.autoBreak": autoBreakAction,
+  "edit.balanceLines": balanceLinesAction,
+  "edit.breakAtFirstSpace": breakAtFirstSpaceAction,
+  "edit.toggleDialogDashes": toggleDialogDashesAction,
+  "edit.trimWhitespace": trimWhitespaceAction,
   "view.theme.system": () => setTheme("system"),
   "view.theme.light": () => setTheme("light"),
   "view.theme.dark": () => setTheme("dark"),
