@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cursorFor, dragCue, hitTest, MIN_CUE_LEN } from "./drag";
+import { cursorFor, dragCue, hitTest, MIN_CUE_LEN, setEdgeAt } from "./drag";
 
 // 100 px per second, view starts at 0: x = t * 100.
 const PPS = 100;
@@ -115,5 +115,24 @@ describe("cursorFor", () => {
     expect(cursorFor({ index: 0, mode: "start" })).toBe("ew-resize");
     expect(cursorFor({ index: 0, mode: "move" })).toBe("grab");
     expect(cursorFor({ index: 0, mode: "move" }, true)).toBe("grabbing");
+  });
+});
+
+describe("setEdgeAt", () => {
+  const cue = { start: 2, end: 3 };
+
+  it("puts the edge exactly at the click", () => {
+    expect(setEdgeAt(cue, "start", 1.2345)).toEqual({ start: 1.235, end: 3 });
+    expect(setEdgeAt(cue, "end", 4.5)).toEqual({ start: 2, end: 4.5 });
+  });
+
+  it("pushes the other edge only to keep the minimum length", () => {
+    expect(setEdgeAt(cue, "start", 3.5)).toEqual({ start: 3.5, end: 3.6 });
+    expect(setEdgeAt(cue, "end", 1)).toEqual({ start: 0.9, end: 1 });
+  });
+
+  it("never goes below zero", () => {
+    expect(setEdgeAt(cue, "start", -1)).toEqual({ start: 0, end: 3 });
+    expect(setEdgeAt(cue, "end", 0.02)).toEqual({ start: 0, end: 0.1 });
   });
 });

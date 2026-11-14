@@ -120,7 +120,7 @@ export function Waveform() {
     <div className="h-full overflow-hidden rounded-xl bg-timeline">
       <canvas
         ref={canvasRef}
-        aria-label="Waveform timeline. Drag a subtitle's edges to retime it, its middle to move it (⌥-drag an edge moves the neighbour too). Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom."
+        aria-label="Waveform timeline. Click to seek; ⇧-click sets the selected subtitle's start, ⌘-click its end. Drag a subtitle's edges to retime it, its middle to move it (⌥-drag an edge moves the neighbour too). Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom."
         className="block size-full cursor-text touch-none"
         onDoubleClick={(e) => {
           const w = e.currentTarget.clientWidth;

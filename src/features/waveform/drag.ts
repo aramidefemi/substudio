@@ -140,3 +140,14 @@ export function cursorFor(hit: Hit | null, dragging = false): string {
   if (hit.mode === "move") return dragging ? "grabbing" : "grab";
   return "ew-resize";
 }
+
+/**
+ * Shift/⌘-click: put one edge exactly at `t`. The other edge only moves when
+ * it must, to keep `minLen`.
+ */
+export function setEdgeAt(cue: Span, edge: "start" | "end", t: number, minLen = MIN_CUE_LEN): Span {
+  const at = Math.max(0, ms(t));
+  if (edge === "start") return { start: at, end: Math.max(cue.end, ms(at + minLen)) };
+  const end = Math.max(at, minLen);
+  return { start: Math.min(cue.start, Math.max(0, ms(end - minLen))), end };
+}

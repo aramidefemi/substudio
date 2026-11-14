@@ -1,6 +1,14 @@
 import { clock } from "@/features/playback/clock";
-import { select, selectSelectedIndex, setCueTimes, useSubtitles, type TimeChange } from "@/features/subtitles/store";
-import { cursorFor, dragCue, hitTest, type DragMode, type Span } from "./drag";
+import { isMac } from "@/app/commands/keys";
+import {
+  select,
+  selectSelectedCue,
+  selectSelectedIndex,
+  setCueTimes,
+  useSubtitles,
+  type TimeChange,
+} from "@/features/subtitles/store";
+import { cursorFor, dragCue, hitTest, setEdgeAt, type DragMode, type Span } from "./drag";
 import { useWaveView } from "./view";
 
 /** Pointer travel (px) before a press on a cue becomes a drag. */
@@ -68,9 +76,21 @@ export function attachPointer(canvas: HTMLCanvasElement): () => void {
     setCueTimes(changes, g.key);
   };
 
+  /** Shift+click sets the selected cue's start, ⌘/Ctrl+click its end. True when handled. */
+  const modifierClick = (e: PointerEvent, x: number) => {
+    const mod = isMac ? e.metaKey : e.ctrlKey;
+    if (e.shiftKey === mod) return false; // neither, or both
+    const cue = selectSelectedCue(useSubtitles.getState());
+    if (!cue) return true;
+    const t = setEdgeAt(cue, e.shiftKey ? "start" : "end", timeAt(x));
+    setCueTimes([{ id: cue.id, ...t }]);
+    return true;
+  };
+
   const down = (e: PointerEvent) => {
     if (e.button !== 0) return;
     const x = localX(e);
+    if (modifierClick(e, x)) return;
     const hit = hitAt(x);
     if (!hit) {
       clock.seek(timeAt(x));
