@@ -17,6 +17,43 @@ export const frameStep = (fps: number) => 1 / fps;
 
 export const snapToFrame = (t: number, fps: number) => Math.max(0, Math.round(t * fps) / fps);
 
+/** Shortest cue hold-to-time makes (a tap, or a hold while paused). */
+export const MIN_HELD_DURATION = 0.3;
+
+/**
+ * Provisional length of a held cue until the key is released. It is also the
+ * final length when the command runs from the menu or palette (no release).
+ */
+export const HELD_PROVISIONAL = 2;
+
+/**
+ * Where hold-to-time puts a cue pressed at `t` (TIM-01): sorted position,
+ * start at `t` (or just after a cue still on screen), and a provisional end
+ * (shortened to fit before the next cue) until the key is released.
+ */
+export function placeHeldCue(
+  cues: readonly CueData[],
+  t: number,
+  minGap = MIN_GAP,
+): { index: number; start: number; end: number } {
+  let index = cues.findIndex((c) => c.start > t);
+  if (index === -1) index = cues.length;
+  const prev = cues[index - 1];
+  const next = cues[index];
+  const start = prev && t < prev.end + minGap ? prev.end + minGap : Math.max(0, t);
+  const limit = next ? next.start - minGap : Infinity;
+  return { index, start, end: Math.max(start + minGap, Math.min(start + HELD_PROVISIONAL, limit)) };
+}
+
+/** End for a held cue released at `t`: at least MIN_HELD_DURATION, never into the next cue. */
+export function heldCueEnd(cues: readonly CueData[], index: number, t: number, minGap = MIN_GAP): number {
+  const cue = cues[index]!;
+  const next = cues[index + 1];
+  let end = Math.max(t, cue.start + MIN_HELD_DURATION);
+  if (next) end = Math.min(end, next.start - minGap);
+  return Math.max(end, cue.start + minGap);
+}
+
 /** Tolerance (in frames) for treating a time as sitting on a frame boundary. */
 const FRAME_EPS = 1e-3;
 

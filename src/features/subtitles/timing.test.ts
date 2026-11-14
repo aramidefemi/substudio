@@ -8,7 +8,11 @@ import {
   extendToNext,
   extendToPrevious,
   frameStep,
+  HELD_PROVISIONAL,
+  heldCueEnd,
+  MIN_HELD_DURATION,
   nudgeEdge,
+  placeHeldCue,
   setEndAndStartOfNext,
   setEndAt,
   setStartAndEndOfPrevious,
@@ -54,6 +58,30 @@ describe("stepFrames", () => {
     expect(stepFrames(0.02, 25, -1)).toBe(0);
     expect(stepFrames(0, 25, -1)).toBe(0);
     expect(stepFrames(1.234, 25, 0)).toBe(1.234);
+  });
+});
+
+describe("hold-to-time placement", () => {
+  it("starts at the playhead with a provisional end", () => {
+    const cues = [cue(1, 2), cue(10, 11)];
+    expect(placeHeldCue(cues, 4)).toEqual({ index: 1, start: 4, end: 4 + HELD_PROVISIONAL });
+    expect(placeHeldCue([], 0.5)).toEqual({ index: 0, start: 0.5, end: 0.5 + HELD_PROVISIONAL });
+  });
+
+  it("starts after a cue still on screen and fits before the next", () => {
+    const cues = [cue(1, 3), cue(4, 5)];
+    const at = placeHeldCue(cues, 2.5);
+    expect(at.index).toBe(1);
+    expect(at.start).toBeCloseTo(3 + MIN_GAP);
+    expect(at.end).toBeCloseTo(4 - MIN_GAP);
+  });
+
+  it("ends at the release time, clamped to a minimum and to the next cue", () => {
+    const cues = [cue(2, 4), cue(5, 6)];
+    expect(heldCueEnd(cues, 0, 3.2)).toBeCloseTo(3.2);
+    expect(heldCueEnd(cues, 0, 2.05)).toBeCloseTo(2 + MIN_HELD_DURATION);
+    expect(heldCueEnd(cues, 0, 9)).toBeCloseTo(5 - MIN_GAP);
+    expect(heldCueEnd([cue(2, 4)], 0, 9)).toBe(9);
   });
 });
 

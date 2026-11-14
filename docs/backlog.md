@@ -129,7 +129,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
-| TIM-01 | **Hold-to-time:** hold a key while the line is spoken; press creates the cue at the playhead, release sets its end | InsertSubtitleAtVideoPositionSetEndAtKeyUp | M | Works while playing, then focuses text. |
+| TIM-01 | **Hold-to-time:** hold a key while the line is spoken; press creates the cue at the playhead, release sets its end | InsertSubtitleAtVideoPositionSetEndAtKeyUp | M | ✅ Hold **H** (outside the text box): key down adds a cue at the playhead (after a cue still on screen), key up sets its end (min 0.3 s, never into the next cue), one undo step, cue selected. Commands can now take a `release` handler (keyup, key repeat ignored, released on window blur). Doesn't focus the text box, so she can hold again for the next line; Enter edits. |
 | TIM-02 | **Set end, add new and go to new** / set start and go to next / set end and go to next | WaveformSetEndAddNewAndGoToNew etc. | S | ✅ Timing menu + F10 / Shift+F10 / set-start-go-next. |
 | TIM-03 | Move start/end ±1 frame or ±X ms, with keep-gap and push-neighbour variants | MoveStart*/MoveEnd* | S | ✅ Global keys + Timing menu (plain / keepGap / push). |
 | TIM-04 | Shift selected lines / all lines by a frame, X ms, or custom steps | MoveSelectedLines*, MoveAllLines* | S | ✅ Incl. “+ following” variant. |

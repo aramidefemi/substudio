@@ -260,6 +260,7 @@ export const MENU: MenuGroup[] = [
       },
       { submenu: "Move All", items: steps("timing.moveAll") },
       "-",
+      "timing.holdToTime",
       "timing.setStart",
       "timing.setEnd",
       "timing.setStartGoNext",

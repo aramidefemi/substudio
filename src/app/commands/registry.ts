@@ -23,6 +23,12 @@ export interface Command {
   /** Hide from the command palette (e.g. plain navigation keys). */
   hidden?: boolean;
   run: () => unknown;
+  /**
+   * Called when the shortcut key that ran the command is released (hold-to-time).
+   * Key repeat is ignored while held. Give such commands scope `outsideText`;
+   * from the menu or palette only `run` happens.
+   */
+  release?: () => unknown;
 }
 
 const commands = new Map<string, Command>();

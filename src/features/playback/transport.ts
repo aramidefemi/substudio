@@ -1,4 +1,4 @@
-import { select, selectedCues, selectSelectedCue, selectSelectedIndex, useSubtitles } from "@/features/subtitles/store";
+import { beginHeldCue, endHeldCue, select, selectedCues, selectSelectedCue, selectSelectedIndex, useSubtitles } from "@/features/subtitles/store";
 import { stepFrames } from "@/features/subtitles/timing";
 import { focusCueText } from "@/lib/dom";
 import { clock } from "./clock";
@@ -25,6 +25,22 @@ export function nextSpeed(rate: number, dir: 1 | -1): number {
 
 export const changeSpeed = (dir: 1 | -1) => clock.setRate(nextSpeed(clock.rate, dir));
 export const resetSpeed = () => clock.setRate(1);
+
+/** Cue being timed by a held key (TIM-01), if any. */
+let heldId: string | null = null;
+
+/** Hold-to-time key down: new cue at the playhead, open-ended until release. */
+export function holdToTimeStart() {
+  // A run from the menu or palette never gets a release; its cue keeps the provisional end.
+  heldId = beginHeldCue(clock.time);
+}
+
+/** Hold-to-time key up: the cue ends at the playhead. */
+export function holdToTimeEnd() {
+  if (!heldId) return;
+  endHeldCue(heldId, clock.time);
+  heldId = null;
+}
 
 /** Seconds of lead-in for "play from just before the line". */
 export const PRE_ROLL = 0.5;

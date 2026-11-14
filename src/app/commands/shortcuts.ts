@@ -2,7 +2,7 @@ import { tinykeys, type KeybindingsMap } from "tinykeys";
 import { isEditable } from "@/lib/dom";
 import { inTauri } from "@/lib/tauri";
 import { menuCommandIds } from "./menu";
-import { allCommands } from "./registry";
+import { allCommands, type Command } from "./registry";
 
 /** Focus targets that use plain keys themselves (text, buttons, sliders, open lists and menus). */
 const KEY_OWNER_ROLES = '[role="slider"],[role="listbox"],[role="option"],[role="menu"],[role="menuitem"],[role="combobox"]';
@@ -20,6 +20,8 @@ function ownsKeys(target: EventTarget | null): boolean {
 export function bindShortcuts(target: Window = window): () => void {
   const nativeOwned = inTauri ? menuCommandIds() : new Set<string>();
   const map: KeybindingsMap = {};
+  /** Physical key (`KeyboardEvent.code`) → command waiting for that key's release. */
+  const held = new Map<string, Command>();
 
   for (const command of allCommands()) {
     (command.keys ?? []).forEach((key, i) => {
@@ -32,11 +34,37 @@ export function bindShortcuts(target: Window = window): () => void {
       map[key] = (e: KeyboardEvent) => {
         if (scope === "outsideText" && ownsKeys(e.target)) return;
         e.preventDefault();
+        if (command.release) {
+          if (e.repeat || held.has(e.code)) return;
+          held.set(e.code, command);
+        }
         void command.run();
       };
     });
   }
 
+  // Release by physical key, whatever the modifiers or focus are by then.
+  const onKeyUp = (e: KeyboardEvent) => {
+    const command = held.get(e.code);
+    if (!command) return;
+    held.delete(e.code);
+    e.preventDefault();
+    void command.release?.();
+  };
+  // Switching apps mid-hold never delivers the keyup: release everything.
+  const releaseAll = () => {
+    const pending = [...held.values()];
+    held.clear();
+    pending.forEach((c) => void c.release?.());
+  };
+  target.addEventListener("keyup", onKeyUp);
+  target.addEventListener("blur", releaseAll);
+
   // Our own scope check decides; tinykeys would otherwise drop all events from inputs.
-  return tinykeys(target, map, { ignore: () => false });
+  const unbind = tinykeys(target, map, { ignore: () => false });
+  return () => {
+    unbind();
+    target.removeEventListener("keyup", onKeyUp);
+    target.removeEventListener("blur", releaseAll);
+  };
 }

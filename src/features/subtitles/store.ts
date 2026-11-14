@@ -19,7 +19,9 @@ import {
   extendToNext,
   extendToPrevious,
   frameStep,
+  heldCueEnd,
   nudgeEdge,
+  placeHeldCue,
   setEndAndStartOfNext,
   setEndAt,
   setStartAndEndOfPrevious,
@@ -434,6 +436,30 @@ export function insertCue(t: number, duration = 2): string {
   });
   select(id);
   return id;
+}
+
+/**
+ * Hold-to-time, key down (TIM-01): add a cue at `t` with an open end and select
+ * it. Pair with `endHeldCue`; both share one undo step.
+ */
+export function beginHeldCue(t: number): string {
+  const id = newId();
+  edit((doc) => {
+    const at = placeHeldCue(doc.cues, t);
+    doc.cues.splice(at.index, 0, { id, start: at.start, end: at.end, text: "" });
+  }, `hold:${id}`);
+  // Set the selection directly: `select` would close the undo step we still extend.
+  set({ selectedId: id, selectedIds: [id], selectionAnchor: id });
+  return id;
+}
+
+/** Hold-to-time, key up: end the held cue at `t` and keep it selected. */
+export function endHeldCue(id: string, t: number) {
+  edit((doc) => {
+    const i = doc.cues.findIndex((c) => c.id === id);
+    if (i >= 0) doc.cues[i]!.end = heldCueEnd(doc.cues, i, t);
+  }, `hold:${id}`);
+  if (get().cues.some((c) => c.id === id)) select(id);
 }
 
 export type TimingStep = "frame" | "ms" | "custom";

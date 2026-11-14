@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  beginHeldCue,
+  endHeldCue,
   deleteSelected,
   duplicateSelected,
   insertAfterSelected,
@@ -279,5 +281,36 @@ describe("line operations", () => {
     );
     removeBlankLines();
     expect(texts()).toEqual(["A", "C"]);
+  });
+});
+
+describe("hold-to-time", () => {
+  const cues = () => useSubtitles.getState().cues;
+
+  it("creates the cue on key down and ends it on key up, in one undo step", () => {
+    const id = beginHeldCue(1.2);
+    expect(useSubtitles.getState().selectedId).toBe(id);
+    expect(cues().map((c) => c.id).indexOf(id)).toBe(1);
+    expect(cues()[1]!.start).toBeCloseTo(1.2);
+    endHeldCue(id, 2.5);
+    expect(cues()[1]!.end).toBeCloseTo(2 - MIN_GAP); // clamped before "B" at 2 s
+    expect(useSubtitles.getState().selectedId).toBe(id);
+    undo();
+    expect(texts()).toEqual(["A", "B"]);
+  });
+
+  it("uses the release time when there is room", () => {
+    const id = beginHeldCue(4);
+    endHeldCue(id, 5.5);
+    const c = cues().find((x) => x.id === id)!;
+    expect(c.start).toBe(4);
+    expect(c.end).toBe(5.5);
+  });
+
+  it("ignores a release for a cue that no longer exists", () => {
+    const id = beginHeldCue(4);
+    undo();
+    endHeldCue(id, 5);
+    expect(texts()).toEqual(["A", "B"]);
   });
 });
