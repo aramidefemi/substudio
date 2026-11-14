@@ -1,12 +1,15 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { clock } from "@/features/playback/clock";
 import { onThemeChange } from "@/features/settings/appearance";
 import { useSettings } from "@/features/settings/store";
-import { useSubtitles } from "@/features/subtitles/store";
+import { select, useSubtitles } from "@/features/subtitles/store";
+import { menuTarget, setPointerTime, type MenuTarget } from "./context";
 import { drawWaveform } from "./draw";
 import { loadPeaks, usePeaks } from "./peaks";
 import { attachPointer } from "./pointer";
 import { createCueFromRegion, regionContains, useRegion } from "./region";
+import { WaveformMenu } from "./WaveformMenu";
 import { canvasTokens, invalidateCanvasTokens } from "./tokens";
 import { centerOn, resetZoom, scrollBy, setAmplitude, setZoom, useWaveView } from "./view";
 
@@ -28,6 +31,7 @@ function waveformMessage(
  */
 export function Waveform() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [menu, setMenu] = useState<{ target: MenuTarget; hasRegion: boolean } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -121,36 +125,54 @@ export function Waveform() {
 
   return (
     <div className="h-full overflow-hidden rounded-xl bg-timeline">
-      <canvas
-        ref={canvasRef}
-        aria-label="Waveform timeline. Click to seek; ⇧-click sets the selected subtitle's start, ⌘-click its end. Drag a subtitle's edges to retime it, its middle to move it (⌥-drag an edge moves the neighbour too). Drag on empty space to mark a region; Enter or double-click inside it creates a subtitle, Escape clears it. Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom."
-        className="block size-full cursor-text touch-none"
-        onDoubleClick={(e) => {
-          const w = e.currentTarget.clientWidth;
-          if (!e.altKey && regionContains(useRegion.getState().region, timeAt(e.clientX))) {
-            createCueFromRegion();
-            return;
-          }
-          if (e.altKey) {
-            resetZoom({ centerTime: clock.time, widthPx: w });
-            return;
-          }
-          centerOn(timeAt(e.clientX), w);
+      <ContextMenu
+        onOpenChange={(open) => {
+          if (!open) setPointerTime(null);
         }}
-        onWheel={(e) => {
-          // ⌥+wheel: amplitude; ⌘/Ctrl+wheel: time zoom; else pan.
-          if (e.altKey) {
-            e.preventDefault();
-            setAmplitude(useWaveView.getState().amp * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
-          } else if (e.ctrlKey || e.metaKey) {
-            const rect = e.currentTarget.getBoundingClientRect();
-            setZoom(useWaveView.getState().pps * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX - rect.left);
-          } else {
-            const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-            scrollBy(d / useWaveView.getState().pps);
-          }
-        }}
-      />
+      >
+        <ContextMenuTrigger asChild>
+          <canvas
+            ref={canvasRef}
+            onContextMenu={(e) => {
+              // Runs before the menu opens: aim the position-aware commands here.
+              const t = Math.max(0, timeAt(e.clientX));
+              const s = useSubtitles.getState();
+              const target = menuTarget(s.cues, t);
+              if (target.cueId && target.cueId !== s.selectedId) select(target.cueId);
+              setPointerTime(t);
+              setMenu({ target, hasRegion: !!useRegion.getState().region });
+            }}
+            aria-label="Waveform timeline. Click to seek; ⇧-click sets the selected subtitle's start, ⌘-click its end. Drag a subtitle's edges to retime it, its middle to move it (⌥-drag an edge moves the neighbour too). Drag on empty space to mark a region; Enter or double-click inside it creates a subtitle, Escape clears it. Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom. Right-click for insert, split, merge and delete."
+            className="block size-full cursor-text touch-none"
+            onDoubleClick={(e) => {
+              const w = e.currentTarget.clientWidth;
+              if (!e.altKey && regionContains(useRegion.getState().region, timeAt(e.clientX))) {
+                createCueFromRegion();
+                return;
+              }
+              if (e.altKey) {
+                resetZoom({ centerTime: clock.time, widthPx: w });
+                return;
+              }
+              centerOn(timeAt(e.clientX), w);
+            }}
+            onWheel={(e) => {
+              // ⌥+wheel: amplitude; ⌘/Ctrl+wheel: time zoom; else pan.
+              if (e.altKey) {
+                e.preventDefault();
+                setAmplitude(useWaveView.getState().amp * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+              } else if (e.ctrlKey || e.metaKey) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setZoom(useWaveView.getState().pps * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX - rect.left);
+              } else {
+                const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+                scrollBy(d / useWaveView.getState().pps);
+              }
+            }}
+          />
+        </ContextMenuTrigger>
+        <WaveformMenu target={menu?.target ?? null} hasRegion={menu?.hasRegion ?? false} />
+      </ContextMenu>
     </div>
   );
 }

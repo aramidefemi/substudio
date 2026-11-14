@@ -96,7 +96,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | WAV-03 | Drag on empty waveform to mark a region; Enter/double-click creates a cue there | "New selection" | M | ✅ Drag in a gap marks a translucent region (kept inside that gap, so it never overlaps a cue); Enter or double-click inside creates a cue with exactly those times and focuses the text; Escape or a click elsewhere clears it. Also Waveform menu › Create subtitle from marked region. |
 | WAV-04 | Click to seek; Shift+click sets start; Ctrl/⌘+click sets end | Waveform mouse | S | ✅ ⇧-click / ⌘-click (Ctrl on Windows/Linux) put the selected cue's start / end exactly at the click; the other edge only moves to keep 0.1 s. |
 | WAV-05 | Zoom and scroll: wheel/trackpad pan, ⌘+wheel time zoom, ⌥+wheel amplitude, double-click centre, ⌥+double-click reset | Waveform mouse | S | ✅ |
-| WAV-06 | Waveform right-click menu: insert / delete / split here / merge before or after | Waveform context menu | M | |
+| WAV-06 | Waveform right-click menu: insert / delete / split here / merge before or after | Waveform context menu | M | ✅ shadcn ContextMenu: create from marked region, insert here, split at this position, merge with previous/next, delete. Right-click selects the cue under the pointer; items run registry commands (`waveform.insertHere` / `waveform.splitHere` act on the right-clicked time). |
 | WAV-07 | Snap to speech / seek silence; guess start/end from the waveform | Seek silence, guess times | M | Uses peaks from WAV-01. |
 | WAV-08 | Spectrogram view (toggle) | Spectrogram | L | Later in M1, if she uses it. ❓ |
 
