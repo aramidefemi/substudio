@@ -6,6 +6,7 @@ import type { NudgeMode } from "@/features/subtitles/timing";
 import type { TimingStep } from "@/features/subtitles/store";
 import { focusCueText } from "@/lib/dom";
 import * as a from "../actions";
+import * as fr from "../findReplace";
 import { defineCommands, type Command } from "./registry";
 
 type Dir = 1 | -1;
@@ -136,6 +137,9 @@ export const COMMANDS: Command[] = [
   { id: "edit.selectAll", label: "Select all", group: "Edit", keys: ["$mod+KeyA"], run: a.selectAllAction },
   { id: "edit.invertSelection", label: "Invert selection", group: "Edit", run: a.invertSelectionAction },
   { id: "edit.find", label: "Find subtitle…", group: "Edit", keys: ["$mod+KeyF", "$mod+KeyK"], run: a.openFind },
+  { id: "edit.replace", label: "Find and replace…", group: "Edit", keys: ["$mod+Alt+KeyF"], run: fr.openReplace },
+  { id: "edit.findNext", label: "Find next", group: "Edit", keys: ["$mod+KeyG"], run: () => fr.findNext(1) },
+  { id: "edit.findPrevious", label: "Find previous", group: "Edit", keys: ["$mod+Shift+KeyG"], run: () => fr.findNext(-1) },
   { id: "app.commandPalette", label: "Command palette…", group: "Edit", keys: ["$mod+Shift+KeyK"], run: a.openCommandPalette },
 
   { id: "edit.italic", label: "Italic", group: "Text", keys: ["$mod+KeyI"], run: a.toggleItalicAction },

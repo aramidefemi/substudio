@@ -64,7 +64,7 @@ She repeats the same tasks on a film she has already subtitled, in both apps.
 | SUB-007 | Light and Dark themes, density setting, native macOS menu | ✅ |
 | SUB-008 | Open and play a video, with the subtitle shown on it | ✅ |
 | SUB-009 | Select the subtitle under the playhead while playing | ✅ |
-| SUB-010 | Find a subtitle (⌘F) | 🟡 (search only, no replace) |
+| SUB-010 | Find a subtitle (⌘F) | ✅ (replace is EDT-04, ⌥⌘F) |
 
 ---
 
@@ -119,7 +119,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | EDT-01 | **Set start / Set end at playhead** shortcuts (+ "set end and go to next") | Set start/end (F9–F12) | S | This is core to how SE users time on the fly. |
 | EDT-02 | Insert before/after, delete, merge with next/previous, split at cursor/playhead | Grid context menu, split/join | M | ✅ Insert before/after/end; delete; duplicate; split at cursor/video; merge prev/next/selected (keep breaks / unbreak / dialog). Context menu later (WAV-06). |
 | EDT-03 | Multi-select in the list (Shift/⌘-click) for bulk delete, shift times, merge | Grid selection | M | ✅ Multi-select, select all, invert; bulk delete via cut. Shift/merge later (EDT-02). |
-| EDT-04 | Find & replace (whole word, case, regex), find next/prev | Find / Replace | M | |
+| EDT-04 | Find & replace (whole word, case, regex), find next/prev | Find / Replace | M | ✅ ⌥⌘F non-modal dialog; ⌘G / ⇧⌘G find next/previous (wraps); match case, Unicode-aware whole word (tone marks stay in the word), regex with `$1` replacements and inline error; replace-all is one undo step. ⌘F palette unchanged. |
 | EDT-05 | Go to line number (⌘G) | Go to line | S | |
 | EDT-06 | Italic/bold toggles (⌘I) rendered in list and preview | Text editor | S | ✅ Italic toggle (⌘I); list + preview render. Bold is M2. |
 | EDT-07 | Auto-break / unbreak lines; balance two lines | Auto-break, toggle break | M | ✅ Auto-break, unbreak, balance, toggle line break. |

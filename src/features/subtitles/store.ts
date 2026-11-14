@@ -358,6 +358,17 @@ export function updateCue(id: string, patch: Partial<CueData>, key?: string) {
   }, key);
 }
 
+/** Set the text of many cues by id in one undo step (find & replace all). */
+export function setCueTexts(texts: ReadonlyMap<string, string>) {
+  if (!texts.size) return;
+  edit((doc) => {
+    for (const cue of doc.cues) {
+      const text = texts.get(cue.id);
+      if (text !== undefined) cue.text = text;
+    }
+  });
+}
+
 /** Map text of every selected cue (document order). */
 export function mapSelectedTexts(fn: (text: string) => string) {
   const ids = new Set(get().selectedIds);

@@ -15,6 +15,7 @@ import { FindDialog } from "./FindDialog";
 import { HistoryDialog } from "./HistoryDialog";
 import { MediaInfoDialog } from "./MediaInfoDialog";
 import { RecentDialog } from "./RecentDialog";
+import { ReplaceDialog } from "./ReplaceDialog";
 import { RestoreBackupDialog } from "./RestoreBackupDialog";
 import { StatisticsDialog } from "./StatisticsDialog";
 import { Toolbar } from "./Toolbar";
@@ -67,6 +68,7 @@ export default function App() {
         <TransportBar />
       </div>
       <FindDialog />
+      <ReplaceDialog />
       <CommandPalette />
       <RecentDialog />
       <EncodingDialog />
