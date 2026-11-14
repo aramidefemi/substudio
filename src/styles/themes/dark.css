@@ -1,0 +1,42 @@
+[data-theme="dark"] {
+  --background: #0f1115;
+  --foreground: #e2e8f0;
+  --card: #161921;
+  --card-foreground: #e2e8f0;
+  --popover: #1b1f29;
+  --popover-foreground: #e2e8f0;
+  --primary: #8b5cf6;
+  --primary-foreground: #ffffff;
+  --secondary: #1e2330;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1e2330;
+  --muted-foreground: #94a3b8;
+  --accent: #2e1f57;
+  --accent-foreground: #ede9fe;
+  --destructive: #f87171;
+  --border: #262b36;
+  --input: #2c3240;
+  --ring: #8b5cf6;
+
+  --row-selected: #2e1f57;
+  --row-hover: #1a1e28;
+  --cell-error-bg: #3f1d1d;
+  --cell-error-fg: #fca5a5;
+
+  --video-bg: #05070a;
+  --preview-text: #ffffff;
+  --preview-box: rgb(0 0 0 / 0.6);
+
+  --timeline-bg: #0b0d12;
+  --timeline-fg: #e2e8f0;
+  --timeline-muted: #7c8799;
+  --waveform-a: #22c55e;
+  --waveform-b: #eab308;
+  --waveform-selected: #c4b5fd;
+  --cue-region: rgb(255 255 255 / 0.06);
+  --cue-region-selected: rgb(139 92 246 / 0.35);
+  --cue-edge: #3a4252;
+  --cue-edge-selected: #a78bfa;
+  --cue-error: #f87171;
+  --playhead: #22d3ee;
+}

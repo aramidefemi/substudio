@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subtitle Editor Base</title>
+<style>
+:root{
+  --bg:#EFEFEF;--panel:#FFFFFF;--head:#E8E8E8;--line:#D3D3D3;--line2:#BDBDBD;
+  --text:#1B1B1B;--muted:#5C5C5C;--sel:#A8C7EC;--bad:#F3C4C4;--badsel:#E3AEB9;
+  --btn:#E1E1E1;--btnh:#D2D2D2;--accent:#2F7BEA;--warn:#B3261E;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:13px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+[hidden]{display:none !important}
+
+/* toolbar */
+.tb{display:flex;align-items:center;gap:4px;padding:8px 12px}
+.ib{width:40px;height:36px;border:0;border-radius:6px;background:transparent;color:#2B6CD4;display:inline-flex;align-items:center;justify-content:center}
+.ib:hover{background:#E2E2E2}
+.ib svg{width:24px;height:24px}
+.sep{width:1px;height:28px;background:var(--line2);margin:0 6px}
+.spacer{flex:1 1 0}
+.fname{color:var(--muted);margin-right:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:30vw}
+.fmt{display:flex;align-items:center;gap:8px}
+.fmt select{height:30px;min-width:150px;border:1px solid var(--line2);border-radius:6px;background:#fff;padding:0 8px}
+#findBox{height:30px;width:200px;border:1px solid var(--line2);border-radius:6px;padding:0 8px;margin-left:4px}
+
+/* top area */
+.top{flex:1 1 auto;min-height:0;display:flex;gap:10px;padding:0 10px}
+.left{flex:1 1 50%;min-width:0;display:flex;flex-direction:column;gap:8px}
+.list{position:relative;flex:1 1 auto;min-height:120px;overflow:auto;background:var(--panel);border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th{position:sticky;top:0;z-index:1;background:var(--head);font-weight:500;text-align:left;padding:5px 8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+td{padding:4px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;cursor:default}
+td.num{text-align:center;color:#333}
+tbody tr:hover td{background:#F2F6FC}
+tr.sel td{background:var(--sel)}
+td.bad{background:var(--bad)}
+tr.sel td.bad{background:var(--badsel)}
+.empty{position:absolute;inset:40px 16px auto 16px;text-align:center;color:var(--muted);line-height:1.6}
+
+.edit{display:grid;grid-template-columns:170px minmax(0,1fr);gap:4px 16px;padding:6px 4px 8px 4px}
+.edit label,.edit .lbl{font-weight:600}
+.fields{display:flex;flex-direction:column;gap:4px}
+.fields input{height:34px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:0 10px;font-variant-numeric:tabular-nums;margin-bottom:6px}
+.txthead,.txtfoot{display:flex;justify-content:space-between;gap:8px}
+.txtfoot{color:#333}
+.warn{color:var(--warn);font-weight:600}
+#textIn{width:100%;height:96px;resize:vertical;border:1px solid var(--line);border-radius:6px;background:#fff;padding:8px 10px;font-size:16px;font-weight:600;line-height:1.4}
+
+.right{flex:1 1 50%;min-width:0;display:flex;flex-direction:column}
+.video{position:relative;flex:1 1 auto;min-height:160px;background:#E2E4EA;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.video video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.bigplay{display:flex;flex-direction:column;align-items:center;gap:10px;border:0;background:transparent;color:#8792A8}
+.bigplay span{font-size:13px;color:var(--muted)}
+.subov{position:absolute;left:0;right:0;bottom:7%;padding:0 6%;text-align:center;color:#fff;font-weight:600;font-size:clamp(14px,2.1vw,24px);line-height:1.3;white-space:pre-line;text-shadow:0 0 3px #000,0 2px 4px #000;pointer-events:none}
+.vctl{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg)}
+.sb{width:38px;height:32px;border:0;border-radius:6px;background:var(--btn);display:inline-flex;align-items:center;justify-content:center;color:#111}
+.sb:hover{background:var(--btnh)}
+.sb svg{width:16px;height:16px}
+input[type=range]{accent-color:var(--accent)}
+#seek{flex:1 1 auto;min-width:60px}
+#vol{width:110px}
+
+/* waveform */
+.wave{padding:8px 10px 0}
+.wbox{position:relative;height:150px;background:#000}
+#wave{display:block;width:100%;height:100%}
+#scroll{display:block;width:100%;margin:2px 0 0;height:14px}
+.wctl{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;padding:6px 0 2px}
+.zoom{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.zoom input{width:120px}
+.speed{display:inline-flex;align-items:center;gap:6px;margin-left:12px}
+.speed select{height:30px;border:1px solid var(--line2);border-radius:6px;background:#fff}
+
+.status{display:flex;justify-content:flex-end;align-items:center;gap:28px;padding:4px 16px 8px;color:#222}
+.status button{border:0;background:transparent;padding:2px 6px;border-radius:4px}
+.status button:hover{background:#E2E2E2}
+
+/* menus */
+.menu{position:fixed;z-index:30;min-width:200px;background:#fff;border:1px solid var(--line2);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:4px 0}
+.menu button{display:flex;justify-content:space-between;gap:16px;width:100%;border:0;background:transparent;text-align:left;padding:6px 14px}
+.menu button:hover{background:#E8F0FC}
+.menu kbd{font:inherit;color:var(--muted)}
+.menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.help{position:fixed;z-index:30;top:52px;left:12px;width:320px;background:#fff;border:1px solid var(--line2);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:14px 16px}
+.help h2{margin:0 0 8px;font-size:14px}
+.help dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0}
+.help dt{font-weight:600;white-space:nowrap}
+.help dd{margin:0;color:#333}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:40;background:#222;color:#fff;padding:8px 14px;border-radius:8px}
+.drop{position:fixed;inset:0;z-index:50;background:rgba(47,123,234,.12);border:3px dashed var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;color:#1d4fa3;pointer-events:none}
+
+@media (max-width: 860px){
+  body{height:auto;overflow:auto}
+  .top{flex-direction:column}
+  .list{height:260px;flex:none}
+  .video{min-height:200px}
+  .edit{grid-template-columns:1fr}
+  .fname{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="tb">
+  <button type="button" class="ib" id="newBtn" title="New" aria-label="New">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14h6"/></svg>
+  </button>
+  <button type="button" class="ib" id="openBtn" title="Open video or subtitle file" aria-label="Open">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+  </button>
+  <button type="button" class="ib" id="saveBtn" title="Save (Ctrl/⌘ S)" aria-label="Save">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v6h8V3M7 21v-7h10v7"/></svg>
+  </button>
+  <span class="sep" aria-hidden="true"></span>
+  <button type="button" class="ib" id="findBtn" title="Find (Ctrl/⌘ F)" aria-label="Find">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+  </button>
+  <input id="findBox" type="search" placeholder="Find text, press Enter" aria-label="Find text" hidden>
+  <span class="sep" aria-hidden="true"></span>
+  <button type="button" class="ib" id="helpBtn" title="Shortcuts" aria-label="Shortcuts">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.3M12 17h.01"/></svg>
+  </button>
+  <div class="spacer"></div>
+  <span class="fname" id="fname"></span>
+  <label class="fmt">Format
+    <select id="fmt"><option value="srt">SubRip</option><option value="vtt">WebVTT</option></select>
+  </label>
+  <input type="file" id="fileIn" accept=".srt,.vtt,video/*,audio/*,.mp4,.mov,.mkv,.m4v" multiple hidden>
+</header>
+
+<main class="top">
+  <section class="left" aria-label="Subtitles">
+    <div class="list" id="list" tabindex="0" aria-label="Subtitle list">
+      <table>
+        <colgroup><col style="width:52px"><col style="width:128px"><col style="width:128px"><col style="width:84px"><col></colgroup>
+        <thead><tr><th>#</th><th>Show</th><th>Hide</th><th>Duration</th><th>Text</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty" id="empty" hidden>No subtitles yet.<br>Double-click the waveform, or press <b>+</b> under it, to add one.<br>Open a video or an .srt with the folder button.</div>
+    </div>
+
+    <div class="edit">
+      <div class="fields">
+        <label for="showIn">Show</label>
+        <input id="showIn" spellcheck="false">
+        <label for="durIn">Duration</label>
+        <input id="durIn" spellcheck="false">
+      </div>
+      <div>
+        <div class="txthead"><label for="textIn">Text</label><span id="cpsL"></span></div>
+        <textarea id="textIn" spellcheck="true"></textarea>
+        <div class="txtfoot"><span id="lenL"></span><span id="totL"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="right" aria-label="Video">
+    <div class="video" id="vbox">
+      <video id="video" playsinline hidden></video>
+      <button type="button" class="bigplay" id="bigPlay" aria-label="Open a video">
+        <svg width="132" height="132" viewBox="0 0 132 132" aria-hidden="true"><circle cx="66" cy="66" r="62" fill="none" stroke="currentColor" stroke-width="3"/><path d="M52 40v52l42-26z" fill="currentColor"/></svg>
+        <span>Open a video, or drop it here</span>
+      </button>
+      <div class="subov" id="subov"></div>
+    </div>
+    <div class="vctl">
+      <button type="button" class="sb playBtn" title="Play / pause (Space)" aria-label="Play"></button>
+      <button type="button" class="sb" id="stopBtn" title="Stop" aria-label="Stop">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" fill="currentColor"/></svg>
+      </button>
+      <button type="button" class="sb" id="fsBtn" title="Full screen" aria-label="Full screen">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>
+      </button>
+      <input type="range" id="seek" min="0" max="30" step="0.01" value="0" aria-label="Position">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="#222"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>
+      <input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
+    </div>
+  </section>
+</main>
+
+<section class="wave" aria-label="Waveform">
+  <div class="wbox" id="wbox"><canvas id="wave"></canvas></div>
+  <input type="range" id="scroll" min="0" max="0" step="0.01" value="0" aria-label="Scroll waveform">
+  <div class="wctl">
+    <button type="button" class="sb playBtn" title="Play / pause (Space)" aria-label="Play"></button>
+    <button type="button" class="sb" id="addBtn" title="Add subtitle at playhead" aria-label="Add subtitle">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
+    </button>
+    <button type="button" class="sb" id="prevBtn" title="Previous subtitle (↑)" aria-label="Previous subtitle">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 8H3M7 4 3 8l4 4"/></svg>
+    </button>
+    <button type="button" class="sb" id="nextBtn" title="Next subtitle (↓)" aria-label="Next subtitle">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+    </button>
+    <label class="zoom" title="Zoom">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#222" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8h14M4 5 1 8l3 3M12 5l3 3-3 3"/></svg>
+      <input type="range" id="zoom" min="20" max="400" step="1" value="120" aria-label="Zoom">
+      <span id="zoomL">100%</span>
+    </label>
+    <label class="speed">Speed
+      <select id="speed"><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1.0x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option></select>
+    </label>
+  </div>
+</section>
+
+<footer class="status">
+  <button type="button" id="modeBtn" title="Switch time format"></button>
+  <span id="posL"></span>
+</footer>
+
+<div class="menu" id="menu" role="menu" hidden></div>
+<div class="help" id="help" hidden>
+  <h2>Shortcuts</h2>
+  <dl>
+    <dt>Space</dt><dd>Play / pause</dd>
+    <dt>↑ ↓</dt><dd>Previous / next subtitle</dd>
+    <dt>Enter</dt><dd>Edit the selected subtitle's text</dd>
+    <dt>Ctrl/⌘ Enter</dt><dd>While typing: go to next subtitle</dd>
+    <dt>Esc</dt><dd>Stop typing</dd>
+    <dt>Ctrl/⌘ Z</dt><dd>Undo (Shift for redo)</dd>
+    <dt>Ctrl/⌘ S</dt><dd>Save the subtitle file</dd>
+    <dt>Ctrl/⌘ F</dt><dd>Find</dd>
+    <dt>Waveform</dt><dd>Click to move the playhead · drag a subtitle's edges to retime · drag its middle to move · double-click empty space to add · right-click for more</dd>
+    <dt>Scroll</dt><dd>Shift + wheel or the bar under the waveform · Ctrl + wheel zooms</dd>
+  </dl>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="drop" id="drop" hidden>Drop a video or .srt file</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var FPS = 25, MIN_DUR = 1, MAX_DUR = 7, MAX_CPS = 17, MAX_LINE = 42;
+  var KEY = 'subtitle-editor-base-v1';
+  var SAMPLE = [
+    [0.32, 1.76, 'My child, why are you crying?'],
+    [2.28, 3.10, "I'm sorry, Mama."],
+    [3.60, 4.88, "In Jesus' name."],
+    [6.40, 8.40, 'God will make a way.'],
+    [8.72, 10.64, 'Have you eaten?'],
+    [11.04, 12.08, 'Not yet.'],
+    [13.00, 15.20, "I don't know what to do anymore."],
+    [15.80, 17.40, 'Amen.']
+  ];
+
+  function $(id) { return document.getElementById(id); }
+  var rows = $('rows'), list = $('list'), showIn = $('showIn'), durIn = $('durIn'), textIn = $('textIn');
+  var video = $('video'), cv = $('wave'), ctx = cv.getContext('2d');
+
+  var state = { cues: [], sel: 0, mode: 'frames', fileName: 'Untitled.srt' };
+  var speech = [];          // where the simulated waveform puts "speech"
+  var undoStack = [], redoStack = [], typingUndo = false;
+  var hasVideo = false, videoUrl = null, peaks = null, peakRate = 100, peakMax = 1;
+  var playing = false, simTime = 0, lastTs = 0, rate = 1;
+  var viewStart = 0, pps = 120, needDraw = true, drag = null, menuAt = 0;
+
+  /* ---------- time ---------- */
+  function pad(n, w) { return String(n).padStart(w || 2, '0'); }
+  function hms(s) { return pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60); }
+  function fmtTime(t) {
+    t = Math.max(0, t);
+    if (state.mode === 'frames') { var tf = Math.round(t * FPS), f = tf % FPS; return hms((tf - f) / FPS) + ':' + pad(f); }
+    var tm = Math.round(t * 1000), ms = tm % 1000;
+    return hms((tm - ms) / 1000) + ',' + pad(ms, 3);
+  }
+  function fmtDur(d) {
+    if (state.mode === 'frames') { var tf = Math.round(d * FPS); return Math.floor(tf / FPS) + ':' + pad(tf % FPS); }
+    return d.toFixed(3).replace('.', ',');
+  }
+  function parseTime(str) {
+    var m = String(str).trim().match(/^(\d+):(\d{1,2}):(\d{1,2})([,.:])(\d{1,3})$/);
+    if (!m) return null;
+    var base = (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]);
+    if (m[4] === ':') return base + (+m[5]) / FPS;
+    return base + (+(m[5] + '00').slice(0, 3)) / 1000;
+  }
+  function parseDur(str) {
+    str = String(str).trim();
+    var m = str.match(/^(\d+):(\d{1,2})$/);
+    if (m) return +m[1] + (+m[2]) / FPS;
+    var v = parseFloat(str.replace(',', '.'));
+    return isFinite(v) ? v : null;
+  }
+  function srtTime(t, sep) { var tm = Math.round(t * 1000), ms = tm % 1000; return hms((tm - ms) / 1000) + sep + pad(ms, 3); }
+  function parseClock(s) {
+    var p = s.replace(',', '.').split(':');
+    var sec = parseFloat(p.pop()), mi = +(p.pop() || 0), h = +(p.pop() || 0);
+    return h * 3600 + mi * 60 + sec;
+  }
+
+  /* ---------- files ---------- */
+  function parseSubs(txt) {
+    txt = txt.replace(/\r/g, '').replace(/^﻿/, '');
+    var T = '((?:\\d+:)?\\d{1,2}:\\d{1,2}[,.]\\d{1,3})';
+    var re = new RegExp(T + '\\s*-->\\s*' + T + '[^\\n]*\\n([\\s\\S]*?)(?=\\n[ \\t]*\\n|$)', 'g');
+    var out = [], m;
+    while ((m = re.exec(txt))) {
+      out.push({ start: parseClock(m[1]), end: parseClock(m[2]), text: m[3].replace(/<[^>]+>/g, '').trim() });
+    }
+    return out.sort(function (a, b) { return a.start - b.start; });
+  }
+  function toSrt() {
+    return state.cues.map(function (c, i) {
+      return (i + 1) + '\n' + srtTime(c.start, ',') + ' --> ' + srtTime(c.end, ',') + '\n' + c.text + '\n';
+    }).join('\n');
+  }
+  function toVtt() {
+    return 'WEBVTT\n\n' + state.cues.map(function (c) {
+      return srtTime(c.start, '.') + ' --> ' + srtTime(c.end, '.') + '\n' + c.text + '\n';
+    }).join('\n');
+  }
+  function baseName(n) { return n.replace(/\.[^.]+$/, ''); }
+
+  function handleFiles(files) {
+    Array.prototype.forEach.call(files, function (f) {
+      if (/\.(srt|vtt)$/i.test(f.name)) {
+        f.text().then(function (txt) {
+          var cues = parseSubs(txt);
+          if (!cues.length) { toast('No subtitles found in ' + f.name); return; }
+          pushUndo();
+          state.cues = cues;
+          state.sel = 0;
+          state.fileName = baseName(f.name) + '.srt';
+          if (!peaks) speech = cues.map(function (c) { return [c.start, c.end]; });
+          viewStart = 0;
+          refreshAll();
+          toast('Opened ' + f.name + ' · ' + cues.length + ' subtitles');
+        });
+      } else if (/^(video|audio)\//.test(f.type) || /\.(mp4|mov|mkv|m4v)$/i.test(f.name)) {
+        loadVideo(f);
+      } else {
+        toast("Can't open " + f.name);
+      }
+    });
+  }
+
+  function loadVideo(f) {
+    if (videoUrl) URL.revokeObjectURL(videoUrl);
+    videoUrl = URL.createObjectURL(f);
+    video.src = videoUrl;
+    video.hidden = false;
+    $('bigPlay').hidden = true;
+    hasVideo = true;
+    setPlaying(false);
+    video.playbackRate = rate;
+    video.volume = +$('vol').value;
+    if (state.fileName === 'Untitled.srt') state.fileName = baseName(f.name) + '.srt';
+    renderName();
+    peaks = null;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC && f.size < 150e6) {
+      toast('Loading waveform…');
+      f.arrayBuffer().then(function (buf) {
+        return new AC().decodeAudioData(buf);
+      }).then(function (ab) {
+        var ch = ab.getChannelData(0), step = Math.max(1, Math.floor(ab.sampleRate / peakRate));
+        var n = Math.ceil(ch.length / step), out = new Float32Array(n), max = 0;
+        for (var i = 0; i < n; i++) {
+          var m = 0, end = Math.min(ch.length, (i + 1) * step);
+          for (var j = i * step; j < end; j += 4) { var v = Math.abs(ch[j]); if (v > m) m = v; }
+          out[i] = m; if (m > max) max = m;
+        }
+        peaks = out; peakMax = max || 1; needDraw = true;
+        toast('Waveform loaded');
+      }).catch(function () { toast('Showing a sample waveform for this video'); });
+    } else {
+      toast('Large video: showing a sample waveform in this mockup');
+    }
+  }
+
+  function save() {
+    var vtt = $('fmt').value === 'vtt';
+    var name = baseName(state.fileName) + (vtt ? '.vtt' : '.srt');
+    var blob = new Blob([vtt ? toVtt() : toSrt()], { type: 'text/plain;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    toast('Saved ' + name);
+  }
+
+  /* ---------- persistence & undo ---------- */
+  var persistTimer;
+  function persist() {
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(function () {
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* storage unavailable */ }
+    }, 300);
+  }
+  function restore() {
+    try {
+      var s = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (s && Array.isArray(s.cues)) { state = Object.assign(state, s); return true; }
+    } catch (e) { /* storage unavailable */ }
+    return false;
+  }
+  function snap() { return JSON.stringify({ cues: state.cues, sel: state.sel }); }
+  function pushUndo() { undoStack.push(snap()); if (undoStack.length > 200) undoStack.shift(); redoStack = []; }
+  function applySnap(s) { var o = JSON.parse(s); state.cues = o.cues; state.sel = o.sel; refreshAll(); }
+  function undo() { if (!undoStack.length) return toast('Nothing to undo'); redoStack.push(snap()); applySnap(undoStack.pop()); }
+  function redo() { if (!redoStack.length) return toast('Nothing to redo'); undoStack.push(snap()); applySnap(redoStack.pop()); }
+
+  /* ---------- checks ---------- */
+  function check(c, i) {
+    var d = c.end - c.start, chars = c.text.replace(/\n/g, '').length, cps = d > 0 ? chars / d : 0;
+    var lens = c.text.split('\n').map(function (l) { return l.length; });
+    var longest = Math.max.apply(null, lens), prev = state.cues[i - 1];
+    return {
+      d: d, cps: cps, lens: lens, longest: longest, chars: chars,
+      durBad: d < MIN_DUR ? 'Too short: under ' + MIN_DUR + ' second' : (d > MAX_DUR ? 'Too long: over ' + MAX_DUR + ' seconds' : ''),
+      textBad: cps > MAX_CPS ? 'Reads too fast: ' + cps.toFixed(1) + ' chars/sec (max ' + MAX_CPS + ')' :
+        (longest > MAX_LINE ? 'Line too long: ' + longest + ' chars (max ' + MAX_LINE + ')' : ''),
+      showBad: prev && c.start < prev.end - 0.0005 ? 'Overlaps the previous subtitle' : ''
+    };
+  }
+
+  /* ---------- rendering ---------- */
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+    });
+  }
+  function bad(msg) { return msg ? ' class="bad" title="' + esc(msg) + '"' : ''; }
+  function rowHtml(c, i) {
+    var k = check(c, i);
+    return '<tr data-i="' + i + '"' + (i === state.sel ? ' class="sel"' : '') + '>' +
+      '<td class="num">' + (i + 1) + '</td>' +
+      '<td' + bad(k.showBad) + '>' + fmtTime(c.start) + '</td>' +
+      '<td>' + fmtTime(c.end) + '</td>' +
+      '<td' + bad(k.durBad) + '>' + fmtDur(k.d) + '</td>' +
+      '<td' + bad(k.textBad) + '>' + esc(c.text.replace(/\n/g, ' / ')) + '</td></tr>';
+  }
+  function renderList() {
+    rows.innerHTML = state.cues.map(rowHtml).join('');
+    $('empty').hidden = state.cues.length > 0;
+  }
+  function renderRow(i) {
+    var tr = rows.children[i];
+    if (!tr || !state.cues[i]) return;
+    var tmp = document.createElement('tbody');
+    tmp.innerHTML = rowHtml(state.cues[i], i);
+    rows.replaceChild(tmp.firstChild, tr);
+  }
+  function cur() { return state.cues[state.sel]; }
+
+  function renderEdit() {
+    var c = cur(), dis = !c;
+    showIn.disabled = durIn.disabled = textIn.disabled = dis;
+    if (dis) {
+      showIn.value = durIn.value = textIn.value = '';
+      $('cpsL').textContent = $('lenL').textContent = $('totL').textContent = '';
+      return;
+    }
+    if (document.activeElement !== showIn) showIn.value = fmtTime(c.start);
+    if (document.activeElement !== durIn) durIn.value = fmtDur(c.end - c.start);
+    renderStats();
+  }
+  function renderStats() {
+    var c = cur(); if (!c) return;
+    var k = check(c, state.sel), cps = $('cpsL'), len = $('lenL');
+    cps.textContent = 'Chars/second: ' + k.cps.toFixed(1);
+    cps.className = k.cps > MAX_CPS ? 'warn' : '';
+    len.textContent = 'Line length: ' + k.lens.join(' / ');
+    len.className = k.longest > MAX_LINE ? 'warn' : '';
+    $('totL').textContent = 'Total chars: ' + k.chars;
+  }
+  function renderStatus() {
+    $('modeBtn').textContent = state.mode === 'frames' ? 'hh:mm:ss:ff' : 'hh:mm:ss,zzz';
+    $('posL').textContent = state.cues.length ? (state.sel + 1) + '/' + state.cues.length : '0/0';
+  }
+  function renderName() {
+    $('fname').textContent = state.fileName;
+    document.title = state.fileName + ' · Subtitle Editor';
+  }
+  function refreshAll() {
+    if (state.sel >= state.cues.length) state.sel = Math.max(0, state.cues.length - 1);
+    renderList(); renderEdit(); textIn.value = cur() ? cur().text : '';
+    renderStatus(); renderName(); needDraw = true; persist();
+  }
+
+  function select(i, opts) {
+    opts = opts || {};
+    if (!state.cues.length) return;
+    i = Math.max(0, Math.min(state.cues.length - 1, i));
+    var old = rows.children[state.sel];
+    if (old) old.classList.remove('sel');
+    state.sel = i;
+    var tr = rows.children[i];
+    if (tr) { tr.classList.add('sel'); if (!opts.noScroll) tr.scrollIntoView({ block: 'nearest' }); }
+    typingUndo = false;
+    textIn.value = cur().text;
+    renderEdit(); renderStatus();
+    var c = cur(), w = cv.clientWidth / pps;
+    if (!opts.keepView && (c.start < viewStart || c.end > viewStart + w)) viewStart = Math.max(0, c.start - 1);
+    if (!playing && !opts.noSeek) seek(c.start);
+    needDraw = true;
+  }
+
+  /* ---------- editing ---------- */
+  function insertAt(t, focus) {
+    pushUndo();
+    var idx = 0;
+    while (idx < state.cues.length && state.cues[idx].start <= t) idx++;
+    var next = state.cues[idx], prev = state.cues[idx - 1];
+    if (prev && t < prev.end) t = prev.end + 0.04;
+    var end = t + 2;
+    if (next && end > next.start - 0.04) end = Math.max(t + 0.3, next.start - 0.04);
+    state.cues.splice(idx, 0, { start: t, end: end, text: '' });
+    renderList();
+    select(idx, { noSeek: true });
+    persist();
+    if (focus !== false) textIn.focus();
+  }
+  function insertAfter(i) { var c = state.cues[i]; insertAt(c ? c.end + 0.04 : now()); }
+  function insertBefore(i) {
+    var c = state.cues[i]; if (!c) return insertAt(now());
+    var prev = state.cues[i - 1], start = Math.max(prev ? prev.end + 0.04 : 0, c.start - 2.04);
+    pushUndo();
+    state.cues.splice(i, 0, { start: start, end: Math.max(start + 0.3, c.start - 0.04), text: '' });
+    renderList(); select(i, { noSeek: true }); persist(); textIn.focus();
+  }
+  function remove(i) {
+    if (!state.cues[i]) return;
+    pushUndo();
+    state.cues.splice(i, 1);
+    refreshAll();
+    if (state.cues.length) select(Math.min(i, state.cues.length - 1), { noSeek: true });
+  }
+  function mergeNext(i) {
+    var a = state.cues[i], b = state.cues[i + 1];
+    if (!a || !b) return toast('No next subtitle to merge with');
+    pushUndo();
+    a.text = [a.text, b.text].filter(Boolean).join('\n');
+    a.end = b.end;
+    state.cues.splice(i + 1, 1);
+    refreshAll(); select(i, { noSeek: true });
+  }
+
+  /* ---------- playback ---------- */
+  function totalDur() {
+    if (hasVideo && isFinite(video.duration)) return video.duration;
+    var last = state.cues[state.cues.length - 1];
+    return Math.max(30, last ? last.end + 10 : 0);
+  }
+  function now() { return hasVideo ? video.currentTime : simTime; }
+  function seek(t) {
+    t = Math.max(0, Math.min(totalDur(), t));
+    if (hasVideo) video.currentTime = t; else simTime = t;
+    needDraw = true;
+  }
+  var PLAY = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>';
+  var PAUSE = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5h3v11H4zM9 2.5h3v11H9z" fill="currentColor"/></svg>';
+  function setPlaying(p) {
+    playing = p;
+    if (hasVideo) { if (p) video.play().catch(function () { playing = false; paintPlay(); }); else video.pause(); }
+    lastTs = 0;
+    paintPlay();
+  }
+  function paintPlay() {
+    Array.prototype.forEach.call(document.querySelectorAll('.playBtn'), function (b) {
+      b.innerHTML = playing ? PAUSE : PLAY;
+      b.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    });
+  }
+  function togglePlay() { setPlaying(!playing); }
+  function cueAt(t, arr) {
+    arr = arr || state.cues;
+    var lo = 0, hi = arr.length - 1;
+    while (lo <= hi) {
+      var mid = (lo + hi) >> 1, c = arr[mid];
+      var s = c.start !== undefined ? c.start : c[0], e = c.end !== undefined ? c.end : c[1];
+      if (t < s) hi = mid - 1; else if (t > e) lo = mid + 1; else return mid;
+    }
+    return -1;
+  }
+
+  function tick(ts) {
+    if (playing && !hasVideo) {
+      if (lastTs) simTime += (ts - lastTs) / 1000 * rate;
+      if (simTime >= totalDur()) { simTime = totalDur(); setPlaying(false); }
+    }
+    lastTs = playing ? ts : 0;
+    var t = now();
+    if (playing) {
+      var w = cv.clientWidth / pps;
+      if (t > viewStart + w * 0.92 || t < viewStart) viewStart = Math.max(0, t - w * 0.08);
+      if (document.activeElement !== textIn) {
+        var i = cueAt(t);
+        if (i >= 0 && i !== state.sel) select(i, { keepView: true, noSeek: true });
+      }
+    }
+    if (playing || needDraw) { draw(t); updateVideoUi(t); needDraw = false; }
+    requestAnimationFrame(tick);
+  }
+  function updateVideoUi(t) {
+    var i = cueAt(t);
+    $('subov').textContent = i >= 0 ? state.cues[i].text : '';
+    var seekEl = $('seek');
+    seekEl.max = totalDur();
+    if (document.activeElement !== seekEl) seekEl.value = t;
+    var sc = $('scroll'), w = cv.clientWidth / pps;
+    sc.max = Math.max(0, totalDur() - w);
+    if (document.activeElement !== sc) sc.value = viewStart;
+  }
+
+  /* ---------- waveform ---------- */
+  function noise(n) { var x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }
+  function amp(t) {
+    if (peaks) { var v = peaks[Math.floor(t * peakRate)]; return v ? v / peakMax : 0; }
+    var i = cueAt(t, speech), nz = noise(Math.floor(t * 140));
+    if (i < 0) return 0.02 + 0.05 * nz;
+    var s = speech[i], env = Math.sin(Math.PI * (t - s[0]) / (s[1] - s[0]));
+    return (0.25 + 0.75 * nz) * (0.3 + 0.7 * Math.max(0, env)) * 0.95;
+  }
+  function draw(t) {
+    var w = cv.clientWidth, h = cv.clientHeight, dpr = window.devicePixelRatio || 1;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+    var t0 = viewStart, t1 = viewStart + w / pps, waveH = h - 16, mid = waveH / 2 + 2;
+
+    // subtitle regions
+    state.cues.forEach(function (c, i) {
+      if (c.end < t0 || c.start > t1) return;
+      var x0 = (c.start - t0) * pps, x1 = (c.end - t0) * pps;
+      ctx.fillStyle = i === state.sel ? 'rgba(70,120,230,0.38)' : 'rgba(255,255,255,0.13)';
+      ctx.fillRect(x0, 0, x1 - x0, waveH);
+    });
+
+    // waveform
+    var green = new Path2D(), amber = new Path2D();
+    for (var x = 0; x < w; x += 2) {
+      var tt = t0 + x / pps, a = Math.min(1, amp(tt)) * (waveH / 2 - 4);
+      var p = cueAt(tt) >= 0 ? amber : green;
+      p.moveTo(x + 0.5, mid - a); p.lineTo(x + 0.5, mid + a);
+    }
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = '#2FA34A'; ctx.stroke(green);
+    ctx.strokeStyle = '#E2A93B'; ctx.stroke(amber);
+
+    // region edges and labels
+    ctx.font = '12px -apple-system, Segoe UI, Roboto, sans-serif';
+    state.cues.forEach(function (c, i) {
+      if (c.end < t0 || c.start > t1) return;
+      var x0 = (c.start - t0) * pps, x1 = (c.end - t0) * pps, k = check(c, i);
+      ctx.fillStyle = '#B23A3A'; ctx.fillRect(x0, 0, 1.5, waveH);
+      ctx.fillStyle = '#7A2A2A'; ctx.fillRect(x1 - 1.5, 0, 1.5, waveH);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x0 + 2, 0, Math.max(0, x1 - x0 - 4), waveH); ctx.clip();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText(c.text.split('\n')[0], x0 + 6, 18);
+      ctx.font = '11px -apple-system, Segoe UI, Roboto, sans-serif';
+      ctx.fillStyle = k.textBad ? '#FF8A80' : '#E6E6E6';
+      ctx.fillText(k.cps.toFixed(1).replace('.', ','), x0 + 6, waveH - 22);
+      ctx.fillStyle = k.durBad ? '#FF8A80' : '#E6E6E6';
+      ctx.fillText('#' + (i + 1) + '  ' + fmtDur(k.d), x0 + 6, waveH - 8);
+      ctx.restore();
+      ctx.font = '12px -apple-system, Segoe UI, Roboto, sans-serif';
+    });
+
+    // ruler
+    var step = pps < 30 ? 10 : pps < 60 ? 5 : 1;
+    ctx.fillStyle = '#9A9A9A'; ctx.font = '10px -apple-system, Segoe UI, Roboto, sans-serif';
+    for (var s = Math.ceil(t0 / step) * step; s <= t1; s += step) {
+      var rx = (s - t0) * pps;
+      ctx.fillRect(rx, h - 8, 1, 8);
+      ctx.fillText(String(s), rx + 3, h - 2);
+    }
+    for (var s2 = Math.ceil(t0 * 2) / 2; s2 <= t1 && step === 1; s2 += 0.5) {
+      ctx.fillRect((s2 - t0) * pps, h - 4, 1, 4);
+    }
+
+    // playhead
+    var px = (t - t0) * pps;
+    if (px >= 0 && px <= w) { ctx.fillStyle = '#35C9DA'; ctx.fillRect(px - 1, 0, 2, h); }
+  }
+
+  function xOf(e) { var r = cv.getBoundingClientRect(); return e.clientX - r.left; }
+  function hit(x) {
+    var t0 = viewStart, best = null;
+    var order = state.cues.map(function (c, i) { return i; });
+    order.sort(function (a, b) { return (b === state.sel) - (a === state.sel); });
+    for (var k = 0; k < order.length; k++) {
+      var i = order[k], c = state.cues[i];
+      var x0 = (c.start - t0) * pps, x1 = (c.end - t0) * pps;
+      if (Math.abs(x - x0) <= 5) return { i: i, mode: 'start' };
+      if (Math.abs(x - x1) <= 5) return { i: i, mode: 'end' };
+      if (!best && x > x0 && x < x1) best = { i: i, mode: 'move' };
+    }
+    return best;
+  }
+  cv.addEventListener('mousedown', function (e) {
+    if (e.button !== 0) return;
+    hideMenus();
+    var x = xOf(e), h = hit(x);
+    if (h) {
+      if (h.i !== state.sel) select(h.i, { keepView: true, noSeek: true });
+      var c = state.cues[h.i];
+      pushUndo();
+      drag = { mode: h.mode, i: h.i, x: x, s: c.start, e: c.end, moved: false };
+      if (h.mode === 'move') seek(viewStart + x / pps);
+    } else {
+      seek(viewStart + x / pps);
+      drag = { mode: 'seek' };
+    }
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', function (e) {
+    if (!drag) {
+      if (e.target === cv) {
+        var h = hit(xOf(e));
+        cv.style.cursor = !h ? 'text' : (h.mode === 'move' ? 'grab' : 'ew-resize');
+      }
+      return;
+    }
+    var x = xOf(e);
+    if (drag.mode === 'seek') { seek(viewStart + x / pps); return; }
+    var dt = (x - drag.x) / pps, c = state.cues[drag.i];
+    var prev = state.cues[drag.i - 1], next = state.cues[drag.i + 1];
+    var lo = prev ? prev.end : 0, hiT = next ? next.start : Infinity;
+    if (drag.mode === 'start') c.start = Math.max(lo, Math.min(c.end - 0.1, drag.s + dt));
+    else if (drag.mode === 'end') c.end = Math.max(c.start + 0.1, Math.min(hiT, drag.e + dt));
+    else {
+      var d = drag.e - drag.s, ns = Math.max(lo, Math.min(hiT - d, drag.s + dt));
+      c.start = ns; c.end = ns + d;
+    }
+    if (Math.abs(x - drag.x) > 1) drag.moved = true;
+    renderRow(drag.i); renderEdit(); needDraw = true;
+  });
+  window.addEventListener('mouseup', function () {
+    if (!drag) return;
+    if (drag.mode !== 'seek') { if (!drag.moved) undoStack.pop(); else { renderList(); persist(); } }
+    drag = null;
+  });
+  cv.addEventListener('dblclick', function (e) {
+    var x = xOf(e), h = hit(x);
+    if (h) { select(h.i, { keepView: true, noSeek: true }); textIn.focus(); }
+    else insertAt(viewStart + x / pps);
+  });
+  cv.addEventListener('wheel', function (e) {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      var x = xOf(e), tAt = viewStart + x / pps;
+      setZoom(pps * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+      viewStart = Math.max(0, tAt - x / pps);
+    } else {
+      var d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : (e.shiftKey ? e.deltaY : 0);
+      if (!d) return;
+      e.preventDefault();
+      viewStart = Math.max(0, Math.min(totalDur() - cv.clientWidth / pps, viewStart + d / pps));
+      if (viewStart < 0) viewStart = 0;
+    }
+    needDraw = true;
+  }, { passive: false });
+  cv.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+    var x = xOf(e), h = hit(x);
+    if (h) { select(h.i, { keepView: true, noSeek: true }); openMenu(e.clientX, e.clientY, true); }
+    else { menuAt = viewStart + x / pps; openMenu(e.clientX, e.clientY, false); }
+  });
+
+  function setZoom(v) {
+    pps = Math.max(20, Math.min(400, v));
+    $('zoom').value = pps;
+    $('zoomL').textContent = Math.round(pps / 120 * 100) + '%';
+    needDraw = true;
+  }
+
+  /* ---------- menus ---------- */
+  function openMenu(x, y, onCue) {
+    var m = $('menu');
+    m.innerHTML = onCue
+      ? '<button type="button" role="menuitem" data-act="before">Insert before</button>' +
+        '<button type="button" role="menuitem" data-act="after">Insert after</button>' +
+        '<button type="button" role="menuitem" data-act="merge">Merge with next</button><hr>' +
+        '<button type="button" role="menuitem" data-act="delete">Delete <kbd>Del</kbd></button>'
+      : '<button type="button" role="menuitem" data-act="here">Add subtitle here</button>';
+    m.hidden = false;
+    var r = m.getBoundingClientRect();
+    m.style.left = Math.min(x, innerWidth - r.width - 8) + 'px';
+    m.style.top = Math.min(y, innerHeight - r.height - 8) + 'px';
+    m.querySelector('button').focus();
+  }
+  function hideMenus() { $('menu').hidden = true; }
+  $('menu').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var a = b.dataset.act, i = state.sel;
+    hideMenus();
+    if (a === 'before') insertBefore(i);
+    else if (a === 'after') insertAfter(i);
+    else if (a === 'merge') mergeNext(i);
+    else if (a === 'delete') remove(i);
+    else if (a === 'here') insertAt(menuAt);
+  });
+  document.addEventListener('mousedown', function (e) {
+    if (!e.target.closest('#menu')) hideMenus();
+    if (!e.target.closest('#help') && !e.target.closest('#helpBtn')) $('help').hidden = true;
+  });
+
+  /* ---------- list events ---------- */
+  rows.addEventListener('mousedown', function (e) {
+    var tr = e.target.closest('tr'); if (!tr) return;
+    select(+tr.dataset.i, { noScroll: true });
+  });
+  rows.addEventListener('dblclick', function () { textIn.focus(); });
+  rows.addEventListener('contextmenu', function (e) {
+    var tr = e.target.closest('tr'); if (!tr) return;
+    e.preventDefault();
+    select(+tr.dataset.i, { noScroll: true });
+    openMenu(e.clientX, e.clientY, true);
+  });
+  list.addEventListener('contextmenu', function (e) {
+    if (e.target.closest('tr')) return;
+    e.preventDefault(); menuAt = now(); openMenu(e.clientX, e.clientY, false);
+  });
+
+  /* ---------- edit panel events ---------- */
+  textIn.addEventListener('focus', function () { typingUndo = false; });
+  textIn.addEventListener('input', function () {
+    var c = cur(); if (!c) return;
+    if (!typingUndo) { pushUndo(); typingUndo = true; }
+    c.text = textIn.value;
+    renderRow(state.sel); renderStats(); needDraw = true; persist();
+  });
+  showIn.addEventListener('change', function () {
+    var c = cur(), t = parseTime(showIn.value);
+    if (!c || t === null) { renderEdit(); return toast('Use the format ' + $('modeBtn').textContent); }
+    pushUndo();
+    var d = c.end - c.start; c.start = t; c.end = t + d;
+    state.cues.sort(function (a, b) { return a.start - b.start; });
+    var i = state.cues.indexOf(c);
+    refreshAll(); select(i);
+  });
+  durIn.addEventListener('change', function () {
+    var c = cur(), d = parseDur(durIn.value);
+    if (!c || d === null || d <= 0) { renderEdit(); return toast('Duration must be more than zero'); }
+    pushUndo();
+    c.end = c.start + d;
+    renderRow(state.sel); renderEdit(); needDraw = true; persist();
+  });
+  [showIn, durIn].forEach(function (el) {
+    el.addEventListener('keydown', function (e) { if (e.key === 'Enter') el.blur(); });
+    el.addEventListener('blur', function () { renderEdit(); });
+  });
+
+  /* ---------- toolbar & controls ---------- */
+  $('newBtn').onclick = function () {
+    if (state.cues.length && !window.confirm('Start a new, empty subtitle file? Save first if you need this one.')) return;
+    pushUndo();
+    state.cues = []; state.sel = 0; state.fileName = 'Untitled.srt';
+    if (!peaks) speech = [];
+    refreshAll();
+  };
+  $('openBtn').onclick = function () { $('fileIn').click(); };
+  $('bigPlay').onclick = function () { $('fileIn').click(); };
+  $('fileIn').onchange = function () { handleFiles(this.files); this.value = ''; };
+  $('saveBtn').onclick = save;
+  $('findBtn').onclick = function () { var f = $('findBox'); f.hidden = !f.hidden; if (!f.hidden) f.focus(); };
+  $('findBox').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { this.hidden = true; return; }
+    if (e.key !== 'Enter' || !this.value) return;
+    var q = this.value.toLowerCase(), n = state.cues.length;
+    for (var k = 1; k <= n; k++) {
+      var i = (state.sel + k) % n;
+      if (state.cues[i].text.toLowerCase().indexOf(q) >= 0) { select(i); return; }
+    }
+    toast('Not found');
+  });
+  $('helpBtn').onclick = function () { $('help').hidden = !$('help').hidden; };
+  Array.prototype.forEach.call(document.querySelectorAll('.playBtn'), function (b) { b.onclick = togglePlay; });
+  $('stopBtn').onclick = function () { setPlaying(false); seek(cur() ? cur().start : 0); };
+  $('fsBtn').onclick = function () { var v = $('vbox'); if (v.requestFullscreen) v.requestFullscreen(); };
+  $('seek').addEventListener('input', function () { seek(+this.value); });
+  $('vol').addEventListener('input', function () { video.volume = +this.value; });
+  $('scroll').addEventListener('input', function () { viewStart = +this.value; needDraw = true; });
+  $('zoom').addEventListener('input', function () {
+    var center = viewStart + cv.clientWidth / pps / 2;
+    setZoom(+this.value);
+    viewStart = Math.max(0, center - cv.clientWidth / pps / 2);
+  });
+  $('speed').addEventListener('change', function () { rate = +this.value; if (hasVideo) video.playbackRate = rate; });
+  $('addBtn').onclick = function () { insertAt(now()); };
+  $('prevBtn').onclick = function () { select(state.sel - 1); };
+  $('nextBtn').onclick = function () { select(state.sel + 1); };
+  $('modeBtn').onclick = function () {
+    state.mode = state.mode === 'frames' ? 'ms' : 'frames';
+    renderList(); renderEdit(); renderStatus(); needDraw = true; persist();
+  };
+  video.addEventListener('loadedmetadata', function () { needDraw = true; });
+  video.addEventListener('seeked', function () { needDraw = true; });
+  video.addEventListener('ended', function () { setPlaying(false); });
+  window.addEventListener('resize', function () { needDraw = true; });
+
+  /* ---------- drag & drop ---------- */
+  var dragDepth = 0;
+  window.addEventListener('dragenter', function (e) { e.preventDefault(); dragDepth++; $('drop').hidden = false; });
+  window.addEventListener('dragleave', function () { if (--dragDepth <= 0) { dragDepth = 0; $('drop').hidden = true; } });
+  window.addEventListener('dragover', function (e) { e.preventDefault(); });
+  window.addEventListener('drop', function (e) {
+    e.preventDefault(); dragDepth = 0; $('drop').hidden = true;
+    if (e.dataTransfer && e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+  });
+
+  /* ---------- keyboard ---------- */
+  document.addEventListener('keydown', function (e) {
+    var tag = e.target.tagName, typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+    var mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase();
+    if (mod && k === 's') { e.preventDefault(); save(); return; }
+    if (mod && k === 'f') { e.preventDefault(); $('findBox').hidden = false; $('findBox').focus(); return; }
+    if (e.target === textIn) {
+      if (mod && e.key === 'Enter') { e.preventDefault(); select(state.sel + 1, { noSeek: playing }); textIn.focus(); }
+      else if (e.key === 'Escape') textIn.blur();
+      return;
+    }
+    if (typing) return;
+    if (e.key === 'Escape') { hideMenus(); $('help').hidden = true; return; }
+    if (!$('menu').hidden) return;
+    if (mod && k === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); }
+    else if (mod && k === 'y') { e.preventDefault(); redo(); }
+    else if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); select(state.sel + 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); select(state.sel - 1); }
+    else if (e.key === 'Enter' && tag !== 'BUTTON') { e.preventDefault(); textIn.focus(); }
+    else if ((e.key === 'Delete' || e.key === 'Backspace') && list.contains(document.activeElement)) { e.preventDefault(); remove(state.sel); }
+  });
+
+  /* ---------- toast ---------- */
+  var toastTimer;
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.hidden = true; }, 2200);
+  }
+
+  /* ---------- start ---------- */
+  if (!restore()) {
+    state.cues = SAMPLE.map(function (a) { return { start: a[0], end: a[1], text: a[2] }; });
+  }
+  speech = (state.cues.length ? state.cues : []).map(function (c) { return [c.start, c.end]; });
+  if (!state.cues.length || state.sel >= state.cues.length) state.sel = 0;
+  setZoom(120);
+  paintPlay();
+  refreshAll();
+  if (cur()) simTime = cur().start;
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

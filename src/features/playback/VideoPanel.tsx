@@ -1,0 +1,109 @@
+import { convertFileSrc } from "@tauri-apps/api/core";
+import { Maximize, Pause, Play, Square, Volume2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { openVideo } from "@/app/actions";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { cueIndexAt, selectTimeFormat, useSubtitles } from "@/features/subtitles/store";
+import { formatTime } from "@/features/subtitles/timecode";
+import { clock, usePlaying } from "./clock";
+
+export function VideoPanel() {
+  const videoPath = useSubtitles((s) => s.videoPath);
+  const playing = usePlaying();
+  const [volume, setVolume] = useState(0.8);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const overlayRef = useRef<HTMLSpanElement>(null);
+  const timeRef = useRef<HTMLSpanElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    clock.attach(videoPath ? videoRef.current : null);
+    return () => clock.attach(null);
+  }, [videoPath]);
+
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.volume = volume;
+  }, [volume, videoPath]);
+
+  // Per-frame readouts are written straight to the DOM, not through React state.
+  useEffect(() => {
+    const paint = () => {
+      const s = useSubtitles.getState();
+      const t = clock.time;
+      const cue = s.cues[cueIndexAt(s.cues, t)];
+      if (overlayRef.current) {
+        overlayRef.current.textContent = cue?.text ?? "";
+        overlayRef.current.hidden = !cue?.text;
+      }
+      const fmt = selectTimeFormat(s);
+      if (timeRef.current) timeRef.current.textContent = `${formatTime(t, fmt)} / ${formatTime(clock.duration, fmt)}`;
+      if (progressRef.current) progressRef.current.style.width = `${(t / clock.duration) * 100}%`;
+    };
+    paint();
+    const unsubs = [clock.onTick(paint), useSubtitles.subscribe(paint)];
+    return () => unsubs.forEach((u) => u());
+  }, []);
+
+  return (
+    <div ref={boxRef} className="flex h-full flex-col overflow-hidden rounded-xl bg-video">
+      <div className="relative min-h-0 flex-1">
+        {videoPath ? (
+          <video ref={videoRef} src={convertFileSrc(videoPath)} playsInline className="absolute inset-0 size-full object-contain" />
+        ) : (
+          <button
+            type="button"
+            onClick={() => void openVideo()}
+            className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/60 transition-colors hover:text-white/80"
+          >
+            <span className="flex size-20 items-center justify-center rounded-full border-2 border-current">
+              <Play className="ml-1 size-8" />
+            </span>
+            <span className="text-sm">Open a video</span>
+          </button>
+        )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-[8%] flex justify-center px-[6%]">
+          <span
+            ref={overlayRef}
+            className="rounded-md bg-(--preview-box) px-3 py-1 text-center text-[clamp(14px,2vw,22px)] leading-snug font-semibold whitespace-pre-line text-(--preview-text)"
+          />
+        </div>
+      </div>
+
+      <div className="h-0.5 bg-white/10">
+        <div ref={progressRef} className="h-full bg-primary" />
+      </div>
+      <div className="flex items-center gap-2 px-3 py-2 text-white">
+        <Button size="icon-sm" variant="ghost" aria-label={playing ? "Pause" : "Play"} onClick={() => clock.toggle()} className="text-white hover:bg-white/10 hover:text-white">
+          {playing ? <Pause /> : <Play />}
+        </Button>
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          aria-label="Stop"
+          onClick={() => {
+            clock.pause();
+            clock.seek(0);
+          }}
+          className="text-white hover:bg-white/10 hover:text-white"
+        >
+          <Square />
+        </Button>
+        <span ref={timeRef} className="ml-1 text-xs tabular-nums text-white/80" />
+        <div className="flex-1" />
+        <Volume2 className="size-4 text-white/80" aria-hidden />
+        <Slider aria-label="Volume" className="w-24" min={0} max={1} step={0.01} value={[volume]} onValueChange={([v]) => setVolume(v ?? 0)} />
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          aria-label="Full screen"
+          onClick={() => void boxRef.current?.requestFullscreen()}
+          className="text-white hover:bg-white/10 hover:text-white"
+        >
+          <Maximize />
+        </Button>
+      </div>
+    </div>
+  );
+}

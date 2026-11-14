@@ -1,0 +1,62 @@
+import { useDefaultLayout } from "react-resizable-panels";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { TransportBar } from "@/features/playback/TransportBar";
+import { VideoPanel } from "@/features/playback/VideoPanel";
+import { CueEditor } from "@/features/subtitles/CueEditor";
+import { SubtitleList } from "@/features/subtitles/SubtitleList";
+import { Waveform } from "@/features/waveform/Waveform";
+import { FindDialog } from "./FindDialog";
+import { Toolbar } from "./Toolbar";
+import { useAppEvents } from "./useAppEvents";
+
+/** Gaps between panels are the resize handles. */
+const Gap = ({ vertical }: { vertical?: boolean }) => (
+  <ResizableHandle className={vertical ? "h-2 bg-transparent" : "w-2 bg-transparent"} />
+);
+
+export default function App() {
+  useAppEvents();
+  const main = useDefaultLayout({ id: "layout.main" });
+  const top = useDefaultLayout({ id: "layout.top" });
+  const left = useDefaultLayout({ id: "layout.left" });
+
+  return (
+    <TooltipProvider delayDuration={500}>
+      <div className="flex h-full flex-col">
+        <Toolbar />
+        <main className="min-h-0 flex-1 p-2">
+          <ResizablePanelGroup orientation="vertical" {...main}>
+            <ResizablePanel id="top" defaultSize="68" minSize="35">
+              <ResizablePanelGroup orientation="horizontal" {...top}>
+                <ResizablePanel id="left" defaultSize="52" minSize="30">
+                  <ResizablePanelGroup orientation="vertical" {...left}>
+                    <ResizablePanel id="list" defaultSize="60" minSize="20">
+                      <SubtitleList />
+                    </ResizablePanel>
+                    <Gap vertical />
+                    <ResizablePanel id="editor" defaultSize="40" minSize={150}>
+                      <CueEditor />
+                    </ResizablePanel>
+                  </ResizablePanelGroup>
+                </ResizablePanel>
+                <Gap />
+                <ResizablePanel id="video" defaultSize="48" minSize="25">
+                  <VideoPanel />
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            </ResizablePanel>
+            <Gap vertical />
+            <ResizablePanel id="waveform" defaultSize="32" minSize={110}>
+              <Waveform />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </main>
+        <TransportBar />
+      </div>
+      <FindDialog />
+      <Toaster position="bottom-center" />
+    </TooltipProvider>
+  );
+}

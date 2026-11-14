@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subtitle Editor Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0E1013;--panel:#14171B;--panel2:#1C2025;--deep:#0B0D0F;--line:#262A30;--line2:#2E333A;--line3:#3A414B;
+  --text:#E6E8EB;--soft:#C3C9D1;--muted:#A7AEB8;--dim:#8B939E;
+  --blue:#5B9BFF;--blue-soft:#9CC2FF;--ai:#F5B547;--ok:#4FD1B5;--warn:#FFB067;--edit:#7FB2FF;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:13px/1.4 Inter,system-ui,-apple-system,sans-serif}
+.mono{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--edit)}
+button:focus-visible,a:focus-visible,input:focus,textarea:focus,select:focus{outline:2px solid var(--blue);outline-offset:1px}
+kbd{font-family:'JetBrains Mono',monospace;font-size:11px;padding:1px 5px;border:1px solid var(--line3);border-radius:4px;color:var(--soft)}
+.btn{height:32px;padding:0 10px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--soft);display:inline-flex;align-items:center;gap:6px;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--panel2)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:var(--bg);font-weight:600}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:var(--bg);font-weight:600;height:36px;padding:0 14px}
+.btn.icon{width:32px;padding:0;justify-content:center}
+.spacer{flex:1 1 0}
+.label{font-size:11px;color:var(--dim)}
+.caps{font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--dim)}
+
+/* top nav */
+.topnav{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:10px 16px;background:#090A0C;border-bottom:1px solid var(--line)}
+.topnav .title{font-weight:700;font-size:14px}
+.topnav .sub{font-size:12px;color:var(--dim)}
+.tabs{display:flex;flex-wrap:wrap;gap:4px}
+.tabs button{height:32px;padding:0 12px;border:1px solid var(--line2);border-radius:999px;background:transparent;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--text);border-color:var(--text);color:var(--bg);font-weight:600}
+.screen{display:none}
+.screen.on{display:block}
+
+/* workflow */
+.wrap{max-width:1240px;margin:0 auto;padding:32px 20px}
+h1{margin:0;font-size:26px;letter-spacing:-.01em}
+.lead{margin:6px 0 0;color:var(--muted);font-size:15px}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--muted);margin:16px 0 20px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:10px;height:10px;border-radius:2px;display:inline-block}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.step{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+.step.hot{border:2px solid var(--ai)}
+.step h2{margin:0;font-size:17px}
+.box{display:flex;flex-direction:column;gap:4px;padding:10px;border-radius:8px;background:var(--panel2)}
+.box.new{background:#17283F}
+.box p{margin:0;font-size:13px;line-height:1.45;color:var(--soft)}
+.box.new p{color:var(--text)}
+.box .caps{color:var(--muted)}
+.box.new .caps{color:var(--blue-soft)}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:24px}
+.note{padding:16px 18px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+.note h3{margin:0 0 8px;font-size:15px}
+.note ul{margin:0;padding-left:18px;color:var(--soft);font-size:13px;line-height:1.6}
+
+/* start */
+.start{max-width:1200px;margin:0 auto;padding:32px 20px;display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;font-size:14px}
+.recent{flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.film{display:flex;flex-direction:column;gap:3px;padding:14px 16px;border-radius:10px;background:var(--panel);border:1px solid var(--line);color:var(--text);text-decoration:none;text-align:left}
+.film:hover{border-color:var(--line3)}
+.film small{font-size:12px;color:var(--muted)}
+.card{flex:2 1 520px;min-width:0;padding:26px;border-radius:14px;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;gap:20px}
+.field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:var(--soft)}
+.field select,.field input{height:38px;padding:0 10px;background:var(--bg);border:1px solid var(--line2);border-radius:6px;font-size:14px;font-weight:400}
+.row{display:flex;flex-wrap:wrap;gap:14px}
+.row > *{flex:1 1 200px;min-width:0}
+.hint{font-size:12px;color:var(--dim);font-weight:400}
+.aiopt{display:flex;gap:12px;align-items:flex-start;padding:16px;border-radius:10px;background:#1E1A12;border:1px solid #4A3B1A;cursor:pointer}
+.aiopt input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--ai)}
+
+/* editor */
+.ed-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:8px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.pill{font-size:12px;padding:3px 9px;border-radius:999px;background:#22262C;color:var(--soft)}
+.dot{width:8px;height:8px;border-radius:999px;background:var(--ai);display:inline-block}
+.ed-main{display:flex;flex-wrap:wrap;gap:1px;background:var(--line)}
+.col{min-width:0;display:flex;flex-direction:column;background:var(--panel)}
+.col.left{flex:1 1 640px}
+.col.right{flex:1 1 480px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.seg{display:flex;gap:2px;padding:2px;background:var(--bg);border-radius:7px}
+.seg button{height:28px;padding:0 12px;border:0;border-radius:5px;background:transparent;color:var(--muted);font-weight:600}
+.seg button[aria-selected="true"]{background:#2A2F36;color:#fff}
+.chip{height:26px;padding:0 10px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--soft);font-size:12px}
+.chip.on{background:#22262C;border-color:var(--line3);color:var(--text)}
+.list{height:292px;overflow:auto}
+.grid{display:grid;grid-template-columns:32px 92px 92px 48px 44px minmax(0,1fr) 100px;gap:8px;align-items:center;min-width:680px;padding:7px 12px}
+.ghead{font-size:11px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:1}
+.cue{width:100%;border:0;border-bottom:1px solid #1E2227;background:transparent;text-align:left}
+.cue:hover{background:#191D22}
+.cue.sel{background:#1F3550}
+.cue .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cue .m{font-family:'JetBrains Mono',monospace;font-size:12px}
+.status{display:inline-flex;align-items:center;gap:5px;font-size:12px}
+.script{height:292px;overflow:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.sline{display:flex;gap:10px;align-items:baseline;width:100%;padding:8px 10px;border:1px solid #22262C;border-radius:6px;background:transparent;text-align:left}
+.sline.sel{background:#1F3550}
+.sline .yo{font-size:14px}
+.editor{border-top:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:10px;flex:1 1 auto}
+.tc{display:flex;align-items:center}
+.tc button{width:26px;height:30px;border:1px solid var(--line2);background:var(--panel2);color:var(--soft)}
+.tc button:first-child{border-radius:6px 0 0 6px}
+.tc button:last-child{border-radius:0 6px 6px 0}
+.tc input{width:104px;height:30px;border:1px solid var(--line2);border-left:0;border-right:0;background:var(--bg);text-align:center;font-family:'JetBrains Mono',monospace;font-size:12px}
+#yo{height:34px;padding:0 10px;border:1px solid var(--line2);border-radius:6px;background:var(--bg);font-size:14px}
+#en{resize:vertical;min-height:56px;padding:8px 10px;border:1px solid var(--line3);border-radius:6px;background:var(--bg);color:#fff;font-size:16px;font-weight:500;line-height:1.4}
+.metrics{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--dim)}
+.video{position:relative;aspect-ratio:16/9;max-height:360px;background:#050607;overflow:hidden}
+.video .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:clamp(18px,4vw,34px);letter-spacing:.08em;color:#3A3F46}
+.video .src{position:absolute;top:10px;left:12px;font-size:11px;color:var(--dim)}
+.video .subt{position:absolute;left:0;right:0;bottom:18px;display:flex;justify-content:center;padding:0 24px}
+.video .subt span{font-size:clamp(14px,2vw,20px);font-weight:600;color:#fff;text-align:center;white-space:pre-line;text-shadow:0 2px 4px #000,0 0 2px #000}
+.ai{padding:12px;display:flex;flex-direction:column;gap:10px;flex:1 1 auto}
+.sug{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#181B20}
+.sug .k{flex:0 0 auto;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.sug .body{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sug .txt{font-size:14px}
+.sug .nt{font-size:12px;color:var(--ai)}
+.tm{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:#101215}
+.tm .body{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.wave{flex:1 1 100%;min-width:0;background:#101215;padding:8px 12px 12px;display:flex;flex-direction:column;gap:6px}
+.ruler{position:relative;height:18px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim)}
+.ruler span{position:absolute;top:0;padding-left:3px;border-left:1px solid var(--line2)}
+.track{position:relative;height:150px;background:var(--deep);border-radius:6px;overflow:hidden}
+.bars{position:absolute;inset:0;display:flex;align-items:center;gap:1px;padding:0 1px}
+.bars span{flex:1 1 0;border-radius:1px}
+.region{position:absolute;top:0;bottom:0;padding:4px 6px;border:0;border-left:2px solid;border-right:2px solid;color:var(--text);font-size:11px;text-align:left;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.region span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.playhead{position:absolute;top:0;bottom:0;width:2px;background:#FF6B5B}
+.foot{display:flex;flex-wrap:wrap;gap:16px;padding:6px 16px;background:var(--panel);border-top:1px solid var(--line);font-size:12px;color:var(--dim)}
+
+/* export */
+.exp{max-width:1240px;margin:0 auto;padding:32px 20px;display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;font-size:14px}
+.exp .main{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.stat{padding:14px 16px;border-radius:10px;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.stat span:first-child{font-size:12px;color:var(--muted)}
+.stat b{font-size:26px}
+.issues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.issue{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;background:var(--panel);border:1px solid var(--line)}
+.issue.done{opacity:.6}
+.issue .body{flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:2px}
+.issue .body span{font-size:13px;color:var(--muted)}
+.side{flex:1 1 320px;min-width:0;padding:22px;border-radius:14px;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;gap:16px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--soft);cursor:pointer}
+.check input{width:16px;height:16px;margin:2px 0 0}
+.check small{display:block;font-size:12px;color:var(--dim)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:10px 16px;border-radius:8px;background:var(--text);color:var(--bg);font-weight:600;display:none;z-index:20}
+</style>
+</head>
+<body>
+
+<header class="topnav">
+  <div>
+    <div class="title">Subtitle editor: first mockup</div>
+    <div class="sub">A clickable sketch built from your Subtitle Edit recording. Nothing here is final.</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="tabs" role="tablist" aria-label="Screens">
+    <button type="button" role="tab" data-screen="flow" aria-selected="true">Workflow</button>
+    <button type="button" role="tab" data-screen="start" aria-selected="false">1 · Start a film</button>
+    <button type="button" role="tab" data-screen="editor" aria-selected="false">2 · Editor</button>
+    <button type="button" role="tab" data-screen="export" aria-selected="false">3 · Check &amp; export</button>
+  </div>
+</header>
+
+<!-- ============ WORKFLOW ============ -->
+<section class="screen on" id="screen-flow" aria-label="Workflow">
+  <div class="wrap">
+    <h1>How you subtitle a film</h1>
+    <p class="lead">Taken from your screen recording. For each step: what you do today in Subtitle Edit, and how the new app could do it.</p>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--panel2)"></i>Today</span>
+      <span><i class="sw" style="background:#17283F"></i>Proposed</span>
+      <span><i class="sw" style="border:2px solid var(--ai)"></i>Biggest time saving</span>
+    </div>
+    <ol class="steps">
+      <li class="step">
+        <span class="mono label">01</span>
+        <h2>Open the film</h2>
+        <div class="box"><span class="caps">Today</span><p>New file, then Video › Open video. Previews come watermarked, filed by client. Any script lives in Google Docs, in another window.</p></div>
+        <div class="box new"><span class="caps">Proposed</span><p>One screen takes the video, script and any old .srt. Frame rate and reading limits are remembered per client.</p></div>
+      </li>
+      <li class="step hot">
+        <span class="mono label">02</span>
+        <h2>First draft</h2>
+        <div class="box"><span class="caps">Today</span><p>There is no draft. Every cue starts empty and you build all of them by hand, often 1,000+ per film.</p></div>
+        <div class="box new"><span class="caps">Proposed</span><p>Optional AI draft: the Yoruba it heard, an English line and timing for every stretch of speech. You can start editing while it finishes.</p></div>
+      </li>
+      <li class="step hot">
+        <span class="mono label">03</span>
+        <h2>Translate &amp; write</h2>
+        <div class="box"><span class="caps">Today</span><p>Listen in Yoruba and type the English from scratch, cue by cue, e.g. "(Singing)", "In Jesus' name."</p></div>
+        <div class="box new"><span class="caps">Proposed</span><p>Review instead of type: press 1–3 for a suggestion, reuse your own past wording, or type over it. Enter approves and moves on.</p></div>
+      </li>
+      <li class="step">
+        <span class="mono label">04</span>
+        <h2>Time each cue</h2>
+        <div class="box"><span class="caps">Today</span><p>Click the waveform for a 2-second cue, then drag its edges by hand while replaying, down to the frame.</p></div>
+        <div class="box new"><span class="caps">Proposed</span><p>Cues already sit on the speech. "Snap to speech" does the rough drag; the same waveform and frame nudges stay for fine work.</p></div>
+      </li>
+      <li class="step">
+        <span class="mono label">05</span>
+        <h2>Check &amp; export</h2>
+        <div class="box"><span class="caps">Today</span><p>Red cells flag problems without saying why. You save the .srt through File › Save.</p></div>
+        <div class="box new"><span class="caps">Proposed</span><p>Problems listed in plain words with one-click fixes, then export. Your approved lines become your private translation memory, if you agree.</p></div>
+      </li>
+    </ol>
+
+    <div class="notes">
+      <div class="note">
+        <h3>Questions for you</h3>
+        <ul>
+          <li>Do you ever get a script, or always just the film?</li>
+          <li>Do you time and translate together, or in separate passes?</li>
+          <li>What do the red cells mean to you? Do you fix all of them?</li>
+          <li>Which keyboard shortcuts do you use most?</li>
+          <li>Would you rather see one AI suggestion or three?</li>
+          <li>Do you need to work without internet?</li>
+          <li>What do producers ask for besides .srt?</li>
+        </ul>
+      </div>
+      <div class="note">
+        <h3>About this mockup</h3>
+        <ul>
+          <li>The Yoruba lines are sample dialogue, so please correct the wording and tone marks.</li>
+          <li>Cue counts, film names and client presets are placeholders.</li>
+          <li>Limits shown: 42 characters per line, 17 characters per second, 7 seconds max on screen.</li>
+          <li>The editor copies Subtitle Edit's layout on purpose, so your habits still work.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ START ============ -->
+<section class="screen" id="screen-start" aria-label="Start a film">
+  <div class="start">
+    <div class="recent">
+      <span class="caps">Recent films</span>
+      <button type="button" class="film" data-go="editor"><b>PREVIEW_1</b><small>Yoruba → English · AI draft ready · <span class="approvedCount">185</span> of 1,084 approved</small></button>
+      <button type="button" class="film" data-go="editor"><b>MY WAY FOR SUB PART 2</b><small>Yoruba → English · 1,156 cues · exported .srt</small></button>
+      <button type="button" class="film" data-go="editor"><b>[Film title]</b><small>Yoruba → English · [cues] · exported .srt</small></button>
+      <p class="hint" style="margin:4px 0 0">Every approved line in these films feeds your translation memory, so suggestions sound like you.</p>
+    </div>
+    <div class="card">
+      <div>
+        <h1 style="font-size:24px">New film</h1>
+        <p class="lead" style="font-size:14px">Bring everything in once, with no switching to Google Docs mid-job.</p>
+      </div>
+      <div class="field">Video
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px;border-radius:10px;background:var(--bg);border:1px solid var(--line2);font-weight:400">
+          <div class="mono" style="width:72px;height:44px;border-radius:6px;background:#050607;display:flex;align-items:center;justify-content:center;font-size:8px;color:#4A5059">PREVIEW</div>
+          <div style="flex:1 1 180px;min-width:0;display:flex;flex-direction:column">
+            <span style="font-weight:600;font-size:14px;color:var(--text)">PREVIEW_1.mp4</span>
+            <span class="mono" style="font-size:12px;color:var(--muted)">01:21:05:12 · 25 fps · audio found</span>
+          </div>
+          <button type="button" class="btn">Change</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">Script <span class="hint">· optional</span>
+          <div style="display:flex;flex-wrap:wrap;gap:6px"><button type="button" class="btn">Google Docs link</button><button type="button" class="btn">.docx / .pdf</button></div>
+          <span class="hint">Lines get linked to cues, so the script sits beside the editor.</span>
+        </div>
+        <div class="field">Existing subtitles <span class="hint">· optional</span>
+          <div><button type="button" class="btn">Open .srt</button></div>
+          <span class="hint">Continue a part-done job, or fix someone else's file.</span>
+        </div>
+      </div>
+      <div class="row">
+        <label class="field">Spoken language
+          <select><option>Yoruba (with English mixed in)</option><option>Nigerian Pidgin</option><option>Nigerian English</option></select>
+        </label>
+        <label class="field">Subtitles in
+          <select><option>English</option><option>Yoruba</option></select>
+        </label>
+        <label class="field" style="flex-basis:260px">Client rules
+          <select><option>Default · 42 chars/line · 17 cps · max 7 s</option><option>Netflix-style · 42 chars/line · 20 cps</option><option>[Client name] preset</option></select>
+        </label>
+      </div>
+      <label class="aiopt">
+        <input type="checkbox" checked>
+        <span style="display:flex;flex-direction:column;gap:4px">
+          <b>Make an AI first draft</b>
+          <span style="font-size:13px;color:var(--soft)">Listens to the Yoruba, writes an English line for each stretch of speech and times it. You can start editing straight away while it finishes. Nothing counts as approved until you approve it.</span>
+        </span>
+      </label>
+      <div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px">
+        <button type="button" class="btn" style="height:44px;padding:0 18px">Cancel</button>
+        <button type="button" class="btn primary" style="height:44px;padding:0 20px" data-go="editor">Start subtitling</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EDITOR ============ -->
+<section class="screen" id="screen-editor" aria-label="Editor">
+  <div class="ed-head">
+    <div style="display:flex;flex-direction:column">
+      <b style="font-size:14px">PREVIEW_1</b>
+      <span style="font-size:11px;color:var(--dim)">SUBTITLES / Client folder · 01:21:05 film</span>
+    </div>
+    <span class="pill">Yoruba → English</span>
+    <button type="button" class="btn" data-go="start">Open</button>
+    <button type="button" class="btn" data-toast="Saved">Save</button>
+    <button type="button" class="btn">Find &amp; replace</button>
+    <div class="spacer"></div>
+    <span class="pill" style="display:inline-flex;align-items:center;gap:6px"><i class="dot"></i>AI first draft ready · 1,084 cues</span>
+    <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)">Format
+      <select style="height:32px;background:var(--panel2);border:1px solid var(--line2);border-radius:6px;padding:0 8px"><option>SubRip (.srt)</option><option>WebVTT (.vtt)</option><option>Advanced SubStation (.ass)</option></select>
+    </label>
+    <button type="button" class="btn primary" data-go="export">Check &amp; export</button>
+  </div>
+
+  <div class="ed-main">
+    <div class="col left">
+      <div class="bar">
+        <div class="seg" role="tablist" aria-label="Left panel">
+          <button type="button" role="tab" id="tabCues" aria-selected="true">Cues</button>
+          <button type="button" role="tab" id="tabScript" aria-selected="false">Script</button>
+        </div>
+        <button type="button" class="chip on">All 1,084</button>
+        <button type="button" class="chip">To review 899</button>
+        <button type="button" class="chip" style="color:var(--warn)">Warnings 37</button>
+        <button type="button" class="chip">Approved <span class="approvedCount">185</span></button>
+      </div>
+      <div class="list" id="listCues">
+        <div class="grid ghead"><span>#</span><span>Show</span><span>Hide</span><span>Dur</span><span>CPS</span><span>English</span><span>Status</span></div>
+        <div id="rows"></div>
+      </div>
+      <div class="script" id="listScript" hidden>
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;font-size:12px;color:var(--dim)">
+          <span>Script imported from Google Docs · lines linked to cues automatically</span><a href="#" onclick="return false">Open original</a>
+        </div>
+        <div id="scriptLines" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+
+      <div class="editor">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+          <b style="font-size:14px" id="curTitle">Cue 5</b>
+          <span class="pill" id="curBadge">Empty</span>
+          <div class="spacer"></div>
+          <button type="button" class="btn" id="prevBtn">Previous <kbd>↑</kbd></button>
+          <button type="button" class="btn" id="nextBtn">Next <kbd>↓</kbd></button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label class="label" for="tcStart">Show</label>
+            <div class="tc"><button type="button" aria-label="Start one frame earlier">−</button><input id="tcStart" readonly><button type="button" aria-label="Start one frame later">+</button></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label class="label" for="tcEnd">Hide</label>
+            <div class="tc"><button type="button" aria-label="End one frame earlier">−</button><input id="tcEnd" readonly><button type="button" aria-label="End one frame later">+</button></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span class="label">Duration</span>
+            <span class="mono" id="curDur" style="height:30px;display:flex;align-items:center;font-size:12px"></span>
+          </div>
+          <button type="button" class="btn" data-toast="Timing fitted to the speech">Fit timing to speech</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+            <label class="label" for="yo">Yoruba heard <span id="conf"></span></label>
+            <button type="button" class="btn" style="height:26px;font-size:12px" data-toast="Replaying cue…">▶ Replay cue <kbd>Space</kbd></button>
+          </div>
+          <input id="yo" lang="yo">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label class="label" for="en">English subtitle</label>
+          <textarea id="en" rows="2" placeholder="Type, or press 1–3 to take a suggestion"></textarea>
+          <div class="metrics" id="metrics"></div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px">
+          <button type="button" class="btn">Insert after</button>
+          <button type="button" class="btn">Split at playhead</button>
+          <button type="button" class="btn">Merge with next</button>
+          <div class="spacer"></div>
+          <button type="button" class="btn ok" id="approveBtn">✓ Approve &amp; next <kbd style="border-color:#0E101355;color:#0E1013">Enter</kbd></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col right">
+      <div class="video">
+        <span class="src">PREVIEW_1.mp4 · video preview</span>
+        <span class="wm" aria-hidden="true">FOR PREVIEW</span>
+        <div class="subt"><span id="vidSub"></span></div>
+      </div>
+      <div class="bar">
+        <button type="button" class="btn icon" aria-label="Back 1 second">«</button>
+        <button type="button" class="btn icon" aria-label="Play" style="background:var(--text);color:var(--bg)">▶</button>
+        <button type="button" class="btn icon" aria-label="Forward 1 second">»</button>
+        <span class="mono" style="font-size:12px;margin-left:6px"><span id="playTc"></span> <span style="color:var(--dim)">/ 01:21:05:12</span></span>
+        <div class="spacer"></div>
+        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)"><input type="checkbox" checked>Loop cue</label>
+        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)">Speed
+          <select style="height:28px;background:var(--panel2);border:1px solid var(--line2);border-radius:6px"><option>0.75×</option><option selected>1.0×</option><option>1.25×</option></select>
+        </label>
+      </div>
+      <div class="ai">
+        <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px">
+          <b style="font-size:14px" id="sugTitle">Suggestions</b>
+          <span style="font-size:12px;color:var(--dim)" id="ctx"></span>
+        </div>
+        <div id="sugs" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div id="tmWrap" style="display:flex;flex-direction:column;gap:6px">
+          <span class="caps">From your past films</span>
+          <div id="tms" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:auto">
+          <button type="button" class="btn">More literal</button>
+          <button type="button" class="btn">More natural</button>
+          <button type="button" class="btn">Shorter</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="wave">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:var(--dim)">
+        <b style="color:var(--soft)">Waveform</b>
+        <span>Click a cue to select it · in the real app you drag its edges to retime it</span>
+        <div class="spacer"></div>
+        <label style="display:inline-flex;align-items:center;gap:6px"><input type="checkbox" checked>Snap to speech</label>
+        <button type="button" class="btn icon" aria-label="Zoom out">−</button>
+        <button type="button" class="btn icon" aria-label="Zoom in">+</button>
+      </div>
+      <div class="ruler" id="ruler"></div>
+      <div class="track" id="track">
+        <div class="bars" id="bars" aria-hidden="true"></div>
+        <div id="regions"></div>
+        <span class="playhead" id="playhead" aria-hidden="true"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span id="footCue">Cue 5 of 1,084</span>
+    <span>Approved <span class="approvedCount">185</span></span>
+    <span>Autosaved just now</span>
+    <span>25 fps · SubRip</span>
+    <div class="spacer"></div>
+    <span><kbd>1</kbd>–<kbd>3</kbd> take suggestion · <kbd>Enter</kbd> approve · <kbd>↑</kbd> <kbd>↓</kbd> move · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> approve while typing</span>
+  </div>
+</section>
+
+<!-- ============ EXPORT ============ -->
+<section class="screen" id="screen-export" aria-label="Check and export">
+  <div class="exp">
+    <div class="main">
+      <div>
+        <h1 style="font-size:24px">Before you export</h1>
+        <p class="lead" style="font-size:14px">Each problem says what's wrong and offers a fix, instead of a red cell with no explanation.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Problems left</span><b id="openCount" style="color:var(--warn)">6</b></div>
+        <div class="stat"><span>AI drafts not yet approved</span><b style="color:var(--ai)">899</b></div>
+        <div class="stat"><span>Approved by you</span><b style="color:var(--ok)" class="approvedCount">185</b></div>
+      </div>
+      <ul class="issues" id="issues"></ul>
+    </div>
+    <aside class="side">
+      <h2 style="margin:0;font-size:18px">Export</h2>
+      <label class="field">Format
+        <select><option>SubRip (.srt)</option><option>WebVTT (.vtt)</option><option>Advanced SubStation (.ass)</option></select>
+      </label>
+      <label class="field">File name
+        <input class="mono" value="PREVIEW_1.en.srt" style="font-size:13px">
+      </label>
+      <label class="check"><input type="checkbox"><span>Include AI drafts I haven't approved<small>Off by default, so unchecked AI text never reaches a client.</small></span></label>
+      <label class="check"><input type="checkbox" checked><span>Add my approved lines to my translation memory<small>Private to you. Makes future suggestions match your wording.</small></span></label>
+      <button type="button" class="btn" id="exportBtn" style="height:46px;justify-content:center;font-weight:700;border:0;color:var(--bg)"></button>
+      <span class="hint">You can export with problems left; they'll be listed in a short report beside the file.</span>
+    </aside>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  var CUES = [
+    { n: 1, start: '00:00:00:01', end: '00:00:37:20', s: 0.04, e: 37.8, yo: '(Orin)', conf: 'high', en: '(Singing)', status: 'approved',
+      sugg: [{ t: '(Singing)' }, { t: '(Hymn playing)' }, { t: '(Choir singing)' }], tm: [] },
+    { n: 2, start: '00:00:37:22', end: '00:00:39:18', s: 37.88, e: 39.72, yo: 'Ní orúkọ Jésù.', conf: 'high', en: "In Jesus' name.", status: 'approved',
+      sugg: [{ t: "In Jesus' name." }, { t: 'In the name of Jesus.' }],
+      tm: [{ yo: 'Ní orúkọ Jésù', en: "In Jesus' name.", from: 'MY WAY FOR SUB PART 2 · cue 77' }] },
+    { n: 3, start: '00:00:40:02', end: '00:00:42:10', s: 40.08, e: 42.4, yo: 'Àmín.', conf: 'high', en: 'Amen.', status: 'approved',
+      sugg: [{ t: 'Amen.' }], tm: [] },
+    { n: 4, start: '00:00:43:00', end: '00:00:45:14', s: 43.0, e: 45.56, yo: 'Ọmọ mi, kí ló dé tí o fi ń sunkún?', conf: 'high', en: 'My child, why are you crying?', status: 'draft',
+      sugg: [{ t: 'My child, why are you crying?' }, { t: 'My dear, why are you crying?' }, { t: 'Child, what is making you cry?' }], tm: [] },
+    { n: 5, start: '00:00:46:05', end: '00:00:48:02', s: 46.2, e: 48.08, yo: 'Màmá, ẹ má bínú.', conf: 'low', en: '', status: 'empty',
+      sugg: [{ t: "I'm sorry, Mama.", note: 'Closest to how you translated this before' }, { t: 'Mama, please forgive me.' }, { t: "Mama, please don't be angry.", note: 'Literal' }],
+      tm: [{ yo: 'Ẹ má bínú, mà.', en: "I'm sorry, ma.", from: 'MY WAY FOR SUB PART 2 · cue 418' }, { yo: 'Màmá, ẹ jọ̀ọ́.', en: 'Mama, please.', from: 'MY WAY FOR SUB PART 2 · cue 902' }] },
+    { n: 6, start: '00:00:48:10', end: '00:00:50:20', s: 48.4, e: 50.8, yo: 'Ọlọ́run á ṣe é.', conf: 'high', en: 'God will do it.', status: 'draft',
+      sugg: [{ t: 'God will make a way.', note: 'Your usual wording' }, { t: 'God will do it.' }, { t: 'God will see us through.' }],
+      tm: [{ yo: 'Ọlọ́run á ṣe é', en: 'God will make a way.', from: 'MY WAY FOR SUB PART 2 · cue 1,032' }] },
+    { n: 7, start: '00:00:51:04', end: '00:00:52:00', s: 51.16, e: 52.0, yo: 'Ṣé o ti jẹun?', conf: 'high', en: 'Have you eaten?', status: 'draft',
+      sugg: [{ t: 'Have you eaten?' }, { t: 'Did you eat?', note: 'Shorter, reads faster' }], tm: [] },
+    { n: 8, start: '00:00:52:12', end: '00:00:55:00', s: 52.48, e: 55.0, yo: 'Èmi ò mọ ohun tí mo máa ṣe mọ́.', conf: 'low', en: "I don't know what to do anymore.", status: 'draft',
+      sugg: [{ t: "I don't know what to do anymore." }, { t: "I don't know what else to do." }, { t: "I'm at my wits' end." }], tm: [] }
+  ];
+  var LABEL = { approved: 'Approved', draft: 'AI draft', empty: 'Empty', edited: 'Edited' };
+  var COLOR = { approved: 'var(--ok)', draft: 'var(--ai)', empty: 'var(--dim)', edited: 'var(--edit)' };
+  var W0 = 36, W1 = 56;
+  var cues = CUES.map(function (c) { return Object.assign({}, c); });
+  var sel = 5;
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+    });
+  }
+  function clamp(t) { return Math.max(0, Math.min(100, (t - W0) / (W1 - W0) * 100)); }
+  function cur() { return cues.filter(function (c) { return c.n === sel; })[0]; }
+  function dur(c) {
+    var f = Math.round((c.e - c.s) * 25);
+    return Math.floor(f / 25) + ':' + String(f % 25).padStart(2, '0');
+  }
+  function info(c) {
+    var d = c.e - c.s;
+    var cps = c.en.replace(/\n/g, '').length / d;
+    var longest = c.en ? Math.max.apply(null, c.en.split('\n').map(function (l) { return l.length; })) : 0;
+    var warn = '';
+    if (d > 7) warn = 'On screen ' + d.toFixed(1) + 's, limit is 7s';
+    else if (cps > 17) warn = 'Reads too fast: ' + cps.toFixed(1) + ' cps, limit is 17';
+    else if (longest > 42) warn = 'Line too long: ' + longest + ' characters, limit is 42';
+    return { d: d, cps: c.en ? cps.toFixed(1) : '–', cpsHigh: cps > 17, longest: longest, warn: warn };
+  }
+  var WARN_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFB067" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Warning"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg>';
+
+  function renderRows() {
+    $('rows').innerHTML = cues.map(function (c) {
+      var i = info(c);
+      return '<button type="button" class="cue grid' + (c.n === sel ? ' sel' : '') + '" data-cue="' + c.n + '" aria-pressed="' + (c.n === sel) + '">' +
+        '<span style="color:var(--dim)">' + c.n + '</span>' +
+        '<span class="m">' + c.start + '</span><span class="m">' + c.end + '</span>' +
+        '<span class="m" style="color:' + (i.d > 7 ? 'var(--warn)' : 'inherit') + '">' + dur(c) + '</span>' +
+        '<span class="m" style="color:' + (i.cpsHigh ? 'var(--warn)' : 'inherit') + '">' + i.cps + '</span>' +
+        '<span class="t" style="color:' + (c.en ? 'var(--text)' : 'var(--dim)') + '">' + esc(c.en || '—') + '</span>' +
+        '<span class="status" style="color:' + COLOR[c.status] + '">' + (i.warn ? WARN_ICON : '') + LABEL[c.status] + '</span>' +
+        '</button>';
+    }).join('');
+    $('scriptLines').innerHTML = cues.map(function (c) {
+      return '<button type="button" class="sline' + (c.n === sel ? ' sel' : '') + '" data-script="' + c.n + '">' +
+        '<span class="mono" style="font-size:11px;color:var(--dim);flex:0 0 auto">cue ' + c.n + '</span>' +
+        '<span class="yo" lang="yo">' + esc(c.yo) + '</span></button>';
+    }).join('');
+  }
+
+  function renderMetrics() {
+    var c = cur(), i = info(c);
+    $('metrics').innerHTML =
+      '<span>Line length <span style="color:var(--text)">' + i.longest + '</span> / 42</span>' +
+      '<span>Reading speed <span style="color:' + (i.cpsHigh ? 'var(--warn)' : 'var(--text)') + '">' + i.cps + '</span> / 17 cps</span>' +
+      (i.warn ? '<span style="color:var(--warn)">' + esc(i.warn) + '</span>' : '');
+    $('curBadge').textContent = LABEL[c.status];
+    $('curBadge').style.color = COLOR[c.status];
+    $('vidSub').textContent = c.en;
+    var n = 182 + cues.filter(function (x) { return x.status === 'approved'; }).length;
+    Array.prototype.forEach.call(document.querySelectorAll('.approvedCount'), function (el) { el.textContent = n.toLocaleString('en-GB'); });
+  }
+
+  function renderEditor() {
+    var c = cur(), i = info(c);
+    $('curTitle').textContent = 'Cue ' + c.n;
+    $('tcStart').value = c.start;
+    $('tcEnd').value = c.end;
+    $('curDur').textContent = dur(c);
+    $('curDur').style.color = i.d > 7 ? 'var(--warn)' : 'var(--text)';
+    $('conf').innerHTML = c.conf === 'low'
+      ? '<span style="color:var(--ai)">· low confidence, please check</span>'
+      : '<span>· AI transcript</span>';
+    $('yo').value = c.yo;
+    $('en').value = c.en;
+    $('footCue').textContent = 'Cue ' + c.n + ' of 1,084';
+    var ph = c.s + 0.5, f = Math.round(ph * 25);
+    $('playTc').textContent = '00:00:' + String(Math.floor(f / 25)).padStart(2, '0') + ':' + String(f % 25).padStart(2, '0');
+    $('playhead').style.left = clamp(ph).toFixed(2) + '%';
+    renderMetrics();
+  }
+
+  function renderAI() {
+    var c = cur();
+    $('sugTitle').textContent = 'Suggestions for cue ' + c.n;
+    $('ctx').textContent = 'Uses cues ' + Math.max(1, sel - 2) + '–' + Math.min(cues.length, sel + 2) + ' as context';
+    $('sugs').innerHTML = c.sugg.map(function (s, k) {
+      return '<div class="sug"><kbd class="k">' + (k + 1) + '</kbd><div class="body"><span class="txt">' + esc(s.t) + '</span>' +
+        (s.note ? '<span class="nt">' + esc(s.note) + '</span>' : '') +
+        '</div><button type="button" class="btn" data-accept="' + k + '" style="background:#22262C;border-color:var(--line3);color:var(--text)">Accept</button></div>';
+    }).join('');
+    $('tmWrap').hidden = !c.tm.length;
+    $('tms').innerHTML = c.tm.map(function (m, k) {
+      return '<div class="tm"><div class="body"><span lang="yo" style="font-size:12px;color:var(--muted)">' + esc(m.yo) + '</span>' +
+        '<span style="font-size:14px">' + esc(m.en) + '</span><span style="font-size:11px;color:var(--dim)">' + esc(m.from) + '</span></div>' +
+        '<button type="button" class="btn" data-tm="' + k + '">Use</button></div>';
+    }).join('');
+  }
+
+  var bars = [];
+  for (var b = 0; b < 200; b++) bars.push(b);
+  function renderWave() {
+    $('bars').innerHTML = bars.map(function (k) {
+      var t = W0 + (k + 0.5) * 0.1;
+      var hit = cues.filter(function (c) { return t >= c.s && t <= c.e; })[0];
+      var amp = hit ? 0.3 + 0.62 * Math.abs(Math.sin(k * 1.7) * Math.sin(k * 0.31 + 1)) : 0.04 + 0.05 * Math.abs(Math.sin(k * 2.3));
+      var col = hit && hit.n === sel ? '#9CC2FF' : (hit ? '#55657D' : '#353B44');
+      return '<span style="height:' + Math.round(amp * 100) + '%;background:' + col + '"></span>';
+    }).join('');
+    $('regions').innerHTML = cues.filter(function (c) { return clamp(c.e) > clamp(c.s); }).map(function (c) {
+      var i = info(c), on = c.n === sel;
+      var edge = i.warn ? '#FFB067' : (on ? '#5B9BFF' : '#2F4E78');
+      return '<button type="button" class="region" data-cue="' + c.n + '" aria-label="Cue ' + c.n + '" style="left:' + clamp(c.s).toFixed(2) + '%;width:' +
+        (clamp(c.e) - clamp(c.s)).toFixed(2) + '%;border-color:' + edge + ';background:' + (on ? 'rgba(91,155,255,.28)' : 'rgba(91,155,255,.10)') + '">' +
+        '<span>' + esc(c.en || '…') + '</span><span class="mono" style="font-size:10px;color:var(--muted)">#' + c.n + '</span></button>';
+    }).join('');
+    var ticks = '';
+    for (var t = W0; t < W1; t += 2) ticks += '<span style="left:' + clamp(t).toFixed(2) + '%">00:00:' + t + '</span>';
+    $('ruler').innerHTML = ticks;
+  }
+
+  function renderAll() { renderRows(); renderEditor(); renderAI(); renderWave(); }
+  function select(n) { sel = Math.max(1, Math.min(cues.length, n)); renderAll(); }
+  function setText(text) {
+    var c = cur();
+    c.en = text;
+    c.status = 'approved';
+    select(sel + 1);
+  }
+  function approve() {
+    var c = cur();
+    c.en = $('en').value;
+    c.status = 'approved';
+    select(sel + 1);
+  }
+
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-cue],[data-script],[data-accept],[data-tm],[data-go],[data-screen],[data-toast]');
+    if (!el) return;
+    if (el.dataset.cue) select(+el.dataset.cue);
+    else if (el.dataset.script) { showLeft('cues'); select(+el.dataset.script); }
+    else if (el.dataset.accept) setText(cur().sugg[+el.dataset.accept].t);
+    else if (el.dataset.tm) setText(cur().tm[+el.dataset.tm].en);
+    else if (el.dataset.go) show(el.dataset.go);
+    else if (el.dataset.screen) show(el.dataset.screen);
+    else if (el.dataset.toast) toast(el.dataset.toast);
+  });
+  $('prevBtn').onclick = function () { select(sel - 1); };
+  $('nextBtn').onclick = function () { select(sel + 1); };
+  $('approveBtn').onclick = approve;
+  $('en').addEventListener('input', function () {
+    var c = cur();
+    c.en = this.value;
+    c.status = 'edited';
+    renderRows(); renderWave(); renderMetrics();
+  });
+  $('yo').addEventListener('input', function () { cur().yo = this.value; renderRows(); });
+
+  function showLeft(which) {
+    $('tabCues').setAttribute('aria-selected', which === 'cues');
+    $('tabScript').setAttribute('aria-selected', which === 'script');
+    $('listCues').hidden = which !== 'cues';
+    $('listScript').hidden = which !== 'script';
+  }
+  $('tabCues').onclick = function () { showLeft('cues'); };
+  $('tabScript').onclick = function () { showLeft('script'); };
+
+  var screen = 'flow';
+  function show(name) {
+    screen = name;
+    Array.prototype.forEach.call(document.querySelectorAll('.screen'), function (s) { s.classList.toggle('on', s.id === 'screen-' + name); });
+    Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (b) { b.setAttribute('aria-selected', b.dataset.screen === name); });
+    window.scrollTo(0, 0);
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (screen !== 'editor') return;
+    var tag = (e.target.tagName || '').toLowerCase();
+    var typing = tag === 'input' || tag === 'textarea' || tag === 'select';
+    if (typing) {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); approve(); }
+      return;
+    }
+    if (e.key >= '1' && e.key <= '3') {
+      var s = cur().sugg[+e.key - 1];
+      if (s) { e.preventDefault(); setText(s.t); }
+    } else if (e.key === 'Enter' && tag !== 'button') { e.preventDefault(); approve(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); select(sel + 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); select(sel - 1); }
+  });
+
+  var timer;
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    clearTimeout(timer);
+    timer = setTimeout(function () { t.style.display = 'none'; }, 1600);
+  }
+
+  // Check & export
+  var ISSUES = [
+    { cue: '1', title: 'On screen for 37.8 seconds', detail: '"(Singing)" · limit is 7 seconds', fix: 'Split into 6 cues', ignore: "Keep, it's a song" },
+    { cue: '7', title: 'Reads too fast: 17.9 characters a second', detail: '"Have you eaten?" · limit is 17', fix: 'Use "Did you eat?"', ignore: 'Ignore' },
+    { cue: '214', title: 'Overlaps the next cue by 3 frames', detail: 'Cue 215 starts before this one ends', fix: 'Add 2-frame gap', ignore: 'Ignore' },
+    { cue: '388', title: 'Line too long: 47 characters', detail: 'Limit is 42 per line', fix: 'Rebalance lines', ignore: 'Ignore' },
+    { cue: '512', title: 'Same text as the cue before', detail: 'Possibly a duplicate after a split', fix: 'Merge cues', ignore: 'Ignore' },
+    { cue: '603', title: 'Name spelled two ways', detail: '"Tolani" here, "Tolanie" in cues 140 and 288', fix: 'Use "Tolani" everywhere', ignore: 'Ignore' }
+  ];
+  var done = {};
+  function renderIssues() {
+    $('issues').innerHTML = ISSUES.map(function (it, k) {
+      var d = done[k];
+      return '<li class="issue' + (d ? ' done' : '') + '">' +
+        '<span class="mono" style="font-size:12px;color:var(--dim);width:64px">cue ' + it.cue + '</span>' +
+        '<div class="body"><b>' + esc(it.title) + '</b><span>' + esc(it.detail) + '</span></div>' +
+        (d
+          ? '<span style="font-size:13px;color:var(--ok)">✓ ' + (d === 'fixed' ? 'Fixed' : 'Kept as is') + '</span>'
+          : '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
+            '<button type="button" class="btn" data-go="editor">Go to cue</button>' +
+            '<button type="button" class="btn" data-ignore="' + k + '">' + esc(it.ignore) + '</button>' +
+            '<button type="button" class="btn primary" data-fix="' + k + '">' + esc(it.fix) + '</button></div>') +
+        '</li>';
+    }).join('');
+    var open = ISSUES.length - Object.keys(done).length;
+    $('openCount').textContent = open;
+    var btn = $('exportBtn');
+    btn.textContent = open ? 'Export .srt (' + open + ' problems left)' : 'Export .srt';
+    btn.style.background = open ? 'var(--soft)' : 'var(--ok)';
+  }
+  $('issues').addEventListener('click', function (e) {
+    var el = e.target.closest('[data-fix],[data-ignore]');
+    if (!el) return;
+    if (el.dataset.fix) done[el.dataset.fix] = 'fixed';
+    else done[el.dataset.ignore] = 'kept';
+    renderIssues();
+  });
+  $('exportBtn').onclick = function () { toast('This is a mockup, so no file is saved'); };
+
+  renderAll();
+  renderIssues();
+})();
+</script>
+</body>
+</html>
