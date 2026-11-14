@@ -2,9 +2,10 @@ import { useEffect, useRef } from "react";
 import { clock } from "@/features/playback/clock";
 import { onThemeChange } from "@/features/settings/appearance";
 import { useSettings } from "@/features/settings/store";
-import { select, useSubtitles } from "@/features/subtitles/store";
+import { useSubtitles } from "@/features/subtitles/store";
 import { drawWaveform } from "./draw";
 import { loadPeaks, usePeaks } from "./peaks";
+import { attachPointer } from "./pointer";
 import { canvasTokens, invalidateCanvasTokens } from "./tokens";
 import { centerOn, resetZoom, scrollBy, setAmplitude, setZoom, useWaveView } from "./view";
 
@@ -91,8 +92,10 @@ export function Waveform() {
         schedule();
       }),
     ];
+    const detachPointer = attachPointer(canvas);
     schedule();
     return () => {
+      detachPointer();
       unsubs.forEach((u) => u());
       resize.disconnect();
       cancelAnimationFrame(frame);
@@ -117,14 +120,8 @@ export function Waveform() {
     <div className="h-full overflow-hidden rounded-xl bg-timeline">
       <canvas
         ref={canvasRef}
-        aria-label="Waveform timeline. Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom."
-        className="block size-full cursor-text"
-        onPointerDown={(e) => {
-          const t = timeAt(e.clientX);
-          const hit = useSubtitles.getState().cues.find((c) => t >= c.start && t <= c.end);
-          if (hit) select(hit.id);
-          clock.seek(t);
-        }}
+        aria-label="Waveform timeline. Drag a subtitle's edges to retime it, its middle to move it (⌥-drag an edge moves the neighbour too). Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom."
+        className="block size-full cursor-text touch-none"
         onDoubleClick={(e) => {
           const w = e.currentTarget.clientWidth;
           if (e.altKey) {

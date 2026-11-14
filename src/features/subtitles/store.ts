@@ -369,6 +369,32 @@ export function setCueTexts(texts: ReadonlyMap<string, string>) {
   });
 }
 
+export interface TimeChange {
+  id: string;
+  start?: number;
+  end?: number;
+}
+
+/**
+ * Retime several cues in one undo step (waveform drags). Pass the same `key`
+ * for every update of one gesture so the whole drag undoes at once.
+ */
+export function setCueTimes(changes: readonly TimeChange[], key?: string) {
+  edit((doc) => {
+    let moved = false;
+    for (const ch of changes) {
+      const cue = doc.cues.find((c) => c.id === ch.id);
+      if (!cue) continue;
+      if (ch.start !== undefined && cue.start !== ch.start) {
+        cue.start = ch.start;
+        moved = true;
+      }
+      if (ch.end !== undefined && cue.end !== ch.end) cue.end = ch.end;
+    }
+    if (moved) doc.cues.sort(byStart);
+  }, key);
+}
+
 /** Map text of every selected cue (document order). */
 export function mapSelectedTexts(fn: (text: string) => string) {
   const ids = new Set(get().selectedIds);

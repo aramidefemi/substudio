@@ -92,7 +92,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
 | WAV-01 | **Real waveform from the film's audio** | Audio visualizer | L | Rust decodes audio (symphonia, ffmpeg fallback), computes peaks, caches next to the video. An 81-min film's waveform appears in ≤5 s the first time and instantly afterwards. Sent to the UI as binary. ✅ symphonia (+ Opus via libopus) for AAC/MP3/PCM/FLAC/Vorbis/ALAC/Opus in MP4/MOV/MKV/WebM/OGG/WAV; ffmpeg PCM fallback for AC-3/E-AC-3/etc.; 100 peaks/s; cached by path+size+mtime. |
-| WAV-02 | Drag a cue's edges to retime; drag the middle to move | Waveform mouse | M | Edges show a resize cursor. Neighbours are not crossed (or Alt-drag moves the neighbour too). One undo step per drag. |
+| WAV-02 | Drag a cue's edges to retime; drag the middle to move | Waveform mouse | M | ✅ ±5 px edge zones (ew-resize) / grab in the middle; clamped to prev.end / next.start with a 0.1 s minimum; ⌥-drag on an edge moves the neighbour's facing edge (keeps the gap); one undo step per gesture; pointer capture. |
 | WAV-03 | Drag on empty waveform to mark a region; Enter/double-click creates a cue there | "New selection" | M | Matches her habit of making a cue then resizing it. |
 | WAV-04 | Click to seek; Shift+click sets start; Ctrl/⌘+click sets end | Waveform mouse | S | |
 | WAV-05 | Zoom and scroll: wheel/trackpad pan, ⌘+wheel time zoom, ⌥+wheel amplitude, double-click centre, ⌥+double-click reset | Waveform mouse | S | ✅ |
