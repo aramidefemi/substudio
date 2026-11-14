@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   insertCue,
+  invertSelection,
   loadDocument,
   newDocument,
+  pasteCues,
   redo,
+  removeCues,
   select,
+  selectAll,
+  selectRangeTo,
   setVideo,
+  toggleSelect,
   undo,
   updateCue,
   useSubtitles,
@@ -85,5 +91,32 @@ describe("insertCue", () => {
     const id = useSubtitles.getState().cues[0]!.id;
     updateCue(id, { start: 5, end: 6 });
     expect(texts()).toEqual(["B", "A"]);
+  });
+});
+
+describe("multi-select", () => {
+  it("toggles and ranges selection", () => {
+    const [a, b] = useSubtitles.getState().cues;
+    select(a!.id);
+    toggleSelect(b!.id);
+    expect(useSubtitles.getState().selectedIds).toEqual([a!.id, b!.id]);
+    select(a!.id);
+    selectRangeTo(b!.id);
+    expect(useSubtitles.getState().selectedIds).toEqual([a!.id, b!.id]);
+  });
+
+  it("selects all and inverts", () => {
+    selectAll();
+    expect(useSubtitles.getState().selectedIds).toHaveLength(2);
+    invertSelection();
+    expect(useSubtitles.getState().selectedIds).toHaveLength(0);
+  });
+
+  it("removes and pastes cues", () => {
+    const [a] = useSubtitles.getState().cues;
+    removeCues([a!.id]);
+    expect(texts()).toEqual(["B"]);
+    pasteCues([{ start: 0.1, end: 0.5, text: "Z" }]);
+    expect(texts()).toEqual(["Z", "B"]);
   });
 });

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { clock } from "@/features/playback/clock";
 import { onThemeChange } from "@/features/settings/appearance";
+import { useSettings } from "@/features/settings/store";
 import { select, useSubtitles } from "@/features/subtitles/store";
 import { drawWaveform } from "./draw";
 import { canvasTokens, invalidateCanvasTokens } from "./tokens";
@@ -27,9 +28,20 @@ export function Waveform() {
         canvas.height = Math.round(h * dpr);
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const { cues, selectedId } = useSubtitles.getState();
+      const { cues, selectedIds } = useSubtitles.getState();
       const { start, pps } = useWaveView.getState();
-      drawWaveform(ctx, { width: w, height: h, start, pps, time: clock.time, cues, selectedId, tokens: canvasTokens() });
+      const hideText = useSettings.getState().privacy === "text";
+      drawWaveform(ctx, {
+        width: w,
+        height: h,
+        start,
+        pps,
+        time: clock.time,
+        cues,
+        selectedIds: new Set(selectedIds),
+        hideText,
+        tokens: canvasTokens(),
+      });
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(draw);
@@ -51,6 +63,7 @@ export function Waveform() {
     const unsubs = [
       clock.onTick(follow),
       useSubtitles.subscribe(schedule),
+      useSettings.subscribe(schedule),
       useWaveView.subscribe(schedule),
       onThemeChange(() => {
         invalidateCanvasTokens();

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { openVideo } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { useSettings } from "@/features/settings/store";
 import { cueIndexAt, selectTimeFormat, useSubtitles } from "@/features/subtitles/store";
 import { formatTime } from "@/features/subtitles/timecode";
 import { clock, usePlaying } from "./clock";
@@ -33,16 +34,18 @@ export function VideoPanel() {
       const s = useSubtitles.getState();
       const t = clock.time;
       const cue = s.cues[cueIndexAt(s.cues, t)];
+      const hideText = useSettings.getState().privacy === "text";
       if (overlayRef.current) {
-        overlayRef.current.textContent = cue?.text ?? "";
-        overlayRef.current.hidden = !cue?.text;
+        const text = hideText ? (cue?.text ? "••••" : "") : (cue?.text ?? "");
+        overlayRef.current.textContent = text;
+        overlayRef.current.hidden = !text;
       }
       const fmt = selectTimeFormat(s);
       if (timeRef.current) timeRef.current.textContent = `${formatTime(t, fmt)} / ${formatTime(clock.duration, fmt)}`;
       if (progressRef.current) progressRef.current.style.width = `${(t / clock.duration) * 100}%`;
     };
     paint();
-    const unsubs = [clock.onTick(paint), useSubtitles.subscribe(paint)];
+    const unsubs = [clock.onTick(paint), useSubtitles.subscribe(paint), useSettings.subscribe(paint)];
     return () => unsubs.forEach((u) => u());
   }, []);
 

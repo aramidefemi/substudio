@@ -117,7 +117,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 |---|---|---|---|---|
 | EDT-01 | **Set start / Set end at playhead** shortcuts (+ "set end and go to next") | Set start/end (F9–F12) | S | This is core to how SE users time on the fly. |
 | EDT-02 | Insert before/after, delete, merge with next/previous, split at cursor/playhead | Grid context menu, split/join | M | |
-| EDT-03 | Multi-select in the list (Shift/⌘-click) for bulk delete, shift times, merge | Grid selection | M | |
+| EDT-03 | Multi-select in the list (Shift/⌘-click) for bulk delete, shift times, merge | Grid selection | M | ✅ Multi-select, select all, invert; bulk delete via cut. Shift/merge later (EDT-02). |
 | EDT-04 | Find & replace (whole word, case, regex), find next/prev | Find / Replace | M | |
 | EDT-05 | Go to line number (⌘G) | Go to line | S | |
 | EDT-06 | Italic/bold toggles (⌘I) rendered in list and preview | Text editor | S | |
@@ -147,7 +147,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | NAV-02 | Bookmarks (with note): toggle, list, next/previous | Bookmarks | M | |
 | NAV-03 | Focus shortcuts between list, text box and waveform | ToggleFocus* | S | |
 | PLY-07 | Play next/previous cue (stop or loop); play from just before the text; go to next line and play | PlayNext*, VideoPlayFromJustBeforeText, GoToNextSubtitlePlayTranslate | S | The listen-then-type loop. |
-| PRV-01 | Screen privacy toggle (hides file names, then text) | ToggleScreenPrivacy | S | Unreleased films; useful when screen-sharing. |
+| PRV-01 | Screen privacy toggle (hides file names, then text) | ToggleScreenPrivacy | S | ✅ Cycles off → names → text (⌘⇧P). |
 
 ### Files & safety
 
@@ -174,7 +174,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
 | RUL-02 | List errors panel (every flagged cue, click to jump) | List errors | S | |
-| RUL-03 | Words-per-minute and gap columns (optional columns) | Grid columns | S | |
+| RUL-03 | Words-per-minute and gap columns (optional columns) | Grid columns | S | ✅ CPS + Gap columns (toggleable). WPM is M2. |
 
 ---
 
