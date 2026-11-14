@@ -4,7 +4,7 @@ import { onThemeChange } from "@/features/settings/appearance";
 import { select, useSubtitles } from "@/features/subtitles/store";
 import { drawWaveform } from "./draw";
 import { canvasTokens, invalidateCanvasTokens } from "./tokens";
-import { scrollBy, setZoom, useWaveView } from "./view";
+import { centerOn, resetZoom, scrollBy, setAmplitude, setZoom, useWaveView } from "./view";
 
 /**
  * Canvas timeline. Draws outside React: every source (clock, document, view,
@@ -28,8 +28,18 @@ export function Waveform() {
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const { cues, selectedId } = useSubtitles.getState();
-      const { start, pps } = useWaveView.getState();
-      drawWaveform(ctx, { width: w, height: h, start, pps, time: clock.time, cues, selectedId, tokens: canvasTokens() });
+      const { start, pps, amp } = useWaveView.getState();
+      drawWaveform(ctx, {
+        width: w,
+        height: h,
+        start,
+        pps,
+        amp,
+        time: clock.time,
+        cues,
+        selectedId,
+        tokens: canvasTokens(),
+      });
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(draw);
@@ -75,7 +85,7 @@ export function Waveform() {
     <div className="h-full overflow-hidden rounded-xl bg-timeline">
       <canvas
         ref={canvasRef}
-        aria-label="Waveform timeline"
+        aria-label="Waveform timeline. Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom."
         className="block size-full cursor-text"
         onPointerDown={(e) => {
           const t = timeAt(e.clientX);
@@ -83,8 +93,20 @@ export function Waveform() {
           if (hit) select(hit.id);
           clock.seek(t);
         }}
+        onDoubleClick={(e) => {
+          const w = e.currentTarget.clientWidth;
+          if (e.altKey) {
+            resetZoom({ centerTime: clock.time, widthPx: w });
+            return;
+          }
+          centerOn(timeAt(e.clientX), w);
+        }}
         onWheel={(e) => {
-          if (e.ctrlKey || e.metaKey) {
+          // ⌥+wheel: amplitude; ⌘/Ctrl+wheel: time zoom; else pan.
+          if (e.altKey) {
+            e.preventDefault();
+            setAmplitude(useWaveView.getState().amp * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+          } else if (e.ctrlKey || e.metaKey) {
             const rect = e.currentTarget.getBoundingClientRect();
             setZoom(useWaveView.getState().pps * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX - rect.left);
           } else {

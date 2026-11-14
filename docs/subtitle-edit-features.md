@@ -123,7 +123,7 @@ The **Plan** column maps each feature to our backlog (`docs/backlog.md`):
 | Click to seek; Shift+click start; Ctrl+click end; Alt+click move | Mouse timing | M1 |
 | Drag edges (Alt also moves the neighbour), drag middle | Retime | M1 |
 | Drag empty area for a new selection → insert / paste / speech-to-text | Create cues | M1 (insert) · M4 (STT) |
-| Horizontal / vertical zoom, scroll, centre, reset zoom & speed | Navigation | 🟡 · M1 |
+| Horizontal / vertical zoom, scroll, centre, reset zoom & speed | Navigation | ✅ (zoom/scroll/centre/reset) · M1 leftover: reset speed |
 | Context menu: insert, delete, split here, merge, copy, extract audio | Region actions | M1 |
 | Seek silence back/forward; guess start, end or both | Snap to speech | M1 |
 | Speech-only waveform (separates music/SFX with a model) | Clearer dialogue view | M4 |

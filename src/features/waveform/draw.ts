@@ -10,6 +10,8 @@ interface Scene {
   height: number;
   start: number;
   pps: number;
+  /** Vertical scale for waveform amplitude (1 = default). */
+  amp: number;
   time: number;
   cues: readonly Cue[];
   selectedId: string | null;
@@ -35,10 +37,11 @@ function sampleAmplitude(cues: readonly Cue[], t: number): number {
 }
 
 export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
-  const { width: w, height: h, start, pps, tokens: k } = s;
+  const { width: w, height: h, start, pps, amp: ampScale, tokens: k } = s;
   const end = start + w / pps;
   const waveH = h - RULER_H;
   const mid = waveH / 2;
+  const maxAmp = mid - 6;
   const x = (t: number) => (t - start) * pps;
   const visible = s.cues.filter((c) => c.end >= start && c.start <= end);
 
@@ -55,7 +58,7 @@ export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
   for (let px = 0; px < w; px += 2) {
     const t = start + px / pps;
     const i = cueIndexAt(s.cues, t);
-    const amp = Math.min(1, sampleAmplitude(s.cues, t)) * (mid - 6);
+    const amp = Math.min(maxAmp, sampleAmplitude(s.cues, t) * ampScale * maxAmp);
     const path = i < 0 ? paths.a : s.cues[i]!.id === s.selectedId ? paths.sel : paths.b;
     path.moveTo(px + 0.5, mid - amp);
     path.lineTo(px + 0.5, mid + amp);

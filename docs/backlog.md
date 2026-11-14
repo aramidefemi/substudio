@@ -95,7 +95,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | WAV-02 | Drag a cue's edges to retime; drag the middle to move | Waveform mouse | M | Edges show a resize cursor. Neighbours are not crossed (or Alt-drag moves the neighbour too). One undo step per drag. |
 | WAV-03 | Drag on empty waveform to mark a region; Enter/double-click creates a cue there | "New selection" | M | Matches her habit of making a cue then resizing it. |
 | WAV-04 | Click to seek; Shift+click sets start; Ctrl/⌘+click sets end | Waveform mouse | S | |
-| WAV-05 | Zoom and scroll: wheel/trackpad pan, ⌥/⌘+wheel zoom, vertical (amplitude) zoom | Waveform mouse | S | 🟡 pan and zoom exist; amplitude zoom is missing. |
+| WAV-05 | Zoom and scroll: wheel/trackpad pan, ⌘+wheel time zoom, ⌥+wheel amplitude, double-click centre, ⌥+double-click reset | Waveform mouse | S | ✅ |
 | WAV-06 | Waveform right-click menu: insert / delete / split here / merge before or after | Waveform context menu | M | |
 | WAV-07 | Snap to speech / seek silence; guess start/end from the waveform | Seek silence, guess times | M | Uses peaks from WAV-01. |
 | WAV-08 | Spectrogram view (toggle) | Spectrogram | L | Later in M1, if she uses it. ❓ |
