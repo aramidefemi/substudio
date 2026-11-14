@@ -4,6 +4,7 @@ import { clock } from "@/features/playback/clock";
 import { onThemeChange } from "@/features/settings/appearance";
 import { useSettings } from "@/features/settings/store";
 import { select, useSubtitles } from "@/features/subtitles/store";
+import { WAVEFORM_ID } from "@/lib/dom";
 import { menuTarget, setPointerTime, type MenuTarget } from "./context";
 import { drawWaveform } from "./draw";
 import { loadPeaks, usePeaks } from "./peaks";
@@ -133,6 +134,8 @@ export function Waveform() {
         <ContextMenuTrigger asChild>
           <canvas
             ref={canvasRef}
+            id={WAVEFORM_ID}
+            tabIndex={0}
             onContextMenu={(e) => {
               // Runs before the menu opens: aim the position-aware commands here.
               const t = Math.max(0, timeAt(e.clientX));
@@ -143,7 +146,7 @@ export function Waveform() {
               setMenu({ target, hasRegion: !!useRegion.getState().region });
             }}
             aria-label="Waveform timeline. Click to seek; ⇧-click sets the selected subtitle's start, ⌘-click its end. Drag a subtitle's edges to retime it, its middle to move it (⌥-drag an edge moves the neighbour too). Drag on empty space to mark a region; Enter or double-click inside it creates a subtitle, Escape clears it. Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom. Right-click for insert, split, merge and delete."
-            className="block size-full cursor-text touch-none"
+            className="block size-full cursor-text touch-none outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset"
             onDoubleClick={(e) => {
               const w = e.currentTarget.clientWidth;
               if (!e.altKey && regionContains(useRegion.getState().region, timeAt(e.clientX))) {

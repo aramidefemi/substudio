@@ -17,6 +17,7 @@ import { selectRelative, toggleTimecode } from "@/features/subtitles/store";
 import type { NudgeMode } from "@/features/subtitles/timing";
 import type { TimingStep } from "@/features/subtitles/store";
 import { enterOutsideText, WAVEFORM_COMMANDS } from "@/features/waveform/commands";
+import { focusCueText, focusSubtitleList, focusWaveform } from "@/lib/dom";
 import * as a from "../actions";
 import * as fr from "../findReplace";
 import { defineCommands, type Command } from "./registry";
@@ -200,6 +201,10 @@ export const COMMANDS: Command[] = [
   { id: "nav.nextBookmark", label: "Next bookmark", group: "Navigate", keys: ["$mod+Alt+KeyB"], run: () => a.goToBookmark(1) },
   { id: "nav.previousBookmark", label: "Previous bookmark", group: "Navigate", keys: ["$mod+Alt+Shift+KeyB"], run: () => a.goToBookmark(-1) },
   { id: "nav.bookmarks", label: "Bookmarks…", group: "Navigate", run: a.openBookmarks },
+  // Global, so they also get her out of the text box.
+  { id: "nav.focusList", label: "Focus subtitle list", group: "Navigate", keys: ["$mod+Digit1"], run: focusSubtitleList },
+  { id: "nav.focusTextBox", label: "Focus text box", group: "Navigate", keys: ["$mod+Digit2"], run: focusCueText },
+  { id: "nav.focusWaveform", label: "Focus waveform", group: "Navigate", keys: ["$mod+Digit3"], run: focusWaveform },
   { id: "nav.nextError", label: "Go to next error", group: "Navigate", keys: ["$mod+Alt+ArrowDown"], scope: "outsideText", run: () => a.goToError(1) },
   { id: "nav.previousError", label: "Go to previous error", group: "Navigate", keys: ["$mod+Alt+ArrowUp"], scope: "outsideText", run: () => a.goToError(-1) },
   { id: "nav.nextEmpty", label: "Go to next empty line", group: "Navigate", run: a.goToNextEmpty },

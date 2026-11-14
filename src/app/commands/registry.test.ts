@@ -35,6 +35,8 @@ describe("command registry", () => {
     expect(accel.get("edit.mergeNext")).toBeNull(); // ⌘⇧→ selects to line end while typing
     expect(accel.get("file.save")).toBe("CmdOrCtrl+S");
     expect(accel.get("timing.setEndGoNext")).toBe("F10");
+    expect(accel.get("nav.focusList")).toBe("CmdOrCtrl+1"); // leaves the text box too
+    expect(accel.get("playback.playSelection")).toBe("F5");
   });
 
   it("formats titles with shortcuts", () => {

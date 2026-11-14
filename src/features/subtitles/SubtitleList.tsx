@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { clock } from "@/features/playback/clock";
 import { ROW_HEIGHT, useSettings } from "@/features/settings/store";
-import { focusCueText } from "@/lib/dom";
+import { focusCueText, SUBTITLE_LIST_ID } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 import { formatRuns, gapAfter, stripTags } from "./format";
 import { checkCue, cueStats } from "./rules";
@@ -110,7 +110,14 @@ export function SubtitleList() {
         <span className="px-3">Text</span>
       </div>
 
-      <div ref={scrollRef} role="grid" aria-label="Subtitles" className="relative min-h-0 flex-1 overflow-auto">
+      <div
+        ref={scrollRef}
+        id={SUBTITLE_LIST_ID}
+        tabIndex={0}
+        role="grid"
+        aria-label="Subtitles"
+        className="relative min-h-0 flex-1 overflow-auto outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset"
+      >
         {cues.length === 0 && (
           <p className="p-6 text-center text-muted-foreground">
             No subtitles yet. Open a file, or add one from the waveform.

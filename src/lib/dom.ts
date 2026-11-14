@@ -3,6 +3,13 @@ export const CUE_TEXT_ID = "cue-text";
 
 export const focusCueText = () => document.getElementById(CUE_TEXT_ID)?.focus();
 
+/** ids of the other keyboard focus targets (NAV-03). */
+export const SUBTITLE_LIST_ID = "subtitle-list";
+export const WAVEFORM_ID = "waveform";
+
+export const focusSubtitleList = () => document.getElementById(SUBTITLE_LIST_ID)?.focus();
+export const focusWaveform = () => document.getElementById(WAVEFORM_ID)?.focus();
+
 export function cueTextArea(): HTMLTextAreaElement | null {
   const el = document.getElementById(CUE_TEXT_ID);
   return el instanceof HTMLTextAreaElement ? el : null;
