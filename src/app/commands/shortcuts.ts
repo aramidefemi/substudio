@@ -4,6 +4,14 @@ import { inTauri } from "@/lib/tauri";
 import { menuCommandIds } from "./menu";
 import { allCommands } from "./registry";
 
+/** Focus targets that use plain keys themselves (text, buttons, sliders, open lists and menus). */
+const KEY_OWNER_ROLES = '[role="slider"],[role="listbox"],[role="option"],[role="menu"],[role="menuitem"],[role="combobox"]';
+
+function ownsKeys(target: EventTarget | null): boolean {
+  if (isEditable(target) || target instanceof HTMLButtonElement) return true;
+  return target instanceof Element && target.closest(KEY_OWNER_ROLES) !== null;
+}
+
 /**
  * Binds every command's keys in the page, except the ones the native menu
  * already owns (a global command's first key, when it is in the menu bar,
@@ -22,7 +30,7 @@ export function bindShortcuts(target: Window = window): () => void {
         return;
       }
       map[key] = (e: KeyboardEvent) => {
-        if (scope === "outsideText" && (isEditable(e.target) || e.target instanceof HTMLButtonElement)) return;
+        if (scope === "outsideText" && ownsKeys(e.target)) return;
         e.preventDefault();
         void command.run();
       };

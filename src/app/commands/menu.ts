@@ -171,6 +171,27 @@ export const MENU: MenuGroup[] = [
     ],
   },
   {
+    submenu: "Playback",
+    items: [
+      "playback.toggle",
+      "-",
+      {
+        submenu: "Step",
+        items: [
+          ["playback.step.frame.-", "Back 1 Frame"],
+          ["playback.step.frame.+", "Forward 1 Frame"],
+          "-",
+          ["playback.step.100ms.-", "Back 100 ms"],
+          ["playback.step.100ms.+", "Forward 100 ms"],
+          ["playback.step.500ms.-", "Back 500 ms"],
+          ["playback.step.500ms.+", "Forward 500 ms"],
+          ["playback.step.1s.-", "Back 1 s"],
+          ["playback.step.1s.+", "Forward 1 s"],
+        ],
+      },
+    ],
+  },
+  {
     submenu: "Timing",
     items: [
       { submenu: "Move Start", items: moveEdge("timing.moveStart") },

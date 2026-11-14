@@ -104,7 +104,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
-| PLY-01 | Frame-accurate stepping: ±1 frame, ±100 ms, ±500 ms, ±1 s keys | Video player keys | S | |
+| PLY-01 | Frame-accurate stepping: ±1 frame, ±100 ms, ±500 ms, ±1 s keys | Video player keys | S | ✅ ←/→ ±1 frame (pauses, lands on the project-fps grid; real VFR timestamps come with MED), ⇧ ±100 ms, ⌘ ±500 ms, ⌃⇧ ±1 s. Playback › Step menu. |
 | PLY-02 | Play current cue; loop selection; play from just before the cue | Waveform toolbar | S | Her most frequent action while timing. |
 | PLY-03 | Playback speed that keeps pitch | Speed | S | 🟡 speed exists; check pitch on WebKit. |
 | PLY-04 | Proxy playback: see MED-02 | — | — | Moved to the media layer. |

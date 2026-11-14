@@ -1,4 +1,5 @@
 import { clock } from "@/features/playback/clock";
+import { jump, stepFrame } from "@/features/playback/transport";
 import { setDensity, setTheme } from "@/features/settings/store";
 import { selectRelative, toggleTimecode } from "@/features/subtitles/store";
 import type { NudgeMode } from "@/features/subtitles/timing";
@@ -81,6 +82,26 @@ function shiftCommands(): Command[] {
   return out;
 }
 
+/** Playhead stepping (PLY-01). Arrows are text-editing keys, so all are outsideText. */
+function stepCommands(): Command[] {
+  const steps: { id: string; label: string; mod: string; run: (d: Dir) => void }[] = [
+    { id: "frame", label: "1 frame", mod: "", run: (d) => stepFrame(d) },
+    { id: "100ms", label: "100 ms", mod: "Shift+", run: (d) => jump(d * 0.1) },
+    { id: "500ms", label: "500 ms", mod: "$mod+", run: (d) => jump(d * 0.5) },
+    { id: "1s", label: "1 s", mod: "Control+Shift+", run: (d) => jump(d) },
+  ];
+  return steps.flatMap((step) =>
+    ([-1, 1] as Dir[]).map((d) => ({
+      id: `playback.step.${step.id}.${dirKey(d)}`,
+      label: `${d < 0 ? "Back" : "Forward"} ${step.label}`,
+      group: "Playback",
+      keys: [`${step.mod}Arrow${d < 0 ? "Left" : "Right"}`],
+      scope: "outsideText" as const,
+      run: () => step.run(d),
+    })),
+  );
+}
+
 export const COMMANDS: Command[] = [
   /* ---------- File ---------- */
   { id: "file.new", label: "New", group: "File", keys: ["$mod+KeyN"], run: a.newFile },
@@ -159,6 +180,7 @@ export const COMMANDS: Command[] = [
   { id: "nav.previous", label: "Previous subtitle", group: "Navigate", keys: ["ArrowUp"], scope: "outsideText", run: () => selectRelative(-1) },
   { id: "nav.focusText", label: "Edit subtitle text", group: "Navigate", keys: ["Enter"], scope: "outsideText", hidden: true, run: focusCueText },
   { id: "playback.toggle", label: "Play / pause", group: "Playback", keys: ["Space"], scope: "outsideText", run: () => clock.toggle() },
+  ...stepCommands(),
 
   /* ---------- View ---------- */
   { id: "view.theme.system", label: "Theme: match system", group: "View", run: () => setTheme("system") },

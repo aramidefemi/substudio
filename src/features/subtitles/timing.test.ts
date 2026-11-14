@@ -17,6 +17,7 @@ import {
   shiftIndices,
   snapAllToFrames,
   snapToFrame,
+  stepFrames,
 } from "./timing";
 import type { CueData } from "./types";
 
@@ -26,6 +27,33 @@ describe("snapToFrame", () => {
   it("rounds to nearest frame at project fps", () => {
     expect(snapToFrame(0.03, 25)).toBeCloseTo(0.04);
     expect(snapToFrame(1.02, 25)).toBeCloseTo(1.04); // 1.02s → frame 25.5 → 26/25
+  });
+});
+
+describe("stepFrames", () => {
+  it("steps whole frames from a frame boundary", () => {
+    expect(stepFrames(1, 25, 1)).toBeCloseTo(1.04);
+    expect(stepFrames(1, 25, -1)).toBeCloseTo(0.96);
+    expect(stepFrames(1, 25, 5)).toBeCloseTo(1.2);
+  });
+
+  it("lands on the grid from mid-frame", () => {
+    expect(stepFrames(1.01, 25, 1)).toBeCloseTo(1.04);
+    expect(stepFrames(1.01, 25, -1)).toBeCloseTo(1); // back to the start of the current frame
+  });
+
+  it("is stable when repeated (no float drift)", () => {
+    let t = 0;
+    for (let i = 0; i < 1000; i++) t = stepFrames(t, 25, 1);
+    expect(t).toBeCloseTo(40, 9);
+    for (let i = 0; i < 1000; i++) t = stepFrames(t, 30, -1);
+    expect(t).toBeCloseTo(40 - 1000 / 30, 9);
+  });
+
+  it("clamps at zero and ignores a zero step", () => {
+    expect(stepFrames(0.02, 25, -1)).toBe(0);
+    expect(stepFrames(0, 25, -1)).toBe(0);
+    expect(stepFrames(1.234, 25, 0)).toBe(1.234);
   });
 });
 

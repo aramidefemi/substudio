@@ -17,6 +17,23 @@ export const frameStep = (fps: number) => 1 / fps;
 
 export const snapToFrame = (t: number, fps: number) => Math.max(0, Math.round(t * fps) / fps);
 
+/** Tolerance (in frames) for treating a time as sitting on a frame boundary. */
+const FRAME_EPS = 1e-3;
+
+/**
+ * Playhead time `frames` frames away from `t`, landing on a frame boundary at
+ * the project fps. Off-grid times step to the next/previous boundary first, so
+ * one step back from mid-frame lands on the start of the current frame.
+ * Project fps for now; switch to the source's real frame timestamps with the
+ * media layer (MED) for variable frame rate.
+ */
+export function stepFrames(t: number, fps: number, frames: number): number {
+  if (!frames || fps <= 0) return t;
+  const f = t * fps;
+  const base = frames > 0 ? Math.floor(f + FRAME_EPS) : Math.ceil(f - FRAME_EPS);
+  return Math.max(0, (base + frames) / fps);
+}
+
 const dur = (c: CueData) => c.end - c.start;
 
 const shiftCue = (c: CueData, delta: number) => {
