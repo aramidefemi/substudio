@@ -75,6 +75,7 @@ import {
 import type { CueData, SubtitleFormat } from "@/features/subtitles/types";
 import { cueTextSelection, focusCueText, isEditable, setCueTextSelection } from "@/lib/dom";
 import { commands, fileName, inTauri, stripExtension } from "@/lib/tauri";
+import { planDrop, SUBTITLE_EXTENSIONS, VIDEO_EXTENSIONS } from "./drop";
 
 /** Transient UI state that several components toggle. */
 export const useUi = create<{
@@ -101,8 +102,8 @@ export const useUi = create<{
   paletteOpen: false,
 }));
 
-const SUBTITLE_FILTER = { name: "Subtitles", extensions: ["srt", "vtt"] };
-const VIDEO_FILTER = { name: "Video", extensions: ["mp4", "mov", "m4v", "webm"] };
+const SUBTITLE_FILTER = { name: "Subtitles", extensions: SUBTITLE_EXTENSIONS };
+const VIDEO_FILTER = { name: "Video", extensions: VIDEO_EXTENSIONS };
 
 const desktopOnly = () => {
   toast("Files open in the desktop app", { description: "Run `pnpm tauri dev` instead of `pnpm dev`." });
@@ -194,6 +195,39 @@ export async function openVideo() {
   if (!path) return;
   setVideo(path);
   pushRecentVideo(path);
+}
+
+/**
+ * Files dropped on the window: a subtitle opens (keeping the current video,
+ * since dropping a subtitle onto a film means "use it with this"), a video
+ * replaces the current one. Both together open as a pair.
+ */
+export async function openDroppedFiles(paths: readonly string[]) {
+  const plan = planDrop(paths);
+  if (!plan.subtitle && !plan.video) {
+    toast.error("Can't open this file", { description: "Drop a .srt or .vtt subtitle, or an .mp4, .mov, .m4v or .webm video." });
+    return;
+  }
+  if (plan.subtitle) {
+    if (!(await confirmDiscard())) return;
+    try {
+      await openSubtitlePath(plan.subtitle, true);
+    } catch (err) {
+      toast.error(`Could not open ${fileName(plan.subtitle)}`, { description: String(err) });
+      return;
+    }
+  }
+  if (plan.video) {
+    setVideo(plan.video);
+    pushRecentVideo(plan.video);
+    if (plan.subtitle) pushRecentSubtitle(plan.subtitle, plan.video);
+    else toast.success(`Opened ${fileName(plan.video)}`);
+  }
+  if (plan.ignored.length) {
+    toast(`Skipped ${plan.ignored.length} file${plan.ignored.length === 1 ? "" : "s"}`, {
+      description: plan.ignored.map(fileName).join(", "),
+    });
+  }
 }
 
 async function writeTo(path: string, format: SubtitleFormat) {

@@ -159,7 +159,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | FIL-03 | Project sidecar (video path, waveform cache, settings) next to the .srt | — | M | |
 | FIL-04 | Encoding detection for legacy files (Windows-1252, etc.) + manual encoding pick | Import with encoding | S | ✅ Manual encoding pick (detection still open). |
 | FIL-05 | Reload when changed outside the app | Reload when changed | S | ✅ Mtime poll; ask to reload. |
-| FIL-06 | Drag and drop video/subtitle onto the window | — | S | |
+| FIL-06 | Drag and drop video/subtitle onto the window | — | S | ✅ Tauri webview drag-drop; routes .srt/.vtt and .mp4/.mov/.m4v/.webm to the open logic (subtitle keeps the current video); overlay says what will open. |
 | FIL-07 | ❓ **Script / "original" column**: show a source document (her Google Doc script) beside each cue | Translation mode ("Open original subtitle") | L | SE's translation mode may be exactly what her Google Docs workflow needs. Confirm with her. |
 
 ### Script workflow (M1 candidate; investigate first)

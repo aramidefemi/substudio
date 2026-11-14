@@ -8,6 +8,7 @@ import { CueEditor } from "@/features/subtitles/CueEditor";
 import { SubtitleList } from "@/features/subtitles/SubtitleList";
 import { Waveform } from "@/features/waveform/Waveform";
 import { CompareDialog } from "./CompareDialog";
+import { DropOverlay } from "./DropOverlay";
 import { EncodingDialog } from "./EncodingDialog";
 import { CommandPalette } from "./commands/CommandPalette";
 import { FindDialog } from "./FindDialog";
@@ -74,6 +75,7 @@ export default function App() {
       <CompareDialog />
       <MediaInfoDialog />
       <HistoryDialog />
+      <DropOverlay />
       <Toaster position="bottom-center" />
     </TooltipProvider>
   );
