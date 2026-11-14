@@ -1,6 +1,7 @@
 mod files;
 mod media;
 mod menu;
+mod project;
 mod subtitles;
 mod waveform;
 
@@ -25,6 +26,17 @@ async fn read_subtitles_encoded(path: String, encoding: String) -> Result<Vec<Cu
 #[tauri::command]
 async fn write_subtitles(path: String, cues: Vec<Cue>, format: SubtitleFormat) -> Result<(), String> {
     std::fs::write(&path, subtitles::serialize(&cues, format)).map_err(|e| e.to_string())
+}
+
+/// Project sidecar next to the subtitle; `None` when missing or unreadable (FIL-03).
+#[tauri::command]
+async fn read_project(subtitle_path: String) -> Option<project::Project> {
+    project::read(std::path::Path::new(&subtitle_path))
+}
+
+#[tauri::command]
+async fn write_project(subtitle_path: String, project: project::Project) -> Result<(), String> {
+    project::write(std::path::Path::new(&subtitle_path), &project)
 }
 
 #[tauri::command]
@@ -132,6 +144,8 @@ pub fn run() {
             read_subtitles,
             read_subtitles_encoded,
             write_subtitles,
+            read_project,
+            write_project,
             file_mtime,
             reveal_path,
             open_path,

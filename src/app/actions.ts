@@ -41,6 +41,7 @@ import {
   redo,
   removeBlankLines,
   removeCues,
+  restoreBookmarks,
   rippleDeleteSelected,
   select,
   selectAll,
@@ -79,6 +80,7 @@ import type { CueData, SubtitleFormat } from "@/features/subtitles/types";
 import { cueTextSelection, focusCueText, isEditable, setCueTextSelection } from "@/lib/dom";
 import { commands, fileName, inTauri, stripExtension } from "@/lib/tauri";
 import { planDrop, SUBTITLE_EXTENSIONS, VIDEO_EXTENSIONS } from "./drop";
+import { buildProject, restoreProject } from "./project";
 
 /** Transient UI state that several components toggle. */
 export const useUi = create<{
@@ -141,12 +143,70 @@ async function rememberMtime(path: string) {
   }
 }
 
+/* ---------- project sidecar (FIL-03) ---------- */
+
+/** Seeks once the newly set video has its metadata (a seek before that is lost). */
+function seekWhenVideoReady(t: number) {
+  const off = clock.onTick(() => {
+    const video = document.querySelector("video");
+    if (video && video.readyState >= 1) {
+      off();
+      clock.seek(t);
+    }
+  });
+  window.setTimeout(off, 15_000);
+}
+
+/** Restores video, fps, timecode, bookmarks and the last selected line. Missing or bad sidecar: nothing happens. */
+async function applySidecar(path: string) {
+  let file;
+  try {
+    file = await commands.readProject(path);
+  } catch {
+    return;
+  }
+  if (!file) return;
+  const s = useSubtitles.getState();
+  const p = restoreProject(s.cues, file);
+  restoreBookmarks(p.bookmarks);
+  if (p.fps || p.timecode) {
+    useSubtitles.setState({ ...(p.fps ? { fps: p.fps } : {}), ...(p.timecode ? { timecode: p.timecode } : {}) });
+  }
+  let videoSet = false;
+  if (p.videoPath && !s.videoPath) {
+    try {
+      await commands.fileMtime(p.videoPath); // exists?
+      setVideo(p.videoPath);
+      pushRecentVideo(p.videoPath);
+      videoSet = true;
+    } catch {
+      toast("Video not found", { description: `${fileName(p.videoPath)} — open it again with ⇧⌘O.` });
+    }
+  }
+  const cue = useSubtitles.getState().cues[p.selectedIndex];
+  if (cue) {
+    select(cue.id);
+    if (videoSet) seekWhenVideoReady(cue.start);
+    else clock.seek(cue.start);
+  }
+}
+
+/** Written next to the subtitle on every save; never blocks or fails the save itself. */
+async function writeSidecar(path: string) {
+  try {
+    await commands.writeProject(path, buildProject(useSubtitles.getState()));
+  } catch (err) {
+    console.warn("Could not write the project sidecar", err);
+  }
+}
+
 async function openSubtitlePath(path: string, keepVideo: boolean, encoding?: string) {
   const cues = encoding
     ? await commands.readSubtitlesEncoded(path, encoding)
     : await commands.readSubtitles(path);
   loadDocument(cues, path, keepVideo);
   await rememberMtime(path);
+  await applySidecar(path);
   pushRecentSubtitle(path, useSubtitles.getState().videoPath);
   toast.success(`Opened ${fileName(path)}`, { description: `${cues.length} subtitles` });
 }
@@ -245,6 +305,7 @@ async function writeTo(path: string, format: SubtitleFormat) {
     await commands.writeSubtitles(path, useSubtitles.getState().cues, format);
     markSaved(path);
     await rememberMtime(path);
+    await writeSidecar(path);
     pushRecentSubtitle(path, useSubtitles.getState().videoPath);
     toast.success(`Saved ${fileName(path)}`);
   } catch (err) {
@@ -370,6 +431,7 @@ export async function runAutoBackup() {
       await commands.writeSubtitles(filePath, cues, formatOf(filePath));
       markSaved(filePath);
       await rememberMtime(filePath);
+      await writeSidecar(filePath);
     }
   } catch (err) {
     console.error("auto-backup failed", err);

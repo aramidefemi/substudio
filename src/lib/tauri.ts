@@ -35,6 +35,17 @@ export interface MediaInfo {
   note: string | null;
 }
 
+/** Mirrors `project::Project` in Rust: the `<name>.substudio.json` sidecar (FIL-03). */
+export interface ProjectFile {
+  version?: number;
+  videoPath: string | null;
+  videoRelative?: string | null;
+  fps: number | null;
+  timecode: "frames" | "ms" | null;
+  bookmarks: { index: number; start: number; note: string }[];
+  selected: { index: number; start: number } | null;
+}
+
 /** Typed wrappers for the Rust commands in `src-tauri/src/lib.rs`. */
 export const commands = {
   readSubtitles: (path: string) => invoke<CueData[]>("read_subtitles", { path }),
@@ -42,6 +53,9 @@ export const commands = {
     invoke<CueData[]>("read_subtitles_encoded", { path, encoding }),
   writeSubtitles: (path: string, cues: CueData[], format: SubtitleFormat) =>
     invoke<void>("write_subtitles", { path, cues, format }),
+  readProject: (subtitlePath: string) => invoke<ProjectFile | null>("read_project", { subtitlePath }),
+  writeProject: (subtitlePath: string, project: ProjectFile) =>
+    invoke<void>("write_project", { subtitlePath, project }),
   fileMtime: (path: string) => invoke<number>("file_mtime", { path }),
   revealPath: (path: string) => invoke<void>("reveal_path", { path }),
   openPath: (path: string) => invoke<void>("open_path", { path }),
