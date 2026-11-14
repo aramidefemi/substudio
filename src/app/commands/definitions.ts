@@ -200,6 +200,11 @@ export const COMMANDS: Command[] = [
   { id: "nav.nextBookmark", label: "Next bookmark", group: "Navigate", keys: ["$mod+Alt+KeyB"], run: () => a.goToBookmark(1) },
   { id: "nav.previousBookmark", label: "Previous bookmark", group: "Navigate", keys: ["$mod+Alt+Shift+KeyB"], run: () => a.goToBookmark(-1) },
   { id: "nav.bookmarks", label: "Bookmarks…", group: "Navigate", run: a.openBookmarks },
+  { id: "nav.nextError", label: "Go to next error", group: "Navigate", keys: ["$mod+Alt+ArrowDown"], scope: "outsideText", run: () => a.goToError(1) },
+  { id: "nav.previousError", label: "Go to previous error", group: "Navigate", keys: ["$mod+Alt+ArrowUp"], scope: "outsideText", run: () => a.goToError(-1) },
+  { id: "nav.nextEmpty", label: "Go to next empty line", group: "Navigate", run: a.goToNextEmpty },
+  { id: "nav.nextFromVideo", label: "Go to next line from video position", group: "Navigate", keys: ["Alt+ArrowDown"], scope: "outsideText", run: () => a.goToLineFromVideo(1) },
+  { id: "nav.previousFromVideo", label: "Go to previous line from video position", group: "Navigate", keys: ["Alt+ArrowUp"], scope: "outsideText", run: () => a.goToLineFromVideo(-1) },
   { id: "playback.toggle", label: "Play / pause", group: "Playback", keys: ["Space"], scope: "outsideText", run: () => clock.toggle() },
   // F-keys: global, so they work while she types in the text box (listen, then type).
   { id: "playback.playSelection", label: "Play selected line", group: "Playback", keys: ["F5"], run: () => playSelection() },

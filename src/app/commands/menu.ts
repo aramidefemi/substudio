@@ -153,6 +153,17 @@ export const MENU: MenuGroup[] = [
           ["nav.bookmarks", "List Bookmarks…"],
         ],
       },
+      {
+        submenu: "Go To",
+        items: [
+          ["nav.nextError", "Next Error"],
+          ["nav.previousError", "Previous Error"],
+          ["nav.nextEmpty", "Next Empty Line"],
+          "-",
+          ["nav.nextFromVideo", "Next Line from Video Position"],
+          ["nav.previousFromVideo", "Previous Line from Video Position"],
+        ],
+      },
       "-",
       "app.commandPalette",
     ],

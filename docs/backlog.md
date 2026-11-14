@@ -144,7 +144,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | EDT-10 | Ripple delete; duplicate line; remove blank lines; trim whitespace | RippleDeleteSelectedLines… | S | ✅ |
 | EDT-11 | Move first/last word between neighbouring cues; move text from cursor to next cue (and play) | MoveFirstWord*, MoveTextFromCursorToNext* | M | Re-split dialogue without retyping. |
 | EDT-12 | Toggle dialog dashes; break at first space from cursor | ToggleDialogDashes, BreakAtFirstSpaceFromCursor | S | ✅ |
-| NAV-01 | Go to next/previous **error**, next empty line, next line from video position | GoToNextError… | S | |
+| NAV-01 | Go to next/previous **error**, next empty line, next line from video position | GoToNextError… | S | ✅ ⌘⌥↓/↑ next/previous error (anything `checkCue` flags), next empty line (menu/palette), ⌥↓/↑ next/previous line from the playhead (back goes to the current line's start first). Each selects and seeks; Edit › Go To. |
 | NAV-02 | Bookmarks (with note): toggle, list, next/previous | Bookmarks | M | ✅ ⌘B toggle, ⇧⌘B note, ⌥⌘B / ⇧⌥⌘B next/previous (wrap), searchable list (Edit › Bookmarks); stored on the cue in the subtitle store (undoable); bookmark icon in the list row. Persisted via FIL-03 sidecar. |
 | NAV-03 | Focus shortcuts between list, text box and waveform | ToggleFocus* | S | |
 | PLY-07 | Play next/previous cue (stop or loop); play from just before the text; go to next line and play | PlayNext*, VideoPlayFromJustBeforeText, GoToNextSubtitlePlayTranslate | S | ✅ F7/F8 select and play the previous/next line, ⇧F7/⇧F8 loop it, F6 plays from just before (PLY-02), ⌘⇧↩ goes to the next line, plays it and keeps the cursor in the text box. All global, so they work while typing. |

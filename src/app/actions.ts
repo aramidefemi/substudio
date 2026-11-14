@@ -13,6 +13,7 @@ import {
   useSettings,
 } from "@/features/settings/store";
 import { nextBookmarkIndex } from "@/features/subtitles/bookmarks";
+import { findEmpty, findError, lineFromVideo } from "@/features/subtitles/navigation";
 import { parseCues, serializeCues } from "@/features/subtitles/clipboard";
 import { toggleItalic } from "@/features/subtitles/format";
 import {
@@ -771,3 +772,32 @@ export const splitAtVideoAction = () => {
 export const mergePreviousAction = (mode: MergeMode = "keepBreaks") => mergeWithPrevious(mode);
 export const mergeNextAction = (mode: MergeMode = "keepBreaks") => mergeWithNext(mode);
 export const mergeSelectedAction = (mode: MergeMode = "keepBreaks") => mergeSelected(mode);
+
+/* ---------- go to (NAV-01) ---------- */
+
+function goToIndex(i: number, none: string) {
+  const cue = useSubtitles.getState().cues[i];
+  if (!cue) {
+    toast(none);
+    return;
+  }
+  select(cue.id);
+  clock.seek(cue.start);
+}
+
+const selectedIndex = () => {
+  const s = useSubtitles.getState();
+  return s.cues.findIndex((c) => c.id === s.selectedId);
+};
+
+export function goToError(dir: 1 | -1) {
+  goToIndex(findError(useSubtitles.getState().cues, selectedIndex(), dir), dir > 0 ? "No more errors below" : "No more errors above");
+}
+
+export function goToNextEmpty() {
+  goToIndex(findEmpty(useSubtitles.getState().cues, selectedIndex()), "No more empty lines below");
+}
+
+export function goToLineFromVideo(dir: 1 | -1) {
+  goToIndex(lineFromVideo(useSubtitles.getState().cues, clock.time, dir), dir > 0 ? "No line after the playhead" : "No line before the playhead");
+}
