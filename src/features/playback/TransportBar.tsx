@@ -1,5 +1,6 @@
-import { Minus, Pause, Play, Plus, SkipBack, StepBack, StepForward } from "lucide-react";
+import { Minus, Pause, Play, Plus, Repeat, SkipBack, SquarePlay, StepBack, StepForward } from "lucide-react";
 import { addCueAtPlayhead } from "@/app/actions";
+import { commandTitle } from "@/app/commands/registry";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
@@ -7,15 +8,28 @@ import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { selectRelative, selectSelectedIndex, toggleTimecode, useSubtitles } from "@/features/subtitles/store";
 import { DEFAULT_PPS, MAX_PPS, MIN_PPS, setZoom, useWaveView } from "@/features/waveform/view";
-import { clock, usePlaybackRate, usePlaying } from "./clock";
-import { SPEEDS } from "./transport";
+import { clock, useLooping, usePlaybackRate, usePlaying } from "./clock";
+import { playSelection, SPEEDS, toggleLoopSelection } from "./transport";
 
 
-function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+interface IconButtonProps {
+  label: string;
+  onClick: () => void;
+  pressed?: boolean;
+  children: React.ReactNode;
+}
+
+function IconButton({ label, onClick, pressed, children }: IconButtonProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button size="icon" variant="outline" aria-label={label} onClick={onClick}>
+        <Button
+          size="icon"
+          variant={pressed ? "secondary" : "outline"}
+          aria-label={label}
+          aria-pressed={pressed}
+          onClick={onClick}
+        >
           {children}
         </Button>
       </TooltipTrigger>
@@ -27,6 +41,7 @@ function IconButton({ label, onClick, children }: { label: string; onClick: () =
 export function TransportBar() {
   const playing = usePlaying();
   const rate = usePlaybackRate();
+  const looping = useLooping();
   const pps = useWaveView((s) => s.pps);
   const index = useSubtitles(selectSelectedIndex);
   const count = useSubtitles((s) => s.cues.length);
@@ -53,6 +68,12 @@ export function TransportBar() {
       </Button>
       <IconButton label="Next subtitle (↓)" onClick={() => seekToCue(1)}>
         <StepForward />
+      </IconButton>
+      <IconButton label={commandTitle("playback.playSelection")} onClick={() => playSelection()}>
+        <SquarePlay />
+      </IconButton>
+      <IconButton label={commandTitle("playback.loopSelection")} onClick={toggleLoopSelection} pressed={looping}>
+        <Repeat />
       </IconButton>
       <IconButton label="Add subtitle at playhead" onClick={addCueAtPlayhead}>
         <Plus />

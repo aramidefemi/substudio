@@ -14,14 +14,23 @@ export function applyRate(video: PitchVideo, rate: number) {
   video.playbackRate = rate;
 }
 
+/** A bounded stretch of playback: stops (or loops) when the playhead reaches `end`. */
+export interface PlayRange {
+  start: number;
+  end: number;
+  loop: boolean;
+}
+
 /**
  * The single source of playback time. Lives outside React: per-frame consumers
  * (waveform, video overlay, timecode readouts) subscribe with `onTick` and
  * write to the canvas/DOM directly. Without a video it runs a simulated clock.
  */
-class PlaybackClock {
+export class PlaybackClock {
   playing = false;
   rate = 1;
+  /** Active play range (play line / loop line); cleared by pause, seek and plain play. */
+  range: PlayRange | null = null;
   private video: HTMLVideoElement | null = null;
   private simTime = 0;
   private simEnd = 30;
@@ -56,17 +65,33 @@ class PlaybackClock {
     this.emitTick();
   }
 
+  get looping(): boolean {
+    return this.range?.loop ?? false;
+  }
+
+  /** Plain playback from the playhead (drops any play range). */
   play() {
-    if (this.playing) return;
-    if (!this.video && this.simTime >= this.simEnd) this.simTime = 0;
-    this.playing = true;
-    this.video?.play().catch(() => this.pause());
-    this.lastTs = 0;
-    this.raf = requestAnimationFrame(this.loop);
+    this.clearRange();
+    this.start();
+  }
+
+  /** Play `start`→`end`, then stop at `end` (or jump back to `start` when `loop`). */
+  playRange(start: number, end: number, loop = false) {
+    if (!(end > start)) return;
+    this.range = { start, end, loop };
+    this.seekRaw(start);
+    this.start();
     this.emitState();
   }
 
+  /** Seek to `t` (clamped at 0) and play on from there. */
+  playFrom(t: number) {
+    this.seek(t);
+    this.play();
+  }
+
   pause() {
+    this.clearRange();
     if (!this.playing) return;
     this.playing = false;
     this.video?.pause();
@@ -81,10 +106,8 @@ class PlaybackClock {
   }
 
   seek(t: number) {
-    const clamped = Math.max(0, Math.min(this.duration, t));
-    if (this.video) this.video.currentTime = clamped;
-    else this.simTime = clamped;
-    this.emitTick();
+    this.clearRange();
+    this.seekRaw(t);
   }
 
   setRate(rate: number) {
@@ -103,17 +126,50 @@ class PlaybackClock {
     return () => void this.stateListeners.delete(fn);
   };
 
+  private start() {
+    if (this.playing) return;
+    if (!this.video && this.simTime >= this.simEnd) this.simTime = 0;
+    this.playing = true;
+    this.video?.play().catch(() => this.pause());
+    this.lastTs = 0;
+    this.raf = requestAnimationFrame(this.loop);
+    this.emitState();
+  }
+
+  private seekRaw(t: number) {
+    const clamped = Math.max(0, Math.min(this.duration, t));
+    if (this.video) this.video.currentTime = clamped;
+    else this.simTime = clamped;
+    this.emitTick();
+  }
+
+  private clearRange() {
+    if (!this.range) return;
+    this.range = null;
+    this.emitState();
+  }
+
   private loop = (ts: number) => {
     if (!this.playing) return;
     if (!this.video) {
       if (this.lastTs) this.simTime += ((ts - this.lastTs) / 1000) * this.rate;
-      if (this.simTime >= this.simEnd) {
-        this.simTime = this.simEnd;
+    }
+    this.lastTs = ts;
+    const range = this.range;
+    if (range && this.time >= range.end) {
+      if (range.loop) {
+        this.seekRaw(range.start);
+      } else {
         this.pause();
+        this.seekRaw(range.end);
         return;
       }
     }
-    this.lastTs = ts;
+    if (!this.video && this.simTime >= this.simEnd) {
+      this.simTime = this.simEnd;
+      this.pause();
+      return;
+    }
     this.emitTick();
     this.raf = requestAnimationFrame(this.loop);
   };
@@ -132,6 +188,10 @@ export const clock = new PlaybackClock();
 /** Re-renders only on play/pause and rate changes, never per frame. */
 export function usePlaying(): boolean {
   return useSyncExternalStore(clock.onState, () => clock.playing);
+}
+
+export function useLooping(): boolean {
+  return useSyncExternalStore(clock.onState, () => clock.looping);
 }
 
 export function usePlaybackRate(): number {

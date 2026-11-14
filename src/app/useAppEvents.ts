@@ -43,11 +43,12 @@ export function useAppEvents() {
     return () => unsubs.forEach((u) => u());
   }, []);
 
-  // While playing, select the cue under the playhead (unless she's typing).
+  // While playing, select the cue under the playhead (unless she's typing, or a
+  // play range is running: then she chose the lines and the selection stays).
   useEffect(
     () =>
       clock.onTick(() => {
-        if (!clock.playing || isEditable(document.activeElement)) return;
+        if (!clock.playing || clock.range || isEditable(document.activeElement)) return;
         const { cues, selectedId } = useSubtitles.getState();
         const cue = cues[cueIndexAt(cues, clock.time)];
         if (cue && cue.id !== selectedId) select(cue.id);

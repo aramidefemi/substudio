@@ -1,4 +1,4 @@
-import { useSubtitles } from "@/features/subtitles/store";
+import { selectedCues, selectSelectedCue, useSubtitles } from "@/features/subtitles/store";
 import { stepFrames } from "@/features/subtitles/timing";
 import { clock } from "./clock";
 
@@ -24,3 +24,31 @@ export function nextSpeed(rate: number, dir: 1 | -1): number {
 
 export const changeSpeed = (dir: 1 | -1) => clock.setRate(nextSpeed(clock.rate, dir));
 export const resetSpeed = () => clock.setRate(1);
+
+/** Seconds of lead-in for "play from just before the line". */
+export const PRE_ROLL = 0.5;
+
+/** First start → last end of the selected lines, or null when nothing is selected. */
+export function selectionSpan(): { start: number; end: number } | null {
+  const cues = selectedCues();
+  if (!cues.length) return null;
+  return { start: Math.min(...cues.map((c) => c.start)), end: Math.max(...cues.map((c) => c.end)) };
+}
+
+/** Play the selected line(s) start → end, then stop (or loop). */
+export function playSelection(loop = false) {
+  const span = selectionSpan();
+  if (span) clock.playRange(span.start, span.end, loop);
+}
+
+/** Loop the selected line(s); a second press stops the loop. */
+export function toggleLoopSelection() {
+  if (clock.looping) clock.pause();
+  else playSelection(true);
+}
+
+/** Play on from just before the selected line, so its first word isn't clipped. */
+export function playBeforeSelection() {
+  const cue = selectSelectedCue(useSubtitles.getState());
+  if (cue) clock.playFrom(cue.start - PRE_ROLL);
+}

@@ -1,5 +1,13 @@
 import { clock } from "@/features/playback/clock";
-import { changeSpeed, jump, resetSpeed, stepFrame } from "@/features/playback/transport";
+import {
+  changeSpeed,
+  jump,
+  playBeforeSelection,
+  playSelection,
+  resetSpeed,
+  stepFrame,
+  toggleLoopSelection,
+} from "@/features/playback/transport";
 import { setDensity, setPreview, setTheme, stepPreviewPosition, stepPreviewSize } from "@/features/settings/store";
 import { selectRelative, toggleTimecode } from "@/features/subtitles/store";
 import type { NudgeMode } from "@/features/subtitles/timing";
@@ -189,6 +197,10 @@ export const COMMANDS: Command[] = [
   { id: "nav.previousBookmark", label: "Previous bookmark", group: "Navigate", keys: ["$mod+Alt+Shift+KeyB"], run: () => a.goToBookmark(-1) },
   { id: "nav.bookmarks", label: "Bookmarks…", group: "Navigate", run: a.openBookmarks },
   { id: "playback.toggle", label: "Play / pause", group: "Playback", keys: ["Space"], scope: "outsideText", run: () => clock.toggle() },
+  // F-keys: global, so they work while she types in the text box (listen, then type).
+  { id: "playback.playSelection", label: "Play selected line", group: "Playback", keys: ["F5"], run: () => playSelection() },
+  { id: "playback.loopSelection", label: "Loop selected line", group: "Playback", keys: ["Shift+F5"], run: toggleLoopSelection },
+  { id: "playback.playBefore", label: "Play from just before the line", group: "Playback", keys: ["F6"], run: playBeforeSelection },
   ...stepCommands(),
   { id: "playback.speed.faster", label: "Faster playback", group: "Playback", run: () => changeSpeed(1) },
   { id: "playback.speed.slower", label: "Slower playback", group: "Playback", run: () => changeSpeed(-1) },

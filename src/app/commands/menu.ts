@@ -207,6 +207,10 @@ export const MENU: MenuGroup[] = [
     items: [
       "playback.toggle",
       "-",
+      "playback.playSelection",
+      "playback.loopSelection",
+      "playback.playBefore",
+      "-",
       {
         submenu: "Step",
         items: [

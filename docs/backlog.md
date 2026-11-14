@@ -105,7 +105,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
 | PLY-01 | Frame-accurate stepping: ±1 frame, ±100 ms, ±500 ms, ±1 s keys | Video player keys | S | ✅ ←/→ ±1 frame (pauses, lands on the project-fps grid; real VFR timestamps come with MED), ⇧ ±100 ms, ⌘ ±500 ms, ⌃⇧ ±1 s. Playback › Step menu. |
-| PLY-02 | Play current cue; loop selection; play from just before the cue | Waveform toolbar | S | Her most frequent action while timing. |
+| PLY-02 | Play current cue; loop selection; play from just before the cue | Waveform toolbar | S | ✅ F5 plays the selected line(s) and stops at the end, ⇧F5 loops (again to stop), F6 plays on from 0.5 s before. Ranges live in `clock.ts`; transport bar has play-line and loop buttons. |
 | PLY-03 | Playback speed that keeps pitch | Speed | S | ✅ `preservesPitch` + `webkitPreservesPitch` set with every rate change (and `defaultPlaybackRate`, so a new video keeps the speed). Faster / slower / normal commands in Playback › Speed. |
 | PLY-04 | Proxy playback: see MED-02 | — | — | Moved to the media layer. |
 | PLY-05 | Audio track picker (multi-track files) | Audio tracks | M | |
