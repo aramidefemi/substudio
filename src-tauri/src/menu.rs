@@ -38,16 +38,17 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         .item(&item("file.restoreBackup", "Restore Auto-backup…", None)?)
         .build()?;
 
-    // Undo/redo are custom so they reach the subtitle history; the frontend
-    // falls back to native text undo while a text field has focus.
+    // Undo/redo and clipboard are custom so they reach the subtitle list when
+    // a text field isn't focused; the frontend falls back to native text ops.
     let edit = SubmenuBuilder::new(app, "Edit")
         .item(&item("edit.undo", "Undo", Some("CmdOrCtrl+Z"))?)
         .item(&item("edit.redo", "Redo", Some("CmdOrCtrl+Shift+Z"))?)
         .separator()
-        .cut()
-        .copy()
-        .paste()
-        .select_all()
+        .item(&item("edit.cut", "Cut", Some("CmdOrCtrl+X"))?)
+        .item(&item("edit.copy", "Copy", Some("CmdOrCtrl+C"))?)
+        .item(&item("edit.paste", "Paste", Some("CmdOrCtrl+V"))?)
+        .item(&item("edit.selectAll", "Select All", Some("CmdOrCtrl+A"))?)
+        .item(&item("edit.invertSelection", "Invert Selection", None)?)
         .separator()
         .item(&item("edit.find", "Find…", Some("CmdOrCtrl+F"))?)
         .build()?;
@@ -61,10 +62,21 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         .item(&item("view.density.compact", "Compact", None)?)
         .item(&item("view.density.comfortable", "Comfortable", None)?)
         .build()?;
+    let columns = SubmenuBuilder::new(app, "Columns")
+        .item(&item("view.column.cps", "CPS", None)?)
+        .item(&item("view.column.gap", "Gap", None)?)
+        .build()?;
     let view = SubmenuBuilder::new(app, "View")
         .item(&theme)
         .item(&density)
+        .item(&columns)
         .item(&item("view.timecode", "Toggle Frames / Milliseconds", None)?)
+        .item(&item("view.formatting", "Show Formatting in Grid", None)?)
+        .item(&item(
+            "view.privacy",
+            "Screen Privacy",
+            Some("CmdOrCtrl+Shift+P"),
+        )?)
         .build()?;
 
     let window = SubmenuBuilder::new(app, "Window").minimize().maximize().close_window().build()?;

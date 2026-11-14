@@ -14,7 +14,8 @@ interface Scene {
   amp: number;
   time: number;
   cues: readonly Cue[];
-  selectedId: string | null;
+  selectedIds: ReadonlySet<string>;
+  hideText?: boolean;
   tokens: CanvasTokens;
 }
 
@@ -49,7 +50,7 @@ export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
   ctx.fillRect(0, 0, w, h);
 
   for (const c of visible) {
-    ctx.fillStyle = c.id === s.selectedId ? k["cue-region-selected"] : k["cue-region"];
+    ctx.fillStyle = s.selectedIds.has(c.id) ? k["cue-region-selected"] : k["cue-region"];
     ctx.fillRect(x(c.start), 0, x(c.end) - x(c.start), waveH);
   }
 
@@ -59,7 +60,7 @@ export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
     const t = start + px / pps;
     const i = cueIndexAt(s.cues, t);
     const amp = Math.min(maxAmp, sampleAmplitude(s.cues, t) * ampScale * maxAmp);
-    const path = i < 0 ? paths.a : s.cues[i]!.id === s.selectedId ? paths.sel : paths.b;
+    const path = i < 0 ? paths.a : s.selectedIds.has(s.cues[i]!.id) ? paths.sel : paths.b;
     path.moveTo(px + 0.5, mid - amp);
     path.lineTo(px + 0.5, mid + amp);
   }
@@ -77,7 +78,7 @@ export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
     const i = s.cues.indexOf(c);
     const x0 = x(c.start);
     const x1 = x(c.end);
-    const selected = c.id === s.selectedId;
+    const selected = s.selectedIds.has(c.id);
     const issues = checkCue(c, s.cues[i - 1]);
     ctx.strokeStyle = selected ? k["cue-edge-selected"] : k["cue-edge"];
     ctx.lineWidth = selected ? 2 : 1;
@@ -89,7 +90,8 @@ export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
     ctx.clip();
     ctx.fillStyle = k["timeline-fg"];
     ctx.font = "500 12px 'Inter Variable', sans-serif";
-    ctx.fillText(c.text.split("\n")[0] ?? "", x0 + 8, 18);
+    const label = s.hideText ? "••••" : (c.text.split("\n")[0] ?? "");
+    ctx.fillText(label, x0 + 8, 18);
     ctx.font = "11px 'Inter Variable', sans-serif";
     ctx.fillStyle = issues.duration || issues.text ? k["cue-error"] : k["timeline-muted"];
     ctx.fillText(String(i + 1), x0 + 8, waveH - 8);

@@ -17,7 +17,12 @@ interface HistoryEntry {
 }
 
 export interface SubtitleState extends Doc {
+  /** Primary cue for the editor / playhead follow. */
   selectedId: string | null;
+  /** Multi-select set; always includes `selectedId` when that is set. */
+  selectedIds: string[];
+  /** Anchor for Shift-click ranges. */
+  selectionAnchor: string | null;
   filePath: string | null;
   videoPath: string | null;
   dirty: boolean;
@@ -46,9 +51,13 @@ const SAMPLE: CueData[] = [
 
 const sampleCues = withIds(SAMPLE);
 
+const firstId = sampleCues[0]?.id ?? null;
+
 export const useSubtitles = create<SubtitleState>()(() => ({
   cues: sampleCues,
-  selectedId: sampleCues[0]?.id ?? null,
+  selectedId: firstId,
+  selectedIds: firstId ? [firstId] : [],
+  selectionAnchor: firstId,
   filePath: null,
   videoPath: null,
   dirty: false,
@@ -66,6 +75,20 @@ const get = useSubtitles.getState;
 export const selectTimeFormat = (s: SubtitleState): TimeFormat => ({ mode: s.timecode, fps: s.fps });
 export const selectSelectedIndex = (s: SubtitleState) => s.cues.findIndex((c) => c.id === s.selectedId);
 export const selectSelectedCue = (s: SubtitleState) => s.cues.find((c) => c.id === s.selectedId);
+function clearTypingMerge(past: HistoryEntry[]): HistoryEntry[] {
+  const last = past.at(-1);
+  return last?.key ? [...past.slice(0, -1), { ...last, key: undefined }] : past;
+}
+
+function setSelection(ids: string[], primary: string | null, anchor: string | null = primary) {
+  const s = get();
+  set({
+    selectedIds: ids,
+    selectedId: primary,
+    selectionAnchor: anchor,
+    past: clearTypingMerge(s.past),
+  });
+}
 
 /** Index of the cue under `t`, or -1. Cues are kept sorted by start. */
 export function cueIndexAt(cues: readonly CueData[], t: number): number {
@@ -98,7 +121,21 @@ export function edit(recipe: (doc: Draft<Doc>) => void, key?: string) {
 
 function keepSelectionValid() {
   const s = get();
-  if (!s.cues.some((c) => c.id === s.selectedId)) set({ selectedId: s.cues[0]?.id ?? null });
+  const alive = new Set(s.cues.map((c) => c.id));
+  const selectedIds = s.selectedIds.filter((id) => alive.has(id));
+  const selectedId =
+    s.selectedId && alive.has(s.selectedId) ? s.selectedId : (selectedIds[0] ?? s.cues[0]?.id ?? null);
+  if (selectedId && !selectedIds.includes(selectedId)) selectedIds.push(selectedId);
+  const selectionAnchor =
+    s.selectionAnchor && alive.has(s.selectionAnchor) ? s.selectionAnchor : selectedId;
+  if (
+    selectedId !== s.selectedId ||
+    selectionAnchor !== s.selectionAnchor ||
+    selectedIds.length !== s.selectedIds.length ||
+    selectedIds.some((id, i) => id !== s.selectedIds[i])
+  ) {
+    set({ selectedId, selectedIds, selectionAnchor });
+  }
 }
 
 export function undo(): boolean {
@@ -125,9 +162,12 @@ export function redo(): boolean {
 
 export function loadDocument(cues: CueData[], filePath: string | null, keepVideo = false) {
   const withId = withIds(cues);
+  const id = withId[0]?.id ?? null;
   set({
     cues: withId,
-    selectedId: withId[0]?.id ?? null,
+    selectedId: id,
+    selectedIds: id ? [id] : [],
+    selectionAnchor: id,
     filePath,
     dirty: false,
     past: [],
@@ -141,6 +181,8 @@ export function newDocument(keepVideo = false) {
   set({
     cues: [],
     selectedId: null,
+    selectedIds: [],
+    selectionAnchor: null,
     filePath: null,
     dirty: false,
     past: [],
@@ -174,13 +216,52 @@ export function toggleTimecode() {
 
 /* ---------- selection ---------- */
 
+/** Replace the selection with a single cue (or clear). */
 export function select(id: string | null) {
   const s = get();
-  if (s.selectedId === id) return;
-  // A new selection starts a new undo step for typing.
-  const last = s.past.at(-1);
-  const past = last?.key ? [...s.past.slice(0, -1), { ...last, key: undefined }] : s.past;
-  set({ selectedId: id, past });
+  if (s.selectedId === id && s.selectedIds.length === (id ? 1 : 0)) return;
+  setSelection(id ? [id] : [], id);
+}
+
+/** ⌘/Ctrl-click: toggle membership; primary becomes `id`. */
+export function toggleSelect(id: string) {
+  const s = get();
+  const has = s.selectedIds.includes(id);
+  const selectedIds = has ? s.selectedIds.filter((x) => x !== id) : [...s.selectedIds, id];
+  const primary = has ? (selectedIds.at(-1) ?? null) : id;
+  setSelection(selectedIds, primary, id);
+}
+
+/** Shift-click: select the inclusive range from the anchor to `id`. */
+export function selectRangeTo(id: string) {
+  const s = get();
+  const anchor = s.selectionAnchor ?? s.selectedId ?? id;
+  const a = s.cues.findIndex((c) => c.id === anchor);
+  const b = s.cues.findIndex((c) => c.id === id);
+  if (a < 0 || b < 0) return select(id);
+  const [lo, hi] = a < b ? [a, b] : [b, a];
+  setSelection(
+    s.cues.slice(lo, hi + 1).map((c) => c.id),
+    id,
+    anchor,
+  );
+}
+
+export function selectAll() {
+  const s = get();
+  if (!s.cues.length) return;
+  const ids = s.cues.map((c) => c.id);
+  const primary = s.selectedId && ids.includes(s.selectedId) ? s.selectedId : ids[0]!;
+  setSelection(ids, primary, s.selectionAnchor ?? primary);
+}
+
+export function invertSelection() {
+  const s = get();
+  if (!s.cues.length) return;
+  const setIds = new Set(s.selectedIds);
+  const ids = s.cues.filter((c) => !setIds.has(c.id)).map((c) => c.id);
+  const primary = ids.includes(s.selectedId!) ? s.selectedId : (ids[0] ?? null);
+  setSelection(ids, primary, primary);
 }
 
 export function selectRelative(delta: number) {
@@ -188,6 +269,12 @@ export function selectRelative(delta: number) {
   if (!s.cues.length) return;
   const i = Math.max(0, Math.min(s.cues.length - 1, selectSelectedIndex(s) + delta));
   select(s.cues[i]!.id);
+}
+
+export function selectedCues(): Cue[] {
+  const s = get();
+  const setIds = new Set(s.selectedIds);
+  return s.cues.filter((c) => setIds.has(c.id));
 }
 
 /* ---------- cue edits ---------- */
@@ -221,12 +308,47 @@ export function insertCue(t: number, duration = 2): string {
 }
 
 export function removeCue(id: string) {
+  removeCues([id]);
+}
+
+/** Deletes cues by id (document order) and selects a neighbour of the first removed. */
+export function removeCues(ids: readonly string[]) {
+  if (!ids.length) return;
   const s = get();
-  const i = s.cues.findIndex((c) => c.id === id);
-  if (i === -1) return;
-  const neighbour = s.cues[i + 1] ?? s.cues[i - 1];
+  const remove = new Set(ids);
+  const firstIdx = s.cues.findIndex((c) => remove.has(c.id));
+  if (firstIdx === -1) return;
+  let neighbour: string | null = null;
+  for (let i = firstIdx + 1; i < s.cues.length; i++) {
+    if (!remove.has(s.cues[i]!.id)) {
+      neighbour = s.cues[i]!.id;
+      break;
+    }
+  }
+  if (!neighbour) {
+    for (let i = firstIdx - 1; i >= 0; i--) {
+      if (!remove.has(s.cues[i]!.id)) {
+        neighbour = s.cues[i]!.id;
+        break;
+      }
+    }
+  }
   edit((doc) => {
-    doc.cues.splice(i, 1);
+    doc.cues = doc.cues.filter((c) => !remove.has(c.id));
   });
-  select(neighbour?.id ?? null);
+  select(neighbour);
+}
+
+/** Inserts cues (new ids), sorted into the document; selects the pasted set. */
+export function pasteCues(incoming: readonly CueData[]) {
+  if (!incoming.length) return;
+  const ids = incoming.map(() => newId());
+  edit((doc) => {
+    for (let i = 0; i < incoming.length; i++) {
+      const c = incoming[i]!;
+      doc.cues.push({ id: ids[i]!, start: c.start, end: c.end, text: c.text });
+    }
+    doc.cues.sort(byStart);
+  });
+  setSelection(ids, ids[0]!, ids[0]!);
 }

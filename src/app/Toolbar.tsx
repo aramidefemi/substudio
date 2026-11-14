@@ -2,6 +2,7 @@ import { ChevronDown, Clapperboard, FilePlus2, FolderOpen, Redo2, Save, Search, 
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -12,12 +13,30 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { setDensity, setTheme, useSettings, type Density } from "@/features/settings/store";
+import {
+  setDensity,
+  setShowCpsColumn,
+  setShowFormattingInGrid,
+  setShowGapColumn,
+  setTheme,
+  useSettings,
+  type Density,
+} from "@/features/settings/store";
 import { THEMES, type ThemePreference } from "@/features/settings/themes";
 import { useSubtitles } from "@/features/subtitles/store";
 import type { TimecodeMode } from "@/features/subtitles/timecode";
 import { fileName } from "@/lib/tauri";
-import { newFile, openFind, openSubtitles, openVideo, redoAction, save, saveAs, undoAction } from "./actions";
+import {
+  newFile,
+  openFind,
+  openSubtitles,
+  openVideo,
+  redoAction,
+  save,
+  saveAs,
+  togglePrivacyAction,
+  undoAction,
+} from "./actions";
 
 function ToolButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -40,6 +59,11 @@ export function Toolbar() {
   const timecode = useSubtitles((s) => s.timecode);
   const theme = useSettings((s) => s.theme);
   const density = useSettings((s) => s.density);
+  const showCps = useSettings((s) => s.showCpsColumn);
+  const showGap = useSettings((s) => s.showGapColumn);
+  const showFormatting = useSettings((s) => s.showFormattingInGrid);
+  const privacy = useSettings((s) => s.privacy);
+  const hideNames = privacy === "names" || privacy === "text";
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-1 border-b bg-background px-3">
@@ -106,6 +130,20 @@ export function Toolbar() {
             <DropdownMenuRadioItem value="comfortable">Comfortable</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
           <DropdownMenuSeparator />
+          <DropdownMenuLabel>Columns</DropdownMenuLabel>
+          <DropdownMenuCheckboxItem checked={showCps} onCheckedChange={(v) => setShowCpsColumn(v === true)}>
+            CPS
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem checked={showGap} onCheckedChange={(v) => setShowGapColumn(v === true)}>
+            Gap
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem
+            checked={showFormatting}
+            onCheckedChange={(v) => setShowFormattingInGrid(v === true)}
+          >
+            Show formatting
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuSeparator />
           <DropdownMenuLabel>Timecode</DropdownMenuLabel>
           <DropdownMenuRadioGroup
             value={timecode}
@@ -114,13 +152,17 @@ export function Toolbar() {
             <DropdownMenuRadioItem value="frames">Frames (hh:mm:ss:ff)</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="ms">Milliseconds (hh:mm:ss,mmm)</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={togglePrivacyAction}>
+            Screen privacy{privacy !== "off" ? ` (${privacy})` : ""}…
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
       <div className="flex-1" />
 
       <span className="mr-3 max-w-[30vw] truncate text-sm text-muted-foreground">
-        {filePath ? fileName(filePath) : "Untitled"}
+        {hideNames ? "••••" : filePath ? fileName(filePath) : "Untitled"}
         {dirty && <span aria-label="Unsaved changes" className="ml-1.5 inline-block size-1.5 rounded-full bg-primary align-middle" />}
       </span>
       <DropdownMenu>

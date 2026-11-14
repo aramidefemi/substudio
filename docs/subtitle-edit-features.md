@@ -45,17 +45,17 @@ The **Plan** column maps each feature to our backlog (`docs/backlog.md`):
 | Feature | What it does | Plan |
 |---|---|---|
 | Columns # / Show / Hide / Duration / Text | Core grid | ✅ |
-| Optional columns: CPS, WPM, Gap, Style, Actor, Layer, Pixel width, Forced, Shot in/out, Original | Show/hide and reorder columns | M1 (CPS, Gap) · M2 (rest) |
+| Optional columns: CPS, WPM, Gap, Style, Actor, Layer, Pixel width, Forced, Shot in/out, Original | Show/hide and reorder columns | ✅ (CPS, Gap) · M2 (rest) |
 | Syntax colouring of problems | Too short/long, too fast, too many lines, overlap, small gap | ✅ (basic) |
-| Show formatting in grid, or hide tags | Italic/bold rendering in rows | M1 |
+| Show formatting in grid, or hide tags | Italic/bold rendering in rows | ✅ |
 | Single-line display, compact mode, alternating rows | Appearance options | ✅ (density) · M2 |
-| Multi-select, select all, invert selection, Modify selection (by rule) | Selection tools | M1 (multi-select) · M2 (modify) |
-| Grid copy / cut / paste lines | Move whole cues around | M1 |
+| Multi-select, select all, invert selection, Modify selection (by rule) | Selection tools | ✅ (multi-select) · M2 (modify) |
+| Grid copy / cut / paste lines | Move whole cues around | ✅ |
 | Column paste / copy / insert / shift cells up or down | Paste a column of text over existing timings | M2 |
 | Fill selected lines with clipboard | Bulk text fill | M2 |
 | Sort by: number, start, end, duration, CPS, WPM, gap, text, length, lines, style, actor | Sorting | M2 |
 | Toggle forced (per line) | Mark forced subtitles | M3 |
-| Screen privacy | Hides file names, then texts, for screen sharing | M1 (her films are unreleased) |
+| Screen privacy | Hides file names, then texts, for screen sharing | ✅ |
 | Lock time codes | Prevents accidental timing edits | M2 |
 
 ## 3. Text box

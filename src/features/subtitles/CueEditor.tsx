@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useSettings } from "@/features/settings/store";
 import { CUE_TEXT_ID } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 import { cueStats, DEFAULT_RULES } from "./rules";
@@ -58,7 +59,8 @@ function TimeField({ id, label, value, format, parse, step, disabled, onCommit }
 export function CueEditor() {
   const cue = useSubtitles(selectSelectedCue);
   const fmt = useSubtitles(useShallow(selectTimeFormat));
-  const disabled = !cue;
+  const hideText = useSettings((s) => s.privacy) === "text";
+  const disabled = !cue || hideText;
   const stats = cue ? cueStats(cue) : null;
   const step = nudgeStep(fmt);
 
@@ -112,9 +114,9 @@ export function CueEditor() {
         <Textarea
           id={CUE_TEXT_ID}
           disabled={disabled}
-          value={cue?.text ?? ""}
-          placeholder={disabled ? "Select a subtitle" : ""}
-          onChange={(e) => cue && updateCue(cue.id, { text: e.target.value }, `text:${cue.id}`)}
+          value={hideText ? "••••" : (cue?.text ?? "")}
+          placeholder={!cue ? "Select a subtitle" : hideText ? "Hidden by screen privacy" : ""}
+          onChange={(e) => cue && !hideText && updateCue(cue.id, { text: e.target.value }, `text:${cue.id}`)}
           onKeyDown={(e) => {
             if (e.key === "Escape") e.currentTarget.blur();
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {

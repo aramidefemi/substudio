@@ -4,18 +4,28 @@ import { create } from "zustand";
 import { clock } from "@/features/playback/clock";
 import {
   clearRecent,
+  cyclePrivacy,
   pushRecentSubtitle,
   pushRecentVideo,
   setDensity,
+  setShowCpsColumn,
+  setShowFormattingInGrid,
+  setShowGapColumn,
   setTheme,
   useSettings,
 } from "@/features/settings/store";
+import { parseCues, serializeCues } from "@/features/subtitles/clipboard";
 import {
   insertCue,
+  invertSelection,
   loadDocument,
   markSaved,
   newDocument,
+  pasteCues,
   redo,
+  removeCues,
+  selectAll,
+  selectedCues,
   setKnownMtime,
   setVideo,
   toggleTimecode,
@@ -23,6 +33,7 @@ import {
   useSubtitles,
 } from "@/features/subtitles/store";
 import type { SubtitleFormat } from "@/features/subtitles/types";
+import { isEditable } from "@/lib/dom";
 import { commands, fileName, inTauri, stripExtension } from "@/lib/tauri";
 
 /** Transient UI state that several components toggle. */
@@ -291,6 +302,97 @@ export const openEncodingDialog = () => useUi.setState({ encodingOpen: true });
 export const openBackupDialog = () => useUi.setState({ backupOpen: true });
 export const addCueAtPlayhead = () => insertCue(clock.time);
 
+async function writeClipboard(text: string) {
+  await navigator.clipboard.writeText(text);
+}
+
+async function readClipboard(): Promise<string> {
+  return navigator.clipboard.readText();
+}
+
+/** Grid line copy when focus isn't in a text field; otherwise native text copy. */
+export async function copyAction() {
+  if (isEditable(document.activeElement)) {
+    document.execCommand("copy");
+    return;
+  }
+  const cues = selectedCues();
+  if (!cues.length) return;
+  try {
+    await writeClipboard(serializeCues(cues));
+    toast.success(`Copied ${cues.length} line${cues.length === 1 ? "" : "s"}`);
+  } catch (err) {
+    toast.error("Could not copy", { description: String(err) });
+  }
+}
+
+export async function cutAction() {
+  if (isEditable(document.activeElement)) {
+    document.execCommand("cut");
+    return;
+  }
+  const cues = selectedCues();
+  if (!cues.length) return;
+  try {
+    await writeClipboard(serializeCues(cues));
+    removeCues(cues.map((c) => c.id));
+    toast.success(`Cut ${cues.length} line${cues.length === 1 ? "" : "s"}`);
+  } catch (err) {
+    toast.error("Could not cut", { description: String(err) });
+  }
+}
+
+export async function pasteAction() {
+  if (isEditable(document.activeElement)) {
+    document.execCommand("paste");
+    return;
+  }
+  try {
+    const cues = parseCues(await readClipboard());
+    if (!cues) {
+      toast("Clipboard has no subtitle lines");
+      return;
+    }
+    pasteCues(cues);
+    toast.success(`Pasted ${cues.length} line${cues.length === 1 ? "" : "s"}`);
+  } catch (err) {
+    toast.error("Could not paste", { description: String(err) });
+  }
+}
+
+export function selectAllAction() {
+  if (isEditable(document.activeElement)) document.execCommand("selectAll");
+  else selectAll();
+}
+
+export function invertSelectionAction() {
+  if (isEditable(document.activeElement)) return;
+  invertSelection();
+}
+
+export function togglePrivacyAction() {
+  const mode = cyclePrivacy();
+  toast(
+    mode === "off" ? "Screen privacy off" : mode === "names" ? "Hiding file names" : "Hiding file names and text",
+  );
+}
+
+export function toggleCpsColumn() {
+  const next = !useSettings.getState().showCpsColumn;
+  setShowCpsColumn(next);
+}
+
+export function toggleGapColumn() {
+  const next = !useSettings.getState().showGapColumn;
+  setShowGapColumn(next);
+}
+
+export function toggleFormattingInGrid() {
+  const next = !useSettings.getState().showFormattingInGrid;
+  setShowFormattingInGrid(next);
+  toast(next ? "Showing formatting in grid" : "Hiding tags in grid");
+}
+
 /** Ids match the native menu items in `src-tauri/src/menu.rs`. */
 const ACTIONS: Record<string, () => unknown> = {
   "file.new": newFile,
@@ -309,6 +411,11 @@ const ACTIONS: Record<string, () => unknown> = {
   "file.restoreBackup": openBackupDialog,
   "edit.undo": undoAction,
   "edit.redo": redoAction,
+  "edit.cut": () => void cutAction(),
+  "edit.copy": () => void copyAction(),
+  "edit.paste": () => void pasteAction(),
+  "edit.selectAll": selectAllAction,
+  "edit.invertSelection": invertSelectionAction,
   "edit.find": openFind,
   "view.theme.system": () => setTheme("system"),
   "view.theme.light": () => setTheme("light"),
@@ -316,6 +423,10 @@ const ACTIONS: Record<string, () => unknown> = {
   "view.density.compact": () => setDensity("compact"),
   "view.density.comfortable": () => setDensity("comfortable"),
   "view.timecode": toggleTimecode,
+  "view.column.cps": toggleCpsColumn,
+  "view.column.gap": toggleGapColumn,
+  "view.formatting": toggleFormattingInGrid,
+  "view.privacy": togglePrivacyAction,
 };
 
 export function runAction(id: string) {
