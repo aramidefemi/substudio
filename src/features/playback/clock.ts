@@ -2,6 +2,18 @@ import { useSyncExternalStore } from "react";
 
 type Listener = () => void;
 
+/** Older WebKit only knows the prefixed flag. */
+type PitchVideo = HTMLVideoElement & { webkitPreservesPitch?: boolean };
+
+/** Apply a playback rate without the chipmunk effect: keep the voice's pitch at any speed. */
+export function applyRate(video: PitchVideo, rate: number) {
+  video.preservesPitch = true;
+  video.webkitPreservesPitch = true;
+  // A new src resets playbackRate to the default, so set both.
+  video.defaultPlaybackRate = rate;
+  video.playbackRate = rate;
+}
+
 /**
  * The single source of playback time. Lives outside React: per-frame consumers
  * (waveform, video overlay, timecode readouts) subscribe with `onTick` and
@@ -36,7 +48,7 @@ class PlaybackClock {
     this.pause();
     this.video = video;
     if (video) {
-      video.playbackRate = this.rate;
+      applyRate(video, this.rate);
       video.onended = () => this.pause();
       video.onseeked = () => this.emitTick();
       video.onloadedmetadata = () => this.emitTick();
@@ -77,7 +89,7 @@ class PlaybackClock {
 
   setRate(rate: number) {
     this.rate = rate;
-    if (this.video) this.video.playbackRate = rate;
+    if (this.video) applyRate(this.video, rate);
     this.emitState();
   }
 

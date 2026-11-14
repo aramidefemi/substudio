@@ -1,5 +1,5 @@
 import { clock } from "@/features/playback/clock";
-import { jump, stepFrame } from "@/features/playback/transport";
+import { changeSpeed, jump, resetSpeed, stepFrame } from "@/features/playback/transport";
 import { setDensity, setPreview, setTheme, stepPreviewPosition, stepPreviewSize } from "@/features/settings/store";
 import { selectRelative, toggleTimecode } from "@/features/subtitles/store";
 import type { NudgeMode } from "@/features/subtitles/timing";
@@ -181,6 +181,9 @@ export const COMMANDS: Command[] = [
   { id: "nav.focusText", label: "Edit subtitle text", group: "Navigate", keys: ["Enter"], scope: "outsideText", hidden: true, run: focusCueText },
   { id: "playback.toggle", label: "Play / pause", group: "Playback", keys: ["Space"], scope: "outsideText", run: () => clock.toggle() },
   ...stepCommands(),
+  { id: "playback.speed.faster", label: "Faster playback", group: "Playback", run: () => changeSpeed(1) },
+  { id: "playback.speed.slower", label: "Slower playback", group: "Playback", run: () => changeSpeed(-1) },
+  { id: "playback.speed.normal", label: "Normal speed", group: "Playback", run: resetSpeed },
 
   /* ---------- View ---------- */
   { id: "view.theme.system", label: "Theme: match system", group: "View", run: () => setTheme("system") },

@@ -106,7 +106,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 |---|---|---|---|---|
 | PLY-01 | Frame-accurate stepping: ±1 frame, ±100 ms, ±500 ms, ±1 s keys | Video player keys | S | ✅ ←/→ ±1 frame (pauses, lands on the project-fps grid; real VFR timestamps come with MED), ⇧ ±100 ms, ⌘ ±500 ms, ⌃⇧ ±1 s. Playback › Step menu. |
 | PLY-02 | Play current cue; loop selection; play from just before the cue | Waveform toolbar | S | Her most frequent action while timing. |
-| PLY-03 | Playback speed that keeps pitch | Speed | S | 🟡 speed exists; check pitch on WebKit. |
+| PLY-03 | Playback speed that keeps pitch | Speed | S | ✅ `preservesPitch` + `webkitPreservesPitch` set with every rate change (and `defaultPlaybackRate`, so a new video keeps the speed). Faster / slower / normal commands in Playback › Speed. |
 | PLY-04 | Proxy playback: see MED-02 | — | — | Moved to the media layer. |
 | PLY-05 | Audio track picker (multi-track files) | Audio tracks | M | |
 | PLY-06 | Subtitle preview style: font, size, outline, box | Subtitle preview properties | S | ✅ Size (scales with the video height), background box or outline (`preview-outline` token), vertical position incl. top; persisted app setting; toolbar view menu + View › Subtitle Preview commands. Font family not offered (Inter only). |

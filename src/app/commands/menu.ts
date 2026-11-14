@@ -202,6 +202,15 @@ export const MENU: MenuGroup[] = [
           ["playback.step.1s.+", "Forward 1 s"],
         ],
       },
+      "-",
+      {
+        submenu: "Speed",
+        items: [
+          ["playback.speed.faster", "Faster"],
+          ["playback.speed.slower", "Slower"],
+          ["playback.speed.normal", "Normal"],
+        ],
+      },
     ],
   },
   {

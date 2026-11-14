@@ -8,8 +8,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { selectRelative, selectSelectedIndex, toggleTimecode, useSubtitles } from "@/features/subtitles/store";
 import { DEFAULT_PPS, MAX_PPS, MIN_PPS, setZoom, useWaveView } from "@/features/waveform/view";
 import { clock, usePlaybackRate, usePlaying } from "./clock";
+import { SPEEDS } from "./transport";
 
-const SPEEDS = ["0.5", "0.75", "1", "1.25", "1.5", "2"];
 
 function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -84,7 +84,7 @@ export function TransportBar() {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {SPEEDS.map((s) => (
+          {SPEEDS.map(String).map((s) => (
             <SelectItem key={s} value={s}>
               Speed {s}x
             </SelectItem>
