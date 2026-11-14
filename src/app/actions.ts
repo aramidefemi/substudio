@@ -16,22 +16,39 @@ import {
 } from "@/features/settings/store";
 import { parseCues, serializeCues } from "@/features/subtitles/clipboard";
 import {
+  extendNextStartToCurrent,
+  extendPreviousEndToCurrent,
+  extendSelectedToNext,
+  extendSelectedToPrevious,
   insertCue,
   invertSelection,
   loadDocument,
   markSaved,
+  moveAllBy,
+  moveSelectedBy,
   newDocument,
+  nudgeSelectedEdgeBy,
   pasteCues,
   redo,
   removeCues,
   selectAll,
   selectedCues,
+  setEndAddNewAndGoToNew,
+  setEndAndGoToNext,
+  setEndAndStartOfNextAfterGap,
   setKnownMtime,
+  setSelectedEndAt,
+  setSelectedStartAt,
+  setStartAndEndOfPreviousMinusGap,
+  setStartAndGoToNext,
   setVideo,
+  snapAllTimesToFrames,
   toggleTimecode,
   undo,
   useSubtitles,
+  type TimingStep,
 } from "@/features/subtitles/store";
+import type { NudgeMode } from "@/features/subtitles/timing";
 import type { SubtitleFormat } from "@/features/subtitles/types";
 import { isEditable } from "@/lib/dom";
 import { commands, fileName, inTauri, stripExtension } from "@/lib/tauri";
@@ -393,6 +410,36 @@ export function toggleFormattingInGrid() {
   toast(next ? "Showing formatting in grid" : "Hiding tags in grid");
 }
 
+/* ---------- timing (keyboard + menu) ---------- */
+
+const playhead = () => clock.time;
+
+export const timingMoveStart = (step: TimingStep, dir: 1 | -1, mode: NudgeMode = "plain") =>
+  nudgeSelectedEdgeBy("start", step, dir, mode);
+export const timingMoveEnd = (step: TimingStep, dir: 1 | -1, mode: NudgeMode = "plain") =>
+  nudgeSelectedEdgeBy("end", step, dir, mode);
+export const timingMoveSelected = (step: TimingStep, dir: 1 | -1, withFollowing = false) =>
+  moveSelectedBy(step, dir, withFollowing);
+export const timingMoveAll = (step: TimingStep, dir: 1 | -1) => moveAllBy(step, dir);
+
+export const timingSetStart = () => setSelectedStartAt(playhead());
+export const timingSetEnd = () => setSelectedEndAt(playhead());
+export const timingSetStartGoNext = () => setStartAndGoToNext(playhead());
+export const timingSetEndGoNext = () => setEndAndGoToNext(playhead());
+export const timingSetStartKeepDuration = () => setSelectedStartAt(playhead(), { keepDuration: true });
+export const timingSetStartOffsetRest = () => setSelectedStartAt(playhead(), { offsetRest: true });
+export const timingSetEndAddNew = () => setEndAddNewAndGoToNew(playhead());
+export const timingSetEndAndNextAfterGap = () => setEndAndStartOfNextAfterGap(playhead());
+export const timingSetStartAndPrevMinusGap = () => setStartAndEndOfPreviousMinusGap(playhead());
+export const timingExtendToPrevious = () => extendSelectedToPrevious();
+export const timingExtendToNext = () => extendSelectedToNext();
+export const timingExtendPreviousEnd = () => extendPreviousEndToCurrent();
+export const timingExtendNextStart = () => extendNextStartToCurrent();
+export const timingSnapAllToFrames = () => {
+  snapAllTimesToFrames();
+  toast.success("Snapped all times to frames");
+};
+
 /** Ids match the native menu items in `src-tauri/src/menu.rs`. */
 const ACTIONS: Record<string, () => unknown> = {
   "file.new": newFile,
@@ -427,6 +474,56 @@ const ACTIONS: Record<string, () => unknown> = {
   "view.column.gap": toggleGapColumn,
   "view.formatting": toggleFormattingInGrid,
   "view.privacy": togglePrivacyAction,
+  "timing.moveStart.frame.-": () => timingMoveStart("frame", -1),
+  "timing.moveStart.frame.+": () => timingMoveStart("frame", 1),
+  "timing.moveStart.ms.-": () => timingMoveStart("ms", -1),
+  "timing.moveStart.ms.+": () => timingMoveStart("ms", 1),
+  "timing.moveStart.custom.-": () => timingMoveStart("custom", -1),
+  "timing.moveStart.custom.+": () => timingMoveStart("custom", 1),
+  "timing.moveStart.keepGap.frame.-": () => timingMoveStart("frame", -1, "keepGap"),
+  "timing.moveStart.keepGap.frame.+": () => timingMoveStart("frame", 1, "keepGap"),
+  "timing.moveStart.push.frame.-": () => timingMoveStart("frame", -1, "push"),
+  "timing.moveStart.push.frame.+": () => timingMoveStart("frame", 1, "push"),
+  "timing.moveEnd.frame.-": () => timingMoveEnd("frame", -1),
+  "timing.moveEnd.frame.+": () => timingMoveEnd("frame", 1),
+  "timing.moveEnd.ms.-": () => timingMoveEnd("ms", -1),
+  "timing.moveEnd.ms.+": () => timingMoveEnd("ms", 1),
+  "timing.moveEnd.custom.-": () => timingMoveEnd("custom", -1),
+  "timing.moveEnd.custom.+": () => timingMoveEnd("custom", 1),
+  "timing.moveEnd.keepGap.frame.-": () => timingMoveEnd("frame", -1, "keepGap"),
+  "timing.moveEnd.keepGap.frame.+": () => timingMoveEnd("frame", 1, "keepGap"),
+  "timing.moveEnd.push.frame.-": () => timingMoveEnd("frame", -1, "push"),
+  "timing.moveEnd.push.frame.+": () => timingMoveEnd("frame", 1, "push"),
+  "timing.moveSelected.frame.-": () => timingMoveSelected("frame", -1),
+  "timing.moveSelected.frame.+": () => timingMoveSelected("frame", 1),
+  "timing.moveSelected.ms.-": () => timingMoveSelected("ms", -1),
+  "timing.moveSelected.ms.+": () => timingMoveSelected("ms", 1),
+  "timing.moveSelected.custom.-": () => timingMoveSelected("custom", -1),
+  "timing.moveSelected.custom.+": () => timingMoveSelected("custom", 1),
+  "timing.moveSelectedFollowing.frame.-": () => timingMoveSelected("frame", -1, true),
+  "timing.moveSelectedFollowing.frame.+": () => timingMoveSelected("frame", 1, true),
+  "timing.moveSelectedFollowing.ms.-": () => timingMoveSelected("ms", -1, true),
+  "timing.moveSelectedFollowing.ms.+": () => timingMoveSelected("ms", 1, true),
+  "timing.moveAll.frame.-": () => timingMoveAll("frame", -1),
+  "timing.moveAll.frame.+": () => timingMoveAll("frame", 1),
+  "timing.moveAll.ms.-": () => timingMoveAll("ms", -1),
+  "timing.moveAll.ms.+": () => timingMoveAll("ms", 1),
+  "timing.moveAll.custom.-": () => timingMoveAll("custom", -1),
+  "timing.moveAll.custom.+": () => timingMoveAll("custom", 1),
+  "timing.setStart": timingSetStart,
+  "timing.setEnd": timingSetEnd,
+  "timing.setStartGoNext": timingSetStartGoNext,
+  "timing.setEndGoNext": timingSetEndGoNext,
+  "timing.setStartKeepDuration": timingSetStartKeepDuration,
+  "timing.setStartOffsetRest": timingSetStartOffsetRest,
+  "timing.setEndAddNew": timingSetEndAddNew,
+  "timing.setEndAndNextAfterGap": timingSetEndAndNextAfterGap,
+  "timing.setStartAndPrevMinusGap": timingSetStartAndPrevMinusGap,
+  "timing.extendToPrevious": timingExtendToPrevious,
+  "timing.extendToNext": timingExtendToNext,
+  "timing.extendPreviousEnd": timingExtendPreviousEnd,
+  "timing.extendNextStart": timingExtendNextStart,
+  "timing.snapAllToFrames": timingSnapAllToFrames,
 };
 
 export function runAction(id: string) {

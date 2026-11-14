@@ -101,16 +101,16 @@ The **Plan** column maps each feature to our backlog (`docs/backlog.md`):
 
 | Feature | What it does | Plan |
 |---|---|---|
-| Move start / end ±1 frame or ±X ms | Nudge timings | ✅ (in fields) · M1 (global keys) |
-| …keeping the gap to the previous/next cue, or pushing neighbours | Move without creating overlaps | M1 |
-| Move selected lines ±frame / ±ms / custom steps (with or without the following lines) | Shift blocks | M1 |
-| Move all lines ±frame / ±ms / custom | Global shift | M1 |
-| Set start / end at video position (go to next, keep duration, offset the rest) | Time while playing | M1 ⭐ |
-| Set end, add new and go to new | Continuous timing flow | M1 ⭐ |
-| Set end and start of next after the minimum gap | Chain cues tightly | M1 |
-| Set start and set end of previous minus gap | Chain cues tightly | M1 |
-| Extend selected to previous/next cue or shot change; extend previous end / next start to selected | Close gaps | M1 |
-| Snap all times to frames | Frame-align everything | M1 |
+| Move start / end ±1 frame or ±X ms | Nudge timings | ✅ (fields + global keys) |
+| …keeping the gap to the previous/next cue, or pushing neighbours | Move without creating overlaps | ✅ |
+| Move selected lines ±frame / ±ms / custom steps (with or without the following lines) | Shift blocks | ✅ |
+| Move all lines ±frame / ±ms / custom | Global shift | ✅ |
+| Set start / end at video position (go to next, keep duration, offset the rest) | Time while playing | ✅ |
+| Set end, add new and go to new | Continuous timing flow | ✅ |
+| Set end and start of next after the minimum gap | Chain cues tightly | ✅ |
+| Set start and set end of previous minus gap | Chain cues tightly | ✅ |
+| Extend selected to previous/next cue or shot change; extend previous end / next start to selected | Close gaps | ✅ (cue edges; shot change stubbed — no shot detection yet) |
+| Snap all times to frames | Frame-align everything | ✅ |
 | Copy ms relative to current line | Utility | P |
 
 ## 6. Waveform & spectrogram
