@@ -1,293 +1,40 @@
-//! The native menu bar. Custom items emit their id to the frontend as a
-//! `menu` event; `src/app/actions.ts` maps ids to actions.
+//! The native menu bar. Its layout comes from the frontend command registry
+//! (`src/app/commands/menu.ts`) via the `set_menu` command; custom items emit
+//! their command id as a `menu` event. Only the macOS app menu and the Window
+//! menu are defined here, because they use predefined system items.
 
-use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
+use serde::Deserialize;
+use tauri::menu::{Menu, MenuBuilder, MenuItemBuilder, Submenu, SubmenuBuilder};
 use tauri::{AppHandle, Runtime};
 
-pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
-    let item = |id: &str, label: &str, accel: Option<&str>| {
-        let builder = MenuItemBuilder::with_id(id, label);
-        match accel {
-            Some(a) => builder.accelerator(a).build(app),
-            None => builder.build(app),
-        }
-    };
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum MenuSpec {
+    Item {
+        id: String,
+        label: String,
+        accelerator: Option<String>,
+    },
+    Separator,
+    Submenu {
+        label: String,
+        items: Vec<MenuSpec>,
+    },
+}
 
-    let recent = SubmenuBuilder::new(app, "Open Recent")
-        .item(&item("file.recent", "Recent Files…", None)?)
-        .item(&item("file.recent.clear", "Clear Recent", None)?)
-        .build()?;
+/// Installed at startup so Quit and Window work before the frontend sends its menus.
+pub fn install_base<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
+    app.set_menu(build(app, &[])?)?;
+    Ok(())
+}
 
-    let file = SubmenuBuilder::new(app, "File")
-        .item(&item("file.new", "New", Some("CmdOrCtrl+N"))?)
-        .item(&item("file.newKeepingVideo", "New Keeping Video", None)?)
-        .separator()
-        .item(&item("file.open", "Open Subtitles…", Some("CmdOrCtrl+O"))?)
-        .item(&item("file.openKeepingVideo", "Open Keeping Video…", None)?)
-        .item(&item("file.importEncoding", "Import with Encoding…", None)?)
-        .item(&recent)
-        .item(&item("file.openVideo", "Open Video…", Some("CmdOrCtrl+Shift+O"))?)
-        .separator()
-        .item(&item("file.save", "Save", Some("CmdOrCtrl+S"))?)
-        .item(&item("file.saveAs", "Save As…", Some("CmdOrCtrl+Shift+S"))?)
-        .item(&item("file.saveSelected", "Save Selected Lines As…", None)?)
-        .separator()
-        .item(&item("file.openContainingFolder", "Open Containing Folder", None)?)
-        .item(&item("file.openDataFolder", "Open Data Folder", None)?)
-        .item(&item("file.copyPath", "Copy Subtitle Path", None)?)
-        .item(&item("file.reload", "Reload", None)?)
-        .separator()
-        .item(&item("file.restoreBackup", "Restore Auto-backup…", None)?)
-        .separator()
-        .item(&item("file.compare", "Compare…", None)?)
-        .item(&item("file.statistics", "Statistics…", None)?)
-        .item(&item("file.mediaInfo", "Media Information…", None)?)
-        .build()?;
+/// Replaces the menu bar with the system menus plus the given top-level submenus.
+pub fn install<R: Runtime>(app: &AppHandle<R>, spec: &[MenuSpec]) -> tauri::Result<()> {
+    app.set_menu(build(app, spec)?)?;
+    Ok(())
+}
 
-    let merge_previous = SubmenuBuilder::new(app, "Merge with Previous")
-        .item(&item("edit.mergePrevious", "Keep Breaks", Some("CmdOrCtrl+Shift+Left"))?)
-        .item(&item("edit.mergePrevious.unbreak", "Unbreak", None)?)
-        .item(&item("edit.mergePrevious.dialog", "As Dialog", None)?)
-        .build()?;
-    let merge_next = SubmenuBuilder::new(app, "Merge with Next")
-        .item(&item("edit.mergeNext", "Keep Breaks", Some("CmdOrCtrl+Shift+Right"))?)
-        .item(&item("edit.mergeNext.unbreak", "Unbreak", None)?)
-        .item(&item("edit.mergeNext.dialog", "As Dialog", None)?)
-        .build()?;
-    let merge_selected = SubmenuBuilder::new(app, "Merge Selected")
-        .item(&item("edit.mergeSelected", "Keep Breaks", Some("CmdOrCtrl+Shift+M"))?)
-        .item(&item("edit.mergeSelected.unbreak", "Unbreak", None)?)
-        .item(&item("edit.mergeSelected.dialog", "As Dialog", None)?)
-        .build()?;
-    let lines = SubmenuBuilder::new(app, "Lines")
-        .item(&item("edit.insertBefore", "Insert Before", Some("CmdOrCtrl+Shift+Insert"))?)
-        .item(&item("edit.insertAfter", "Insert After", Some("CmdOrCtrl+Insert"))?)
-        .item(&item("edit.insertAtEnd", "Insert at End", None)?)
-        .separator()
-        .item(&item("edit.deleteLines", "Delete", Some("CmdOrCtrl+Shift+Delete"))?)
-        .item(&item(
-            "edit.rippleDelete",
-            "Ripple Delete",
-            Some("CmdOrCtrl+Alt+Shift+Delete"),
-        )?)
-        .item(&item("edit.duplicate", "Duplicate", Some("CmdOrCtrl+D"))?)
-        .item(&item("edit.removeBlankLines", "Remove Blank Lines", None)?)
-        .separator()
-        .item(&item("edit.splitAtCursor", "Split at Cursor", Some("CmdOrCtrl+T"))?)
-        .item(&item(
-            "edit.splitAtVideo",
-            "Split at Video Position",
-            Some("CmdOrCtrl+Shift+T"),
-        )?)
-        .separator()
-        .item(&merge_previous)
-        .item(&merge_next)
-        .item(&merge_selected)
-        .build()?;
-
-    // Undo/redo and clipboard are custom so they reach the subtitle list when
-    // a text field isn't focused; the frontend falls back to native text ops.
-    let edit = SubmenuBuilder::new(app, "Edit")
-        .item(&item("edit.undo", "Undo", Some("CmdOrCtrl+Z"))?)
-        .item(&item("edit.redo", "Redo", Some("CmdOrCtrl+Shift+Z"))?)
-        .item(&item("edit.history", "Show History…", None)?)
-        .separator()
-        .item(&item("edit.cut", "Cut", Some("CmdOrCtrl+X"))?)
-        .item(&item("edit.copy", "Copy", Some("CmdOrCtrl+C"))?)
-        .item(&item("edit.paste", "Paste", Some("CmdOrCtrl+V"))?)
-        .item(&item("edit.selectAll", "Select All", Some("CmdOrCtrl+A"))?)
-        .item(&item("edit.invertSelection", "Invert Selection", None)?)
-        .separator()
-        .item(&lines)
-        .separator()
-        .item(&item("edit.italic", "Italic", Some("CmdOrCtrl+I"))?)
-        .item(&item("edit.toggleLineBreak", "Toggle Line Break", Some("CmdOrCtrl+Shift+L"))?)
-        .item(&item("edit.unbreak", "Unbreak", Some("CmdOrCtrl+Shift+R"))?)
-        .item(&item("edit.autoBreak", "Auto-break", Some("CmdOrCtrl+R"))?)
-        .item(&item("edit.balanceLines", "Balance Lines", None)?)
-        .item(&item(
-            "edit.breakAtFirstSpace",
-            "Break at First Space",
-            Some("CmdOrCtrl+Alt+Return"),
-        )?)
-        .item(&item(
-            "edit.toggleDialogDashes",
-            "Toggle Dialog Dashes",
-            Some("CmdOrCtrl+Shift+D"),
-        )?)
-        .item(&item("edit.trimWhitespace", "Trim Whitespace", None)?)
-        .separator()
-        .item(&item("edit.find", "Find…", Some("CmdOrCtrl+F"))?)
-        .build()?;
-
-    let theme = SubmenuBuilder::new(app, "Theme")
-        .item(&item("view.theme.system", "Match System", None)?)
-        .item(&item("view.theme.light", "Light", None)?)
-        .item(&item("view.theme.dark", "Dark", None)?)
-        .build()?;
-    let density = SubmenuBuilder::new(app, "Row Density")
-        .item(&item("view.density.compact", "Compact", None)?)
-        .item(&item("view.density.comfortable", "Comfortable", None)?)
-        .build()?;
-    let columns = SubmenuBuilder::new(app, "Columns")
-        .item(&item("view.column.cps", "CPS", None)?)
-        .item(&item("view.column.gap", "Gap", None)?)
-        .build()?;
-    let view = SubmenuBuilder::new(app, "View")
-        .item(&theme)
-        .item(&density)
-        .item(&columns)
-        .item(&item("view.timecode", "Toggle Frames / Milliseconds", None)?)
-        .item(&item("view.formatting", "Show Formatting in Grid", None)?)
-        .item(&item(
-            "view.privacy",
-            "Screen Privacy",
-            Some("CmdOrCtrl+Shift+P"),
-        )?)
-        .build()?;
-
-    let move_start = SubmenuBuilder::new(app, "Move Start")
-        .item(&item("timing.moveStart.frame.-", "−1 Frame", Some("Alt+Left"))?)
-        .item(&item("timing.moveStart.frame.+", "+1 Frame", Some("Alt+Right"))?)
-        .item(&item("timing.moveStart.ms.-", "−100 ms", None)?)
-        .item(&item("timing.moveStart.ms.+", "+100 ms", None)?)
-        .item(&item("timing.moveStart.custom.-", "−Custom ms", None)?)
-        .item(&item("timing.moveStart.custom.+", "+Custom ms", None)?)
-        .separator()
-        .item(&item(
-            "timing.moveStart.keepGap.frame.-",
-            "−1 Frame (Keep Gap)",
-            None,
-        )?)
-        .item(&item(
-            "timing.moveStart.keepGap.frame.+",
-            "+1 Frame (Keep Gap)",
-            None,
-        )?)
-        .item(&item("timing.moveStart.push.frame.-", "−1 Frame (Push)", None)?)
-        .item(&item("timing.moveStart.push.frame.+", "+1 Frame (Push)", None)?)
-        .build()?;
-    let move_end = SubmenuBuilder::new(app, "Move End")
-        .item(&item("timing.moveEnd.frame.-", "−1 Frame", Some("Alt+Shift+Left"))?)
-        .item(&item("timing.moveEnd.frame.+", "+1 Frame", Some("Alt+Shift+Right"))?)
-        .item(&item("timing.moveEnd.ms.-", "−100 ms", None)?)
-        .item(&item("timing.moveEnd.ms.+", "+100 ms", None)?)
-        .item(&item("timing.moveEnd.custom.-", "−Custom ms", None)?)
-        .item(&item("timing.moveEnd.custom.+", "+Custom ms", None)?)
-        .separator()
-        .item(&item("timing.moveEnd.keepGap.frame.-", "−1 Frame (Keep Gap)", None)?)
-        .item(&item("timing.moveEnd.keepGap.frame.+", "+1 Frame (Keep Gap)", None)?)
-        .item(&item("timing.moveEnd.push.frame.-", "−1 Frame (Push)", None)?)
-        .item(&item("timing.moveEnd.push.frame.+", "+1 Frame (Push)", None)?)
-        .build()?;
-    let move_selected = SubmenuBuilder::new(app, "Move Selected")
-        .item(&item(
-            "timing.moveSelected.frame.-",
-            "−1 Frame",
-            Some("Alt+CmdOrCtrl+Left"),
-        )?)
-        .item(&item(
-            "timing.moveSelected.frame.+",
-            "+1 Frame",
-            Some("Alt+CmdOrCtrl+Right"),
-        )?)
-        .item(&item("timing.moveSelected.ms.-", "−100 ms", None)?)
-        .item(&item("timing.moveSelected.ms.+", "+100 ms", None)?)
-        .item(&item("timing.moveSelected.custom.-", "−Custom ms", None)?)
-        .item(&item("timing.moveSelected.custom.+", "+Custom ms", None)?)
-        .separator()
-        .item(&item(
-            "timing.moveSelectedFollowing.frame.-",
-            "−1 Frame + Following",
-            None,
-        )?)
-        .item(&item(
-            "timing.moveSelectedFollowing.frame.+",
-            "+1 Frame + Following",
-            None,
-        )?)
-        .item(&item(
-            "timing.moveSelectedFollowing.ms.-",
-            "−100 ms + Following",
-            None,
-        )?)
-        .item(&item(
-            "timing.moveSelectedFollowing.ms.+",
-            "+100 ms + Following",
-            None,
-        )?)
-        .build()?;
-    let move_all = SubmenuBuilder::new(app, "Move All")
-        .item(&item("timing.moveAll.frame.-", "−1 Frame", None)?)
-        .item(&item("timing.moveAll.frame.+", "+1 Frame", None)?)
-        .item(&item("timing.moveAll.ms.-", "−100 ms", None)?)
-        .item(&item("timing.moveAll.ms.+", "+100 ms", None)?)
-        .item(&item("timing.moveAll.custom.-", "−Custom ms", None)?)
-        .item(&item("timing.moveAll.custom.+", "+Custom ms", None)?)
-        .build()?;
-
-    let timing = SubmenuBuilder::new(app, "Timing")
-        .item(&move_start)
-        .item(&move_end)
-        .item(&move_selected)
-        .item(&move_all)
-        .separator()
-        .item(&item("timing.setStart", "Set Start at Video", Some("F11"))?)
-        .item(&item("timing.setEnd", "Set End at Video", Some("F12"))?)
-        .item(&item("timing.setStartGoNext", "Set Start and Go to Next", None)?)
-        .item(&item("timing.setEndGoNext", "Set End and Go to Next", Some("F10"))?)
-        .item(&item(
-            "timing.setStartKeepDuration",
-            "Set Start (Keep Duration)",
-            None,
-        )?)
-        .item(&item(
-            "timing.setStartOffsetRest",
-            "Set Start and Offset the Rest",
-            Some("F9"),
-        )?)
-        .item(&item(
-            "timing.setEndAddNew",
-            "Set End, Add New and Go to New",
-            Some("Shift+F10"),
-        )?)
-        .item(&item(
-            "timing.setEndAndNextAfterGap",
-            "Set End and Start of Next After Gap",
-            None,
-        )?)
-        .item(&item(
-            "timing.setStartAndPrevMinusGap",
-            "Set Start and End of Previous Minus Gap",
-            None,
-        )?)
-        .separator()
-        .item(&item(
-            "timing.extendToPrevious",
-            "Extend to Previous Cue",
-            Some("Alt+Shift+E"),
-        )?)
-        .item(&item(
-            "timing.extendToNext",
-            "Extend to Next Cue",
-            Some("CmdOrCtrl+Shift+E"),
-        )?)
-        .item(&item(
-            "timing.extendPreviousEnd",
-            "Extend Previous End to Selected",
-            None,
-        )?)
-        .item(&item(
-            "timing.extendNextStart",
-            "Extend Next Start to Selected",
-            None,
-        )?)
-        .separator()
-        .item(&item("timing.snapAllToFrames", "Snap All Times to Frames", None)?)
-        .build()?;
-
-    let window = SubmenuBuilder::new(app, "Window").minimize().maximize().close_window().build()?;
-
+fn build<R: Runtime>(app: &AppHandle<R>, spec: &[MenuSpec]) -> tauri::Result<Menu<R>> {
     let mut menu = MenuBuilder::new(app);
     #[cfg(target_os = "macos")]
     {
@@ -304,7 +51,49 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             .build()?;
         menu = menu.item(&app_menu);
     }
-    let menu = menu.items(&[&file, &edit, &view, &timing, &window]).build()?;
-    app.set_menu(menu)?;
-    Ok(())
+    for node in spec {
+        if let MenuSpec::Submenu { label, items } = node {
+            menu = menu.item(&submenu(app, label, items)?);
+        }
+    }
+    let window = SubmenuBuilder::new(app, "Window").minimize().maximize().close_window().build()?;
+    menu.item(&window).build()
+}
+
+fn submenu<R: Runtime>(app: &AppHandle<R>, label: &str, items: &[MenuSpec]) -> tauri::Result<Submenu<R>> {
+    let mut builder = SubmenuBuilder::new(app, label);
+    for node in items {
+        builder = match node {
+            MenuSpec::Item { id, label, accelerator } => {
+                let mut item = MenuItemBuilder::with_id(id.as_str(), label);
+                if let Some(accel) = accelerator {
+                    item = item.accelerator(accel);
+                }
+                builder.item(&item.build(app)?)
+            }
+            MenuSpec::Separator => builder.separator(),
+            MenuSpec::Submenu { label, items } => builder.item(&submenu(app, label, items)?),
+        };
+    }
+    builder.build()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_frontend_spec() {
+        let json = r#"[{"type":"submenu","label":"File","items":[
+            {"type":"item","id":"file.save","label":"Save","accelerator":"CmdOrCtrl+S"},
+            {"type":"separator"},
+            {"type":"submenu","label":"Recent","items":[{"type":"item","id":"file.recent","label":"Recent…","accelerator":null}]}
+        ]}]"#;
+        let spec: Vec<MenuSpec> = serde_json::from_str(json).unwrap();
+        let MenuSpec::Submenu { label, items } = &spec[0] else { panic!("expected submenu") };
+        assert_eq!(label, "File");
+        assert_eq!(items.len(), 3);
+        assert!(matches!(&items[0], MenuSpec::Item { accelerator: Some(a), .. } if a == "CmdOrCtrl+S"));
+        assert!(matches!(items[1], MenuSpec::Separator));
+    }
 }

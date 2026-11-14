@@ -25,7 +25,7 @@ description: Add Rust-side functionality to Substudio, such as a Tauri command, 
 
 ## Native menu items
 
-Add the item in `src-tauri/src/menu.rs` with an id like `file.something`. It's emitted to the frontend as a `menu` event. Map the same id in `ACTIONS` in `src/app/actions.ts`. If it has an accelerator, don't also bind that key in tinykeys for Tauri (see `useAppEvents.ts`).
+Don't edit `src-tauri/src/menu.rs` for app menus: the menu bar is built from the frontend registry. Add a command in `src/app/commands/definitions.ts` and its id to `MENU` in `src/app/commands/menu.ts`. Rust only owns the macOS app menu and the Window menu (predefined system items).
 
 ## New plugins
 

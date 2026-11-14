@@ -76,7 +76,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 
 | ID | Feature | Size | Acceptance |
 |---|---|---|---|
-| ARC-01 | **Command registry**: every operation is one command (id, label, default keys, `isEnabled`, `run`). The native menu, shortcuts, right-click menus, waveform gestures and (later) the palette all call it. | M | Replaces the ad-hoc map in `actions.ts`. Adding a command updates every surface. User-remappable keys come from it (EDT-08). |
+| ARC-01 | **Command registry**: every operation is one command (id, label, default keys, `isEnabled`, `run`). The native menu, shortcuts, right-click menus, waveform gestures and (later) the palette all call it. | M | ✅ Registry in `src/app/commands/`; menu bar built from it; scopes keep list-only keys away from text editing; ⌘⇧K palette. |
 
 ### Media layer (separate from the UI from day one)
 
@@ -187,7 +187,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | QLT-02 | Beautify / snap time codes to frames; apply min gap; bridge gaps; duration limits | Beautify, Bridge gaps… | M |
 | QLT-03 | **Early M2.** Spell check (English) with **names list and user dictionary** (Yoruba names, places, slang) and a live underline | Spell check | L |
 | RUL-01 | Rule profiles per client (min/max duration, CPS, line length, min gap, max lines) incl. a Netflix preset. M1 ships fixed default warnings. | Settings → Rules | M |
-| QLT-09 | Command palette (⌘⇧K); nearly free once ARC-01 exists | Command palette | S |
+| QLT-09 | Command palette (⌘⇧K); nearly free once ARC-01 exists | Command palette | S | ✅ Shipped with ARC-01 |
 | QLT-04 | Multiple replace (saved rule sets) | Multiple replace | M |
 | QLT-05 | Change casing; merge short lines; merge same text/time | Tools menu | M |
 | QLT-06 | Remove text for hearing impaired | Remove HI | M |

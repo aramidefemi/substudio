@@ -27,7 +27,8 @@ pnpm tauri build  # release .app/.dmg
 ```
 src/
   app/            App shell: App.tsx (resizable layout), Toolbar, FindDialog,
-                  actions.ts (every user action + native-menu id map), useAppEvents.ts (menu events, shortcuts, title)
+                  commands/ (registry: every command's id, label, keys, scope; menu layout; shortcut binding; palette),
+                  actions.ts (action implementations), useAppEvents.ts (menu events, title, play-follow)
   features/
     subtitles/    store.ts (document, selection, undo), timecode.ts, rules.ts, SubtitleList, CueEditor
     playback/     clock.ts (playback time, outside React), VideoPanel, TransportBar
@@ -38,7 +39,7 @@ src/
   lib/            tauri.ts (typed Rust command wrappers), dom.ts, utils.ts
 src-tauri/src/
   lib.rs          commands + plugin setup
-  menu.rs         native menu bar (ids → frontend `menu` event → actions.ts)
+  menu.rs         builds the native menu bar from the spec the frontend sends (`set_menu`)
   subtitles.rs    SRT/VTT parse + serialize (with tests)
 docs/             style-guide.md, backlog.md (roadmap with IDs), subtitle-edit-features.md (SE5 feature reference), mockups/
 ```
@@ -51,7 +52,7 @@ docs/             style-guide.md, backlog.md (roadmap with IDs), subtitle-edit-f
 - **Heavy or file work belongs in Rust:** parsing, saving, audio decoding / waveform peaks (planned: `symphonia`), ffmpeg sidecar. Return binary data via Tauri channels or `Response`, not JSON arrays.
 - **One operation, many triggers.** Don't add a separate control for each variant of an operation (Subtitle Edit has 15 ways to move a line). Add one command and reach it from shortcuts, menus, the waveform and the palette. The command registry is ARC-01 in `docs/backlog.md`.
 - **Media layer.** Subtitle times always refer to the *source* file's timeline. Frame stepping and snapping use the source's real frame timestamps (variable frame rate), never `1/fps`. Proxies preserve source timestamps and never replace the original. Bundle an LGPL ffmpeg build only.
-- **Every user action lives in `app/actions.ts`.** If it appears in the native menu, add the item in `menu.rs` with the same id. Shortcuts that the native menu owns (⌘S, ⌘Z…) are bound in tinykeys only when `!inTauri`.
+- **Every user action is a command** in `src/app/commands/definitions.ts`: one id, label, group, keys (tinykeys syntax) and scope. The native menu (`commands/menu.ts`), shortcuts (`commands/shortcuts.ts`), toolbar tooltips (`commandTitle`), menu events and the ⌘⇧K palette all read the registry. Never hand-bind keys or add menu items in Rust. Scope `global` keys fire even while typing and become native accelerators; anything that collides with text editing (arrows, ⌥/⌘⇧ arrows, Delete, Space) must be `outsideText`.
 - **Colours come only from tokens** (see `docs/style-guide.md`). Never hard-code hex in components or canvas code.
 - **`SubtitleList` opts out of React Compiler** (`"use no memo"`) because of TanStack Virtual. Do the same for any component using `useVirtualizer`.
 

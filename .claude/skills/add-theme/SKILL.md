@@ -14,7 +14,7 @@ A theme is one CSS file plus one registry entry. No component changes.
    ```
 3. **Import it** in `src/index.css` next to the other theme imports.
 4. **Register it** in `THEMES` in `src/features/settings/themes.ts` with `{ id, label, scheme: "light" | "dark" }`. `scheme` drives `dark:` utilities, native form controls and the macOS window appearance.
-5. **Optionally** add it to the native View › Theme menu in `src-tauri/src/menu.rs` (`view.theme.<id>`) and map that id in `ACTIONS` in `src/app/actions.ts`.
+5. **Optionally** add a `view.theme.<id>` command in `src/app/commands/definitions.ts` and list it under View › Theme in `src/app/commands/menu.ts`.
 
 ## Checks
 

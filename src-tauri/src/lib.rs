@@ -87,6 +87,12 @@ async fn probe_media(path: String) -> Result<MediaInfo, String> {
         .map_err(|e| e.to_string())?
 }
 
+/// Rebuilds the menu bar from the frontend command registry.
+#[tauri::command]
+fn set_menu(app: tauri::AppHandle, spec: Vec<menu::MenuSpec>) -> Result<(), String> {
+    menu::install(&app, &spec).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -94,13 +100,14 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .setup(|app| {
-            menu::install(app.handle())?;
+            menu::install_base(app.handle())?;
             Ok(())
         })
         .on_menu_event(|app, event| {
             let _ = app.emit("menu", event.id().as_ref());
         })
         .invoke_handler(tauri::generate_handler![
+            set_menu,
             read_subtitles,
             read_subtitles_encoded,
             write_subtitles,

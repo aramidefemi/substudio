@@ -9,6 +9,7 @@ import { SubtitleList } from "@/features/subtitles/SubtitleList";
 import { Waveform } from "@/features/waveform/Waveform";
 import { CompareDialog } from "./CompareDialog";
 import { EncodingDialog } from "./EncodingDialog";
+import { CommandPalette } from "./commands/CommandPalette";
 import { FindDialog } from "./FindDialog";
 import { HistoryDialog } from "./HistoryDialog";
 import { MediaInfoDialog } from "./MediaInfoDialog";
@@ -65,6 +66,7 @@ export default function App() {
         <TransportBar />
       </div>
       <FindDialog />
+      <CommandPalette />
       <RecentDialog />
       <EncodingDialog />
       <RestoreBackupDialog />

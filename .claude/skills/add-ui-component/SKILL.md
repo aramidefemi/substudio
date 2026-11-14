@@ -26,7 +26,7 @@ pnpm dlx shadcn@latest add <component> -y </dev/null
 - **Changing state:** call store functions (`updateCue`, `select`…) or actions from `@/app/actions`, never `setState` with document data. Document edits must go through `edit()` so they're undoable.
 - **Anything per-frame** (playhead, timecode readout, meters): subscribe with `clock.onTick` in an effect and write to a ref. See `VideoPanel.tsx`.
 - **Icon buttons:** need `aria-label` and a tooltip that mentions the shortcut, e.g. "Save (⌘S)".
-- **New actions:** add a new user action to `src/app/actions.ts`. If it deserves a menu entry or shortcut, add it to `src-tauri/src/menu.rs`, or to tinykeys in `src/app/useAppEvents.ts` for keys the menu doesn't own.
+- **New actions:** implement the behaviour (store function or `src/app/actions.ts`), then add one entry to `COMMANDS` in `src/app/commands/definitions.ts` (id, label, group, optional keys and scope). Put it in the menu bar by adding its id to `MENU` in `src/app/commands/menu.ts`. Buttons call `runCommand(id)` and use `commandTitle(id)` for their tooltip. Use scope `outsideText` for any key that also means something while typing. The registry tests catch duplicate keys and unknown menu ids.
 - **Long lists:** use TanStack Virtual, and add `"use no memo"` as the first statement of the component (React Compiler incompatibility).
 
 ## Checks

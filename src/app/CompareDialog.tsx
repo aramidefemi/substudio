@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { compareCues, diffSummary, type CueDiffRow } from "@/features/subtitles/compare";
@@ -31,7 +32,7 @@ export function CompareDialog() {
   const open = useUi((s) => s.compareOpen);
   const left = useSubtitles((s) => s.cues);
   const leftPath = useSubtitles((s) => s.filePath);
-  const fmt = useSubtitles(selectTimeFormat);
+  const fmt = useSubtitles(useShallow(selectTimeFormat));
   const other = useUi((s) => s.compareOther);
   const [hideSame, setHideSame] = useState(false);
 

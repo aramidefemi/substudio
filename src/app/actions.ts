@@ -7,11 +7,9 @@ import {
   cyclePrivacy,
   pushRecentSubtitle,
   pushRecentVideo,
-  setDensity,
   setShowCpsColumn,
   setShowFormattingInGrid,
   setShowGapColumn,
-  setTheme,
   useSettings,
 } from "@/features/settings/store";
 import { parseCues, serializeCues } from "@/features/subtitles/clipboard";
@@ -58,7 +56,6 @@ import {
   snapAllTimesToFrames,
   splitSelectedAtCursor,
   splitSelectedAtTime,
-  toggleTimecode,
   undo,
   updateCue,
   useSubtitles,
@@ -90,6 +87,7 @@ export const useUi = create<{
   compareOther: { path: string; cues: CueData[] } | null;
   mediaInfoOpen: boolean;
   historyOpen: boolean;
+  paletteOpen: boolean;
 }>()(() => ({
   findOpen: false,
   recentOpen: false,
@@ -100,6 +98,7 @@ export const useUi = create<{
   compareOther: null,
   mediaInfoOpen: false,
   historyOpen: false,
+  paletteOpen: false,
 }));
 
 const SUBTITLE_FILTER = { name: "Subtitles", extensions: ["srt", "vtt"] };
@@ -362,6 +361,7 @@ export const openMediaInfo = () => {
   useUi.setState({ mediaInfoOpen: true });
 };
 export const openHistory = () => useUi.setState({ historyOpen: true });
+export const openCommandPalette = () => useUi.setState({ paletteOpen: true });
 export const addCueAtPlayhead = () => insertCue(clock.time);
 
 export async function copySubtitlePath() {
@@ -625,125 +625,3 @@ export const splitAtVideoAction = () => {
 export const mergePreviousAction = (mode: MergeMode = "keepBreaks") => mergeWithPrevious(mode);
 export const mergeNextAction = (mode: MergeMode = "keepBreaks") => mergeWithNext(mode);
 export const mergeSelectedAction = (mode: MergeMode = "keepBreaks") => mergeSelected(mode);
-
-/** Ids match the native menu items in `src-tauri/src/menu.rs`. */
-const ACTIONS: Record<string, () => unknown> = {
-  "file.new": newFile,
-  "file.newKeepingVideo": newFileKeepingVideo,
-  "file.open": () => openSubtitles(false),
-  "file.openKeepingVideo": openSubtitlesKeepingVideo,
-  "file.importEncoding": openEncodingDialog,
-  "file.recent": openRecentDialog,
-  "file.recent.clear": clearRecentFiles,
-  "file.openVideo": openVideo,
-  "file.save": save,
-  "file.saveAs": () => saveAs("srt"),
-  "file.openContainingFolder": openContainingFolder,
-  "file.openDataFolder": openDataFolder,
-  "file.reload": reloadFromDisk,
-  "file.restoreBackup": openBackupDialog,
-  "file.copyPath": () => void copySubtitlePath(),
-  "file.saveSelected": () => void saveSelectedAs("srt"),
-  "file.compare": () => void compareWithFile(),
-  "file.statistics": openStatistics,
-  "file.mediaInfo": openMediaInfo,
-  "edit.undo": undoAction,
-  "edit.redo": redoAction,
-  "edit.history": openHistory,
-  "edit.cut": () => void cutAction(),
-  "edit.copy": () => void copyAction(),
-  "edit.paste": () => void pasteAction(),
-  "edit.selectAll": selectAllAction,
-  "edit.invertSelection": invertSelectionAction,
-  "edit.find": openFind,
-  "edit.italic": toggleItalicAction,
-  "edit.toggleLineBreak": toggleLineBreakAction,
-  "edit.unbreak": unbreakAction,
-  "edit.autoBreak": autoBreakAction,
-  "edit.balanceLines": balanceLinesAction,
-  "edit.breakAtFirstSpace": breakAtFirstSpaceAction,
-  "edit.toggleDialogDashes": toggleDialogDashesAction,
-  "edit.trimWhitespace": trimWhitespaceAction,
-  "edit.insertBefore": insertBeforeAction,
-  "edit.insertAfter": insertAfterAction,
-  "edit.insertAtEnd": insertAtEndAction,
-  "edit.deleteLines": deleteLinesAction,
-  "edit.rippleDelete": rippleDeleteAction,
-  "edit.duplicate": duplicateLinesAction,
-  "edit.removeBlankLines": removeBlankLinesAction,
-  "edit.splitAtCursor": splitAtCursorAction,
-  "edit.splitAtVideo": splitAtVideoAction,
-  "edit.mergePrevious": () => mergePreviousAction("keepBreaks"),
-  "edit.mergePrevious.unbreak": () => mergePreviousAction("unbreak"),
-  "edit.mergePrevious.dialog": () => mergePreviousAction("dialog"),
-  "edit.mergeNext": () => mergeNextAction("keepBreaks"),
-  "edit.mergeNext.unbreak": () => mergeNextAction("unbreak"),
-  "edit.mergeNext.dialog": () => mergeNextAction("dialog"),
-  "edit.mergeSelected": () => mergeSelectedAction("keepBreaks"),
-  "edit.mergeSelected.unbreak": () => mergeSelectedAction("unbreak"),
-  "edit.mergeSelected.dialog": () => mergeSelectedAction("dialog"),
-  "view.theme.system": () => setTheme("system"),
-  "view.theme.light": () => setTheme("light"),
-  "view.theme.dark": () => setTheme("dark"),
-  "view.density.compact": () => setDensity("compact"),
-  "view.density.comfortable": () => setDensity("comfortable"),
-  "view.timecode": toggleTimecode,
-  "view.column.cps": toggleCpsColumn,
-  "view.column.gap": toggleGapColumn,
-  "view.formatting": toggleFormattingInGrid,
-  "view.privacy": togglePrivacyAction,
-  "timing.moveStart.frame.-": () => timingMoveStart("frame", -1),
-  "timing.moveStart.frame.+": () => timingMoveStart("frame", 1),
-  "timing.moveStart.ms.-": () => timingMoveStart("ms", -1),
-  "timing.moveStart.ms.+": () => timingMoveStart("ms", 1),
-  "timing.moveStart.custom.-": () => timingMoveStart("custom", -1),
-  "timing.moveStart.custom.+": () => timingMoveStart("custom", 1),
-  "timing.moveStart.keepGap.frame.-": () => timingMoveStart("frame", -1, "keepGap"),
-  "timing.moveStart.keepGap.frame.+": () => timingMoveStart("frame", 1, "keepGap"),
-  "timing.moveStart.push.frame.-": () => timingMoveStart("frame", -1, "push"),
-  "timing.moveStart.push.frame.+": () => timingMoveStart("frame", 1, "push"),
-  "timing.moveEnd.frame.-": () => timingMoveEnd("frame", -1),
-  "timing.moveEnd.frame.+": () => timingMoveEnd("frame", 1),
-  "timing.moveEnd.ms.-": () => timingMoveEnd("ms", -1),
-  "timing.moveEnd.ms.+": () => timingMoveEnd("ms", 1),
-  "timing.moveEnd.custom.-": () => timingMoveEnd("custom", -1),
-  "timing.moveEnd.custom.+": () => timingMoveEnd("custom", 1),
-  "timing.moveEnd.keepGap.frame.-": () => timingMoveEnd("frame", -1, "keepGap"),
-  "timing.moveEnd.keepGap.frame.+": () => timingMoveEnd("frame", 1, "keepGap"),
-  "timing.moveEnd.push.frame.-": () => timingMoveEnd("frame", -1, "push"),
-  "timing.moveEnd.push.frame.+": () => timingMoveEnd("frame", 1, "push"),
-  "timing.moveSelected.frame.-": () => timingMoveSelected("frame", -1),
-  "timing.moveSelected.frame.+": () => timingMoveSelected("frame", 1),
-  "timing.moveSelected.ms.-": () => timingMoveSelected("ms", -1),
-  "timing.moveSelected.ms.+": () => timingMoveSelected("ms", 1),
-  "timing.moveSelected.custom.-": () => timingMoveSelected("custom", -1),
-  "timing.moveSelected.custom.+": () => timingMoveSelected("custom", 1),
-  "timing.moveSelectedFollowing.frame.-": () => timingMoveSelected("frame", -1, true),
-  "timing.moveSelectedFollowing.frame.+": () => timingMoveSelected("frame", 1, true),
-  "timing.moveSelectedFollowing.ms.-": () => timingMoveSelected("ms", -1, true),
-  "timing.moveSelectedFollowing.ms.+": () => timingMoveSelected("ms", 1, true),
-  "timing.moveAll.frame.-": () => timingMoveAll("frame", -1),
-  "timing.moveAll.frame.+": () => timingMoveAll("frame", 1),
-  "timing.moveAll.ms.-": () => timingMoveAll("ms", -1),
-  "timing.moveAll.ms.+": () => timingMoveAll("ms", 1),
-  "timing.moveAll.custom.-": () => timingMoveAll("custom", -1),
-  "timing.moveAll.custom.+": () => timingMoveAll("custom", 1),
-  "timing.setStart": timingSetStart,
-  "timing.setEnd": timingSetEnd,
-  "timing.setStartGoNext": timingSetStartGoNext,
-  "timing.setEndGoNext": timingSetEndGoNext,
-  "timing.setStartKeepDuration": timingSetStartKeepDuration,
-  "timing.setStartOffsetRest": timingSetStartOffsetRest,
-  "timing.setEndAddNew": timingSetEndAddNew,
-  "timing.setEndAndNextAfterGap": timingSetEndAndNextAfterGap,
-  "timing.setStartAndPrevMinusGap": timingSetStartAndPrevMinusGap,
-  "timing.extendToPrevious": timingExtendToPrevious,
-  "timing.extendToNext": timingExtendToNext,
-  "timing.extendPreviousEnd": timingExtendPreviousEnd,
-  "timing.extendNextStart": timingExtendNextStart,
-  "timing.snapAllToFrames": timingSnapAllToFrames,
-};
-
-export function runAction(id: string) {
-  void ACTIONS[id]?.();
-}

@@ -26,27 +26,26 @@ import { THEMES, type ThemePreference } from "@/features/settings/themes";
 import { useSubtitles } from "@/features/subtitles/store";
 import type { TimecodeMode } from "@/features/subtitles/timecode";
 import { fileName } from "@/lib/tauri";
-import {
-  newFile,
-  openFind,
-  openSubtitles,
-  openVideo,
-  redoAction,
-  save,
-  saveAs,
-  togglePrivacyAction,
-  undoAction,
-} from "./actions";
+import { commandTitle, runCommand } from "./commands/registry";
 
-function ToolButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+/** Icon button bound to a registry command; the tooltip shows its shortcut. */
+function ToolButton({ command, label, disabled, children }: { command: string; label?: string; disabled?: boolean; children: React.ReactNode }) {
+  const title = commandTitle(command, label);
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button size="icon" variant="ghost" aria-label={label} onClick={onClick} className="[&_svg]:size-[18px]">
+        <Button
+          size="icon"
+          variant="ghost"
+          aria-label={title}
+          disabled={disabled}
+          onClick={() => runCommand(command)}
+          className="[&_svg]:size-[18px]"
+        >
           {children}
         </Button>
       </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
+      <TooltipContent>{title}</TooltipContent>
     </Tooltip>
   );
 }
@@ -67,39 +66,29 @@ export function Toolbar() {
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-1 border-b bg-background px-3">
-      <ToolButton label="New (⌘N)" onClick={() => void newFile()}>
+      <ToolButton command="file.new">
         <FilePlus2 />
       </ToolButton>
-      <ToolButton label="Open subtitles (⌘O)" onClick={() => void openSubtitles()}>
+      <ToolButton command="file.open">
         <FolderOpen />
       </ToolButton>
-      <ToolButton label="Open video (⇧⌘O)" onClick={() => void openVideo()}>
+      <ToolButton command="file.openVideo">
         <Clapperboard />
       </ToolButton>
-      <ToolButton label="Save (⌘S)" onClick={() => void save()}>
+      <ToolButton command="file.save">
         <Save />
       </ToolButton>
       <Separator orientation="vertical" className="mx-1.5 h-6" />
-      <ToolButton label="Find (⌘F)" onClick={openFind}>
+      <ToolButton command="edit.find">
         <Search />
       </ToolButton>
       <Separator orientation="vertical" className="mx-1.5 h-6" />
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button size="icon" variant="ghost" aria-label="Undo (⌘Z)" disabled={!canUndo} onClick={undoAction} className="[&_svg]:size-[18px]">
-            <Undo2 />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Undo (⌘Z)</TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button size="icon" variant="ghost" aria-label="Redo (⇧⌘Z)" disabled={!canRedo} onClick={redoAction} className="[&_svg]:size-[18px]">
-            <Redo2 />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Redo (⇧⌘Z)</TooltipContent>
-      </Tooltip>
+      <ToolButton command="edit.undo" disabled={!canUndo}>
+        <Undo2 />
+      </ToolButton>
+      <ToolButton command="edit.redo" disabled={!canRedo}>
+        <Redo2 />
+      </ToolButton>
       <Separator orientation="vertical" className="mx-1.5 h-6" />
 
       <DropdownMenu>
@@ -153,7 +142,7 @@ export function Toolbar() {
             <DropdownMenuRadioItem value="ms">Milliseconds (hh:mm:ss,mmm)</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={togglePrivacyAction}>
+          <DropdownMenuItem onSelect={() => runCommand("view.privacy")}>
             Screen privacy{privacy !== "off" ? ` (${privacy})` : ""}…
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -172,8 +161,8 @@ export function Toolbar() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => void saveAs("srt")}>SubRip (.srt)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => void saveAs("vtt")}>WebVTT (.vtt)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAs")}>SubRip (.srt)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsVtt")}>WebVTT (.vtt)</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>
