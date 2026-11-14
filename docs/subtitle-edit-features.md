@@ -22,22 +22,22 @@ The **Plan** column maps each feature to our backlog (`docs/backlog.md`):
 | New window | Second editor window | P |
 | Reopen / Recent files / Clear recent | Recent subtitle and video lists | ✅ |
 | Open containing folder, Open data folder | Reveal in Finder | ✅ |
-| Copy subtitle path to clipboard | Utility | M2 |
+| Copy subtitle path to clipboard | Utility | ✅ |
 | Reload when changed outside the app | Detects external edits; reloads or asks | ✅ |
 | Auto-save + auto-backup + Restore auto-backup | Periodic backups, kept 30 by default, restore UI | ✅ |
-| Show history (undo history panel) | Browse and restore earlier states | M2 |
+| Show history (undo history panel) | Browse and restore earlier states | ✅ |
 | Import with manually chosen encoding | For legacy-encoded files | ✅ |
 | Import plain text (optional forced alignment to audio) | Turn a script into timed subtitles | M2 ❓ (her scripts) |
 | Import time codes from another file | Apply another file's timings to the current text | M2 |
 | Import formatting / styling from another file | Copy italics/bold/tags line by line | M3 |
 | Import CSV / XLSX / ODS with column mapping | Spreadsheet import | M3 |
 | Insert subtitle file after this line / at video position | Splice in another file | M2 |
-| Save selected lines as… / Save forced lines as… | Partial export | M2 |
+| Save selected lines as… / Save forced lines as… | Partial export | ✅ (selected) · M3 (forced) |
 | Export plain text, dialogue list, custom text format (templates) | Text exports with placeholders | M3 |
 | Format properties (per format) | ASS, EBU STL, PAC, D-Cinema, TTML settings | M3 |
-| Compare two files | Side-by-side diff | M2 |
-| Statistics (file and selected lines; dashboard with CPS histogram) | Totals, KPIs | M2 |
-| Media information | Container, codec and track info for the video | M2 |
+| Compare two files | Side-by-side diff | ✅ |
+| Statistics (file and selected lines; dashboard with CPS histogram) | Totals, KPIs | ✅ |
+| Media information | Container, codec and track info for the video | ✅ (ffprobe/mdls; full MED-01 later) |
 | Format limit warning | Warns when the target format can't hold features in use | M3 |
 
 ## 2. Subtitle list (grid)

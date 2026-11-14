@@ -82,7 +82,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 
 | ID | Feature | Size | Acceptance |
 |---|---|---|---|
-| MED-01 | **Probe media in Rust** (bundled LGPL ffprobe): container, codecs, audio tracks, start-time offset, frame rate, **variable frame rate detection with real frame timestamps** | M | Works on a test set of her real files plus a phone VFR clip. |
+| MED-01 | **Probe media in Rust** (bundled LGPL ffprobe): container, codecs, audio tracks, start-time offset, frame rate, **variable frame rate detection with real frame timestamps** | M | 🟡 UI + ffprobe/mdls probe shipped (QLT media info); bundled ffprobe + VFR timestamps still open. |
 | MED-02 | **Playback path decision**: play the source directly when WebKit can; otherwise make a background **editing proxy** (H.264 via VideoToolbox) that keeps source timestamps. The original file is never modified. | L | Proxy is cached and reused. Subtitle times always refer to the source timeline. |
 | MED-03 | **Frame-accurate stepping and snapping on the source's real frame timestamps** (not `1/fps`), so VFR footage is exact | M | ±1 frame lands on true frames in a VFR test clip. |
 | MED-04 | **Media test corpus**: her actual previews (H.264 .mov/.mp4), an MKV, multi-audio, VFR phone footage, long 80-min file | S | Run before every media change. |
@@ -191,8 +191,8 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | QLT-04 | Multiple replace (saved rule sets) | Multiple replace | M |
 | QLT-05 | Change casing; merge short lines; merge same text/time | Tools menu | M |
 | QLT-06 | Remove text for hearing impaired | Remove HI | M |
-| QLT-07 | Statistics dashboard (CPS histogram, totals) | Statistics | S |
-| QLT-08 | Compare two subtitle files | Compare | M |
+| QLT-07 | Statistics dashboard (CPS histogram, totals) | Statistics | S | ✅ |
+| QLT-08 | Compare two subtitle files | Compare | M | ✅ |
 | SYN-01 | Adjust all times (offset selected or all) | Adjust all times | S |
 | SYN-02 | Visual sync / point sync | Visual sync | L |
 | SYN-03 | Change frame rate; change speed | Sync menu | S |

@@ -1,8 +1,10 @@
 mod files;
+mod media;
 mod menu;
 mod subtitles;
 
 use files::BackupInfo;
+use media::MediaInfo;
 use subtitles::{Cue, SubtitleFormat};
 use tauri::{Emitter, Manager};
 
@@ -78,6 +80,13 @@ async fn ensure_data_folder(app: tauri::AppHandle) -> Result<String, String> {
     Ok(data.to_string_lossy().into_owned())
 }
 
+#[tauri::command]
+async fn probe_media(path: String) -> Result<MediaInfo, String> {
+    tauri::async_runtime::spawn_blocking(move || media::probe(&path))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -103,6 +112,7 @@ pub fn run() {
             write_auto_backup,
             list_auto_backups,
             ensure_data_folder,
+            probe_media,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

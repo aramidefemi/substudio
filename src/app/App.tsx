@@ -7,10 +7,14 @@ import { VideoPanel } from "@/features/playback/VideoPanel";
 import { CueEditor } from "@/features/subtitles/CueEditor";
 import { SubtitleList } from "@/features/subtitles/SubtitleList";
 import { Waveform } from "@/features/waveform/Waveform";
+import { CompareDialog } from "./CompareDialog";
 import { EncodingDialog } from "./EncodingDialog";
 import { FindDialog } from "./FindDialog";
+import { HistoryDialog } from "./HistoryDialog";
+import { MediaInfoDialog } from "./MediaInfoDialog";
 import { RecentDialog } from "./RecentDialog";
 import { RestoreBackupDialog } from "./RestoreBackupDialog";
+import { StatisticsDialog } from "./StatisticsDialog";
 import { Toolbar } from "./Toolbar";
 import { useAppEvents } from "./useAppEvents";
 import { useFileSafety } from "./useFileSafety";
@@ -64,6 +68,10 @@ export default function App() {
       <RecentDialog />
       <EncodingDialog />
       <RestoreBackupDialog />
+      <StatisticsDialog />
+      <CompareDialog />
+      <MediaInfoDialog />
+      <HistoryDialog />
       <Toaster position="bottom-center" />
     </TooltipProvider>
   );

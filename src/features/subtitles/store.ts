@@ -179,6 +179,42 @@ export function redo(): boolean {
   return true;
 }
 
+/** Summarise an immer patch set for the undo history panel. */
+export function summarizePatches(patches: readonly Patch[]): string {
+  const paths = patches.map((p) => p.path.map(String).join("."));
+  const joined = paths.join(" ");
+  if (/\.text\b|text$/.test(joined)) return "Edit text";
+  if (/\.start|\.end/.test(joined)) return "Change timing";
+  if (patches.some((p) => p.op === "add" && p.path[0] === "cues")) return "Add line";
+  if (patches.some((p) => p.op === "remove" && p.path[0] === "cues")) return "Delete line";
+  if (patches.some((p) => p.path[0] === "cues" && p.path.length === 1)) return "Reorder / replace lines";
+  return "Edit";
+}
+
+export interface HistoryStep {
+  index: number;
+  label: string;
+}
+
+/** Past steps newest-last. */
+export function listHistorySteps(): HistoryStep[] {
+  return get().past.map((entry, index) => ({
+    index,
+    label: summarizePatches(entry.patches),
+  }));
+}
+
+/** Undo until `past.length === index` (0 = empty history). */
+export function restoreHistoryTo(index: number): boolean {
+  const target = Math.max(0, Math.min(index, get().past.length));
+  let changed = false;
+  while (get().past.length > target) {
+    if (!undo()) break;
+    changed = true;
+  }
+  return changed;
+}
+
 /* ---------- document ---------- */
 
 export function loadDocument(cues: CueData[], filePath: string | null, keepVideo = false) {

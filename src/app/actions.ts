@@ -62,7 +62,7 @@ import {
   trimWhitespace,
   unbreak,
 } from "@/features/subtitles/textOps";
-import type { SubtitleFormat } from "@/features/subtitles/types";
+import type { CueData, SubtitleFormat } from "@/features/subtitles/types";
 import { cueTextSelection, focusCueText, isEditable, setCueTextSelection } from "@/lib/dom";
 import { commands, fileName, inTauri, stripExtension } from "@/lib/tauri";
 
@@ -72,11 +72,21 @@ export const useUi = create<{
   recentOpen: boolean;
   encodingOpen: boolean;
   backupOpen: boolean;
+  statsOpen: boolean;
+  compareOpen: boolean;
+  compareOther: { path: string; cues: CueData[] } | null;
+  mediaInfoOpen: boolean;
+  historyOpen: boolean;
 }>()(() => ({
   findOpen: false,
   recentOpen: false,
   encodingOpen: false,
   backupOpen: false,
+  statsOpen: false,
+  compareOpen: false,
+  compareOther: null,
+  mediaInfoOpen: false,
+  historyOpen: false,
 }));
 
 const SUBTITLE_FILTER = { name: "Subtitles", extensions: ["srt", "vtt"] };
@@ -330,7 +340,66 @@ export const openFind = () => useUi.setState({ findOpen: true });
 export const openRecentDialog = () => useUi.setState({ recentOpen: true });
 export const openEncodingDialog = () => useUi.setState({ encodingOpen: true });
 export const openBackupDialog = () => useUi.setState({ backupOpen: true });
+export const openStatistics = () => useUi.setState({ statsOpen: true });
+export const openMediaInfo = () => {
+  if (!useSubtitles.getState().videoPath) {
+    toast("No video open", { description: "Open a video to see media information." });
+    return;
+  }
+  useUi.setState({ mediaInfoOpen: true });
+};
+export const openHistory = () => useUi.setState({ historyOpen: true });
 export const addCueAtPlayhead = () => insertCue(clock.time);
+
+export async function copySubtitlePath() {
+  const { filePath } = useSubtitles.getState();
+  if (!filePath) {
+    toast("No subtitle path", { description: "Save or open a subtitle file first." });
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(filePath);
+    toast.success("Copied subtitle path");
+  } catch (err) {
+    toast.error("Could not copy path", { description: String(err) });
+  }
+}
+
+export async function saveSelectedAs(format: SubtitleFormat = "srt") {
+  if (!inTauri) return desktopOnly();
+  const cues = selectedCues();
+  if (!cues.length) {
+    toast("No lines selected");
+    return;
+  }
+  const { filePath, videoPath } = useSubtitles.getState();
+  const base = stripExtension(fileName(filePath ?? videoPath ?? "Untitled"));
+  const path = await saveDialog({
+    defaultPath: `${base}.selection.${format}`,
+    filters: [format === "vtt" ? { name: "WebVTT", extensions: ["vtt"] } : { name: "SubRip", extensions: ["srt"] }],
+  });
+  if (!path) return;
+  try {
+    await commands.writeSubtitles(path, cues, format);
+    toast.success(`Saved ${cues.length} line${cues.length === 1 ? "" : "s"}`, {
+      description: fileName(path),
+    });
+  } catch (err) {
+    toast.error("Could not save selection", { description: String(err) });
+  }
+}
+
+export async function compareWithFile() {
+  if (!inTauri) return desktopOnly();
+  const path = await open({ filters: [SUBTITLE_FILTER], title: "Compare with…" });
+  if (!path) return;
+  try {
+    const cues = await commands.readSubtitles(path);
+    useUi.setState({ compareOther: { path, cues }, compareOpen: true });
+  } catch (err) {
+    toast.error(`Could not open ${fileName(path)}`, { description: String(err) });
+  }
+}
 
 async function writeClipboard(text: string) {
   await navigator.clipboard.writeText(text);
@@ -534,8 +603,14 @@ const ACTIONS: Record<string, () => unknown> = {
   "file.openDataFolder": openDataFolder,
   "file.reload": reloadFromDisk,
   "file.restoreBackup": openBackupDialog,
+  "file.copyPath": () => void copySubtitlePath(),
+  "file.saveSelected": () => void saveSelectedAs("srt"),
+  "file.compare": () => void compareWithFile(),
+  "file.statistics": openStatistics,
+  "file.mediaInfo": openMediaInfo,
   "edit.undo": undoAction,
   "edit.redo": redoAction,
+  "edit.history": openHistory,
   "edit.cut": () => void cutAction(),
   "edit.copy": () => void copyAction(),
   "edit.paste": () => void pasteAction(),

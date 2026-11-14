@@ -16,6 +16,7 @@ import {
   setVideo,
   snapAllTimesToFrames,
   toggleSelect,
+  restoreHistoryTo,
   undo,
   updateCue,
   useSubtitles,
@@ -60,6 +61,17 @@ describe("undo history", () => {
     select(a!.id);
     updateCue(a!.id, { text: "xy" }, `text:${a!.id}`);
     expect(useSubtitles.getState().past).toHaveLength(2);
+  });
+
+  it("restoreHistoryTo keeps older steps", () => {
+    const id = useSubtitles.getState().cues[0]!.id;
+    updateCue(id, { text: "1" });
+    updateCue(id, { text: "2" });
+    updateCue(id, { text: "3" });
+    expect(useSubtitles.getState().past).toHaveLength(3);
+    restoreHistoryTo(1);
+    expect(texts()[0]).toBe("1");
+    expect(useSubtitles.getState().past).toHaveLength(1);
   });
 });
 

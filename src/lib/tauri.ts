@@ -11,6 +11,30 @@ export interface BackupInfo {
   size: number;
 }
 
+export interface MediaTrack {
+  index: number;
+  kind: string;
+  codec: string | null;
+  language: string | null;
+  detail: string | null;
+}
+
+export interface MediaInfo {
+  path: string;
+  fileName: string;
+  sizeBytes: number;
+  modifiedMs: number | null;
+  container: string | null;
+  durationSecs: number | null;
+  bitRate: number | null;
+  width: number | null;
+  height: number | null;
+  frameRate: string | null;
+  tracks: MediaTrack[];
+  source: string;
+  note: string | null;
+}
+
 /** Typed wrappers for the Rust commands in `src-tauri/src/lib.rs`. */
 export const commands = {
   readSubtitles: (path: string) => invoke<CueData[]>("read_subtitles", { path }),
@@ -27,6 +51,7 @@ export const commands = {
     invoke<string>("write_auto_backup", { label, cues, format, keep }),
   listAutoBackups: () => invoke<BackupInfo[]>("list_auto_backups"),
   ensureDataFolder: () => invoke<string>("ensure_data_folder"),
+  probeMedia: (path: string) => invoke<MediaInfo>("probe_media", { path }),
 };
 
 export const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path;

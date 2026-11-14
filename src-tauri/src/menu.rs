@@ -30,12 +30,18 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         .separator()
         .item(&item("file.save", "Save", Some("CmdOrCtrl+S"))?)
         .item(&item("file.saveAs", "Save As…", Some("CmdOrCtrl+Shift+S"))?)
+        .item(&item("file.saveSelected", "Save Selected Lines As…", None)?)
         .separator()
         .item(&item("file.openContainingFolder", "Open Containing Folder", None)?)
         .item(&item("file.openDataFolder", "Open Data Folder", None)?)
+        .item(&item("file.copyPath", "Copy Subtitle Path", None)?)
         .item(&item("file.reload", "Reload", None)?)
         .separator()
         .item(&item("file.restoreBackup", "Restore Auto-backup…", None)?)
+        .separator()
+        .item(&item("file.compare", "Compare…", None)?)
+        .item(&item("file.statistics", "Statistics…", None)?)
+        .item(&item("file.mediaInfo", "Media Information…", None)?)
         .build()?;
 
     // Undo/redo and clipboard are custom so they reach the subtitle list when
@@ -43,6 +49,7 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     let edit = SubmenuBuilder::new(app, "Edit")
         .item(&item("edit.undo", "Undo", Some("CmdOrCtrl+Z"))?)
         .item(&item("edit.redo", "Redo", Some("CmdOrCtrl+Shift+Z"))?)
+        .item(&item("edit.history", "Show History…", None)?)
         .separator()
         .item(&item("edit.cut", "Cut", Some("CmdOrCtrl+X"))?)
         .item(&item("edit.copy", "Copy", Some("CmdOrCtrl+C"))?)
