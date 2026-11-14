@@ -201,14 +201,23 @@ async function writeSidecar(path: string) {
 }
 
 async function openSubtitlePath(path: string, keepVideo: boolean, encoding?: string) {
-  const cues = encoding
-    ? await commands.readSubtitlesEncoded(path, encoding)
-    : await commands.readSubtitles(path);
+  let cues: CueData[];
+  let detected: string | null = null;
+  if (encoding) cues = await commands.readSubtitlesEncoded(path, encoding);
+  else {
+    const read = await commands.readSubtitlesDetect(path);
+    cues = read.cues;
+    if (read.encoding !== "utf-8") detected = read.encoding;
+  }
   loadDocument(cues, path, keepVideo);
   await rememberMtime(path);
   await applySidecar(path);
   pushRecentSubtitle(path, useSubtitles.getState().videoPath);
-  toast.success(`Opened ${fileName(path)}`, { description: `${cues.length} subtitles` });
+  toast.success(`Opened ${fileName(path)}`, {
+    description: detected
+      ? `${cues.length} subtitles · read as ${detected}, saves as UTF-8. Wrong characters? Use Import with encoding.`
+      : `${cues.length} subtitles`,
+  });
 }
 
 export async function newFile() {

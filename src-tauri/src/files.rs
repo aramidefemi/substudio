@@ -49,6 +49,38 @@ pub fn decode_bytes(bytes: &[u8], encoding_label: &str) -> Result<String, String
     Ok(cow.into_owned())
 }
 
+/// Decodes subtitle bytes without being told the encoding (FIL-04):
+/// a BOM wins, then valid UTF-8, otherwise `chardetng` guesses the legacy
+/// encoding (Windows-1252 for most old Western SRTs). Returns the text and the
+/// encoding's label, e.g. `"windows-1252"`.
+pub fn decode_auto(bytes: &[u8]) -> (String, String) {
+    if let Some((enc, _)) = encoding_rs::Encoding::for_bom(bytes) {
+        let (text, _) = enc.decode_with_bom_removal(bytes);
+        return (text.into_owned(), enc.name().to_ascii_lowercase());
+    }
+    if let Ok(text) = std::str::from_utf8(bytes) {
+        return (text.to_owned(), "utf-8".into());
+    }
+    let mut detector = chardetng::EncodingDetector::new(chardetng::Iso2022JpDetection::Deny);
+    detector.feed(bytes, true);
+    let enc = detector.guess(None, chardetng::Utf8Detection::Allow);
+    let (text, _, _) = enc.decode(bytes);
+    (text.into_owned(), enc.name().to_ascii_lowercase())
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DetectedSubtitles {
+    pub cues: Vec<Cue>,
+    /// Encoding the file was read as.
+    pub encoding: String,
+}
+
+pub fn parse_auto(bytes: &[u8]) -> DetectedSubtitles {
+    let (text, encoding) = decode_auto(bytes);
+    DetectedSubtitles { cues: subtitles::parse(&text), encoding }
+}
+
 pub fn parse_with_encoding(bytes: &[u8], encoding_label: &str) -> Result<Vec<Cue>, String> {
     Ok(subtitles::parse(&decode_bytes(bytes, encoding_label)?))
 }
@@ -241,6 +273,49 @@ mod tests {
         let bytes = [b'c', b'a', b'f', 0xE9];
         let s = decode_bytes(&bytes, "windows-1252").unwrap();
         assert_eq!(s, "café");
+    }
+
+    /// A Windows-1252 SRT as an old Subtitle Edit / Windows tool would write it.
+    fn windows_1252_srt() -> Vec<u8> {
+        let mut bytes = b"1\r\n00:00:01,000 --> 00:00:03,000\r\n".to_vec();
+        // "Café, déjà vu… “Señor”" in Windows-1252 (0x85 ellipsis, 0x93/0x94 curly quotes).
+        bytes.extend_from_slice(&[
+            b'C', b'a', b'f', 0xE9, b',', b' ', b'd', 0xE9, b'j', 0xE0, b' ', b'v', b'u', 0x85, b' ', 0x93, b'S', b'e',
+            0xF1, b'o', b'r', 0x94,
+        ]);
+        bytes.extend_from_slice(b"\r\n\r\n2\r\n00:00:04,000 --> 00:00:06,000\r\nGar");
+        bytes.extend_from_slice(&[0xE7, 0x6F, 0x6E, b' ', b'p', b'r', 0xEA, b't', b'.']);
+        bytes.extend_from_slice(b"\r\n");
+        bytes
+    }
+
+    #[test]
+    fn detects_windows_1252_when_not_utf8() {
+        let bytes = windows_1252_srt();
+        assert!(std::str::from_utf8(&bytes).is_err());
+        let parsed = parse_auto(&bytes);
+        assert_eq!(parsed.encoding, "windows-1252");
+        assert_eq!(parsed.cues.len(), 2);
+        assert_eq!(parsed.cues[0].text, "Café, déjà vu… “Señor”");
+        assert_eq!(parsed.cues[1].text, "Garçon prêt.");
+    }
+
+    #[test]
+    fn keeps_valid_utf8_and_strips_boms() {
+        let yoruba = "1\n00:00:01,000 --> 00:00:02,000\nỌmọ mi, ẹ̀ ṣé\n";
+        let (text, enc) = decode_auto(yoruba.as_bytes());
+        assert_eq!((text.as_str(), enc.as_str()), (yoruba, "utf-8"));
+
+        let mut bom = vec![0xEF, 0xBB, 0xBF];
+        bom.extend_from_slice(yoruba.as_bytes());
+        let (text, enc) = decode_auto(&bom);
+        assert_eq!((text.as_str(), enc.as_str()), (yoruba, "utf-8"));
+
+        let mut utf16: Vec<u8> = vec![0xFF, 0xFE];
+        utf16.extend(yoruba.encode_utf16().flat_map(|u| u.to_le_bytes()));
+        let parsed = parse_auto(&utf16);
+        assert_eq!(parsed.encoding, "utf-16le");
+        assert_eq!(parsed.cues[0].text, "Ọmọ mi, ẹ̀ ṣé");
     }
 
     #[test]

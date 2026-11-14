@@ -28,6 +28,7 @@ encoding_rs = "0.8.44"
 symphonia = { version = "0.6.1", default-features = false, features = ["aac", "alac", "flac", "mp3", "pcm", "vorbis", "isomp4", "mkv", "ogg", "wav", "aiff", "adpcm"] }
 # Opus (WebM/MKV/Ogg) — Symphonia has no first-party decoder yet.
 symphonia-adapter-libopus = "0.3"
+chardetng = "1.0.0"
 
 # Keep dev builds snappy while making dependencies (decoders, later) run fast.
 [profile.dev.package."*"]

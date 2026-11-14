@@ -10,11 +10,18 @@ use media::MediaInfo;
 use subtitles::{Cue, SubtitleFormat};
 use tauri::{Emitter, Manager};
 
-/// Reads a .srt/.vtt file as UTF-8 (lossy). Prefer `read_subtitles_encoded` for legacy files.
+/// Reads a .srt/.vtt file, detecting the encoding when it isn't UTF-8 (FIL-04).
 #[tauri::command]
 async fn read_subtitles(path: String) -> Result<Vec<Cue>, String> {
     let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
-    Ok(subtitles::parse(&String::from_utf8_lossy(&bytes)))
+    Ok(files::parse_auto(&bytes).cues)
+}
+
+/// Like `read_subtitles`, but also says which encoding was used.
+#[tauri::command]
+async fn read_subtitles_detect(path: String) -> Result<files::DetectedSubtitles, String> {
+    let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+    Ok(files::parse_auto(&bytes))
 }
 
 #[tauri::command]
@@ -142,6 +149,7 @@ pub fn run() {
             set_menu,
             waveform_peaks,
             read_subtitles,
+            read_subtitles_detect,
             read_subtitles_encoded,
             write_subtitles,
             read_project,

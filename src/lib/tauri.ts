@@ -49,6 +49,9 @@ export interface ProjectFile {
 /** Typed wrappers for the Rust commands in `src-tauri/src/lib.rs`. */
 export const commands = {
   readSubtitles: (path: string) => invoke<CueData[]>("read_subtitles", { path }),
+  /** Detects the encoding when the file isn't UTF-8 (FIL-04). */
+  readSubtitlesDetect: (path: string) =>
+    invoke<{ cues: CueData[]; encoding: string }>("read_subtitles_detect", { path }),
   readSubtitlesEncoded: (path: string, encoding: string) =>
     invoke<CueData[]>("read_subtitles_encoded", { path, encoding }),
   writeSubtitles: (path: string, cues: CueData[], format: SubtitleFormat) =>
