@@ -12,6 +12,7 @@ import {
   setShowGapColumn,
   useSettings,
 } from "@/features/settings/store";
+import { nextBookmarkIndex } from "@/features/subtitles/bookmarks";
 import { parseCues, serializeCues } from "@/features/subtitles/clipboard";
 import { toggleItalic } from "@/features/subtitles/format";
 import {
@@ -41,6 +42,7 @@ import {
   removeBlankLines,
   removeCues,
   rippleDeleteSelected,
+  select,
   selectAll,
   selectRelative,
   selectedCues,
@@ -56,6 +58,7 @@ import {
   snapAllTimesToFrames,
   splitSelectedAtCursor,
   splitSelectedAtTime,
+  toggleBookmark,
   undo,
   updateCue,
   useSubtitles,
@@ -90,6 +93,9 @@ export const useUi = create<{
   historyOpen: boolean;
   paletteOpen: boolean;
   errorsOpen: boolean;
+  bookmarksOpen: boolean;
+  /** Cue whose bookmark note is being edited, if any. */
+  bookmarkNoteFor: string | null;
 }>()(() => ({
   findOpen: false,
   recentOpen: false,
@@ -102,6 +108,8 @@ export const useUi = create<{
   historyOpen: false,
   paletteOpen: false,
   errorsOpen: false,
+  bookmarksOpen: false,
+  bookmarkNoteFor: null,
 }));
 
 const SUBTITLE_FILTER = { name: "Subtitles", extensions: SUBTITLE_EXTENSIONS };
@@ -398,6 +406,36 @@ export const openMediaInfo = () => {
 };
 export const openHistory = () => useUi.setState({ historyOpen: true });
 export const openCommandPalette = () => useUi.setState({ paletteOpen: true });
+/* ---------- bookmarks (NAV-02) ---------- */
+
+export function toggleBookmarkAction() {
+  const { cues, selectedId } = useSubtitles.getState();
+  const index = cues.findIndex((c) => c.id === selectedId);
+  const on = toggleBookmark();
+  if (on === null) return;
+  toast(on ? `Bookmarked line ${index + 1}` : `Removed bookmark from line ${index + 1}`);
+}
+
+export function editBookmarkNote() {
+  const { selectedId } = useSubtitles.getState();
+  if (!selectedId) return;
+  useUi.setState({ bookmarkNoteFor: selectedId });
+}
+
+export function goToBookmark(dir: 1 | -1) {
+  const s = useSubtitles.getState();
+  const i = nextBookmarkIndex(s.cues, s.cues.findIndex((c) => c.id === s.selectedId), dir);
+  if (i < 0) {
+    toast("No bookmarks", { description: "Bookmark a line with ⌘B." });
+    return;
+  }
+  const cue = s.cues[i]!;
+  select(cue.id);
+  clock.seek(cue.start);
+}
+
+export const openBookmarks = () => useUi.setState({ bookmarksOpen: true });
+
 export const toggleErrorsList = () => useUi.setState((s) => ({ errorsOpen: !s.errorsOpen }));
 export const addCueAtPlayhead = () => insertCue(clock.time);
 

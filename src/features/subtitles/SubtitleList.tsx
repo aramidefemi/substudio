@@ -1,5 +1,5 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { TriangleAlert } from "lucide-react";
+import { Bookmark, TriangleAlert } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { clock } from "@/features/playback/clock";
@@ -147,6 +147,16 @@ export function SubtitleList() {
                 )}
               >
                 <Cell className="text-muted-foreground">{row.index + 1}</Cell>
+                {cue.bookmark !== undefined && (
+                  // Sits in the # cell's left padding so long line numbers never truncate it.
+                  <Bookmark
+                    role="img"
+                    aria-label={cue.bookmark ? `Bookmark: ${cue.bookmark}` : "Bookmarked"}
+                    className="pointer-events-auto absolute top-1/2 left-0.5 size-2.5 -translate-y-1/2 fill-current text-primary"
+                  >
+                    <title>{cue.bookmark ? `Bookmark: ${cue.bookmark}` : "Bookmarked"}</title>
+                  </Bookmark>
+                )}
                 <Cell issue={issues.start}>{formatTime(cue.start, fmt)}</Cell>
                 <Cell>{formatTime(cue.end, fmt)}</Cell>
                 <Cell issue={issues.duration}>{formatDuration(cue.end - cue.start, fmt)}</Cell>

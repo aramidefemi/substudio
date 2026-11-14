@@ -194,6 +194,7 @@ export function redo(): boolean {
 export function summarizePatches(patches: readonly Patch[]): string {
   const paths = patches.map((p) => p.path.map(String).join("."));
   const joined = paths.join(" ");
+  if (/\.bookmark\b|bookmark$/.test(joined)) return "Bookmark";
   if (/\.text\b|text$/.test(joined)) return "Edit text";
   if (/\.start|\.end/.test(joined)) return "Change timing";
   if (patches.some((p) => p.op === "add" && p.path[0] === "cues")) return "Add line";
@@ -839,4 +840,43 @@ export function mergeSelected(mode: MergeMode = "keepBreaks") {
   });
   select(keepId);
   return keepId;
+}
+
+/* ---------- bookmarks (NAV-02) ---------- */
+
+/** Bookmark the primary cue, or remove its bookmark (and note). One undo step. */
+export function toggleBookmark(id = get().selectedId): boolean | null {
+  const cue = get().cues.find((c) => c.id === id);
+  if (!cue) return null;
+  const on = cue.bookmark === undefined;
+  edit((doc) => {
+    const c = doc.cues.find((x) => x.id === id);
+    if (!c) return;
+    if (on) c.bookmark = "";
+    else delete c.bookmark;
+  });
+  return on;
+}
+
+/** Sets (and creates, if needed) the bookmark note on a cue. */
+export function setBookmarkNote(id: string, note: string) {
+  edit((doc) => {
+    const c = doc.cues.find((x) => x.id === id);
+    if (c && c.bookmark !== note) c.bookmark = note;
+  });
+}
+
+export function removeBookmark(id: string) {
+  edit((doc) => {
+    const c = doc.cues.find((x) => x.id === id);
+    if (c && c.bookmark !== undefined) delete c.bookmark;
+  });
+}
+
+/** Restores bookmarks by cue index (e.g. from the project sidecar) without an undo step. */
+export function restoreBookmarks(marks: ReadonlyMap<number, string>) {
+  if (!marks.size) return;
+  set((s) => ({
+    cues: s.cues.map((c, i) => (marks.has(i) ? { ...c, bookmark: marks.get(i)! } : c)),
+  }));
 }

@@ -7,6 +7,8 @@ import { VideoPanel } from "@/features/playback/VideoPanel";
 import { CueEditor } from "@/features/subtitles/CueEditor";
 import { SubtitleList } from "@/features/subtitles/SubtitleList";
 import { Waveform } from "@/features/waveform/Waveform";
+import { BookmarkNoteDialog } from "./BookmarkNoteDialog";
+import { BookmarksDialog } from "./BookmarksDialog";
 import { CompareDialog } from "./CompareDialog";
 import { DropOverlay } from "./DropOverlay";
 import { EncodingDialog } from "./EncodingDialog";
@@ -71,6 +73,8 @@ export default function App() {
       <FindDialog />
       <ReplaceDialog />
       <ErrorsPanel />
+      <BookmarksDialog />
+      <BookmarkNoteDialog />
       <CommandPalette />
       <RecentDialog />
       <EncodingDialog />
