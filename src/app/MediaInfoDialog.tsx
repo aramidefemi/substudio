@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useMedia } from "@/features/media/store";
 import { useSubtitles } from "@/features/subtitles/store";
 import type { MediaInfo } from "@/lib/tauri";
-import { commands, inTauri } from "@/lib/tauri";
 import { useUi } from "./actions";
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -31,39 +30,30 @@ function fmtDur(s: number | null) {
     : `${m}:${String(sec).padStart(2, "0")}`;
 }
 
+function fmtStart(s: number | null) {
+  if (s == null || !Number.isFinite(s)) return "—";
+  if (Math.abs(s) < 1e-6) return "0";
+  return `${s.toFixed(3)} s`;
+}
+
+function frameRateLabel(info: MediaInfo) {
+  const base = info.frameRate ?? (info.fps != null ? String(info.fps) : "—");
+  if (info.variableFrameRate) return `${base} (VFR)`;
+  if (info.variableFrameRate === false) return `${base} (CFR)`;
+  return base;
+}
+
 /** Tools → Media Information: container / codec / tracks for the open video. */
 export function MediaInfoDialog() {
   const open = useUi((s) => s.mediaInfoOpen);
   const videoPath = useSubtitles((s) => s.videoPath);
-  const [info, setInfo] = useState<MediaInfo | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const setOpen = (mediaInfoOpen: boolean) => {
-    if (mediaInfoOpen) {
-      setInfo(null);
-      setError(null);
-    }
-    useUi.setState({ mediaInfoOpen });
-  };
-
-  useEffect(() => {
-    if (!open || !inTauri || !videoPath) return;
-    let cancelled = false;
-    void commands
-      .probeMedia(videoPath)
-      .then((m) => {
-        if (!cancelled) setInfo(m);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(String(err));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [open, videoPath]);
+  const info = useMedia((s) => s.info);
+  const frameTimes = useMedia((s) => s.frameTimes);
+  const loading = useMedia((s) => s.loading);
+  const error = useMedia((s) => s.error);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(mediaInfoOpen) => useUi.setState({ mediaInfoOpen })}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Media information</DialogTitle>
@@ -71,7 +61,9 @@ export function MediaInfoDialog() {
         </DialogHeader>
         {!videoPath && <p className="text-sm text-muted-foreground">Open a video first.</p>}
         {videoPath && error && <p className="text-sm text-destructive">{error}</p>}
-        {videoPath && !error && !info && <p className="text-sm text-muted-foreground">Probing…</p>}
+        {videoPath && !error && loading && !info && (
+          <p className="text-sm text-muted-foreground">Probing…</p>
+        )}
         {info && (
           <div className="max-h-96 space-y-3 overflow-y-auto">
             <Row label="File" value={info.fileName} />
@@ -79,11 +71,22 @@ export function MediaInfoDialog() {
             <Row label="Size" value={fmtBytes(info.sizeBytes)} />
             <Row label="Container" value={info.container ?? "—"} />
             <Row label="Duration" value={fmtDur(info.durationSecs)} />
+            <Row label="Start offset" value={fmtStart(info.startTimeSecs)} />
             <Row
               label="Resolution"
               value={info.width && info.height ? `${info.width}×${info.height}` : "—"}
             />
-            <Row label="Frame rate" value={info.frameRate ?? "—"} />
+            <Row label="Frame rate" value={frameRateLabel(info)} />
+            <Row
+              label="Frames"
+              value={
+                frameTimes?.length
+                  ? String(frameTimes.length)
+                  : info.frameCount != null
+                    ? String(info.frameCount)
+                    : "—"
+              }
+            />
             <Row
               label="Bit rate"
               value={info.bitRate ? `${Math.round(info.bitRate / 1000)} kb/s` : "—"}

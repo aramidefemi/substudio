@@ -1,3 +1,5 @@
+import { stepAlongFrames } from "@/features/media/frameTimes";
+import { useMedia } from "@/features/media/store";
 import {
   beginHeldCue,
   endHeldCue,
@@ -9,14 +11,15 @@ import {
   selectSelectedIndex,
   useSubtitles,
 } from "@/features/subtitles/store";
-import { stepFrames } from "@/features/subtitles/timing";
 import { focusCueText } from "@/lib/dom";
 import { clock } from "./clock";
 
-/** Step the playhead by whole frames at the project fps. Pauses first, like a jog wheel. */
+/** Step the playhead by whole source frames (VFR timestamps when probed). Pauses first. */
 export function stepFrame(frames: number) {
   clock.pause();
-  clock.seek(stepFrames(clock.time, useSubtitles.getState().fps, frames));
+  const fps = useSubtitles.getState().fps;
+  const times = useMedia.getState().frameTimes;
+  clock.seek(stepAlongFrames(clock.time, frames, times, fps));
 }
 
 /** Jump the playhead by `seconds`; playback keeps going so she can re-listen. */

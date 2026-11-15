@@ -1,3 +1,4 @@
+mod ffmpeg_bin;
 mod files;
 mod media;
 mod menu;
@@ -115,6 +116,21 @@ async fn probe_media(path: String) -> Result<MediaInfo, String> {
         .map_err(|e| e.to_string())?
 }
 
+/// Source video frame timestamps as SSFT bytes (MED-01). Cached by path+size+mtime.
+#[tauri::command]
+async fn media_frame_times(
+    app: tauri::AppHandle,
+    path: String,
+) -> Result<tauri::ipc::Response, String> {
+    let cache_dir = app.path().app_cache_dir().map_err(|e| e.to_string())?;
+    let bytes = tauri::async_runtime::spawn_blocking(move || {
+        media::load_or_extract_frame_times(&path, &cache_dir)
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
 /// Waveform peaks for a media file as raw bytes (see `waveform::Peaks::to_bytes`),
 /// cached in the app cache dir. Progress (0–1) streams over `on_progress`.
 #[tauri::command]
@@ -172,6 +188,7 @@ pub fn run() {
             list_auto_backups,
             ensure_data_folder,
             probe_media,
+            media_frame_times,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
