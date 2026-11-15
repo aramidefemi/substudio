@@ -190,7 +190,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | QLT-01 | Fix common errors (overlaps, short gaps, double spaces, missing periods, dialog dashes…) with preview | Fix common errors | L | ✅ |
 | QLT-02 | Beautify / snap time codes to frames; apply min gap; bridge gaps; duration limits | Beautify, Bridge gaps… | M | ✅ |
 | QLT-03 | **Early M2.** Spell check (English) with **names list and user dictionary** (Yoruba names, places, slang) and a live underline | Spell check | L | ✅ |
-| RUL-01 | Rule profiles per client (min/max duration, CPS, line length, min gap, max lines) incl. a Netflix preset. M1 ships fixed default warnings. | Settings → Rules | M |
+| RUL-01 | Rule profiles per client (min/max duration, CPS, line length, min gap, max lines) incl. a Netflix preset. M1 ships fixed default warnings. | Settings → Rules | M | ✅ |
 | QLT-09 | Command palette (⌘⇧K); nearly free once ARC-01 exists | Command palette | S | ✅ Shipped with ARC-01 |
 | QLT-04 | Multiple replace (saved rule sets) | Multiple replace | M | ✅ |
 | QLT-05 | Change casing; merge short lines; merge same text/time | Tools menu | M | ✅ |
