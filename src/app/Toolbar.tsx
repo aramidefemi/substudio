@@ -14,7 +14,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   setDensity,
@@ -119,19 +118,16 @@ export function Toolbar() {
       <ToolButton command="file.save">
         <Save />
       </ToolButton>
-      <Separator orientation="vertical" className="mx-1.5 h-6" />
       <ToolButton command="edit.find">
         <Search />
       </ToolButton>
       <ErrorsButton />
-      <Separator orientation="vertical" className="mx-1.5 h-6" />
       <ToolButton command="edit.undo" disabled={!canUndo}>
         <Undo2 />
       </ToolButton>
       <ToolButton command="edit.redo" disabled={!canRedo}>
         <Redo2 />
       </ToolButton>
-      <Separator orientation="vertical" className="mx-1.5 h-6" />
 
       <DropdownMenu>
         <Tooltip>
