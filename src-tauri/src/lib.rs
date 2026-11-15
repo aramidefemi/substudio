@@ -3,6 +3,7 @@ mod files;
 mod media;
 mod menu;
 mod project;
+mod proxy;
 mod spell_engine;
 mod spellcheck;
 mod subtitles;
@@ -10,6 +11,7 @@ mod waveform;
 
 use files::BackupInfo;
 use media::MediaInfo;
+use proxy::PlaybackDecision;
 use spellcheck::{CheckOptions, ListKind};
 use subtitles::{Cue, SubtitleFormat};
 use tauri::{Emitter, Manager};
@@ -147,6 +149,23 @@ async fn media_frame_times(
     .await
     .map_err(|e| e.to_string())??;
     Ok(tauri::ipc::Response::new(bytes))
+}
+
+/// Playback path: source when WebKit-safe, else cached/encoded H.264 editing proxy (MED-02).
+#[tauri::command]
+async fn ensure_playback(
+    app: tauri::AppHandle,
+    path: String,
+    on_progress: tauri::ipc::Channel<f32>,
+) -> Result<PlaybackDecision, String> {
+    let cache_dir = app.path().app_cache_dir().map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        proxy::ensure_playback(&path, &cache_dir, |p| {
+            let _ = on_progress.send(p);
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 /// Waveform peaks for a media file as raw bytes (see `waveform::Peaks::to_bytes`),
@@ -320,6 +339,7 @@ pub fn run() {
             ensure_data_folder,
             probe_media,
             media_frame_times,
+            ensure_playback,
             spell_check_texts,
             spell_suggest,
             spell_list_words,

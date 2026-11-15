@@ -5,7 +5,7 @@ Tauri `externalBin` expects:
 | File | Role |
 |---|---|
 | `ffprobe-<rust-target-triple>` | Media probe + VFR frame timestamps |
-| `ffmpeg-<rust-target-triple>` | Waveform PCM fallback / future proxy |
+| `ffmpeg-<rust-target-triple>` | Waveform PCM fallback + MED-02 editing proxy (VideoToolbox H.264 on macOS) |
 
 Example (Apple Silicon): `ffprobe-aarch64-apple-darwin`, `ffmpeg-aarch64-apple-darwin`.
 

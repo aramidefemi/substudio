@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { openVideo } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { useMedia } from "@/features/media/store";
 import { previewLayout } from "@/features/settings/preview";
 import { useSettings } from "@/features/settings/store";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,10 @@ function paintCueOverlay(el: HTMLElement, text: string) {
 
 export function VideoPanel() {
   const videoPath = useSubtitles((s) => s.videoPath);
+  /** Source path stays on the document; `<video>` may use a MED-02 editing proxy. */
+  const playbackPath = useMedia((s) => s.playbackPath);
+  const proxyProgress = useMedia((s) => s.proxyProgress);
+  const srcPath = playbackPath;
   const playing = usePlaying();
   const preview = previewLayout(useSettings((s) => s.preview));
   const [volume, setVolume] = useState(0.8);
@@ -39,13 +44,13 @@ export function VideoPanel() {
   const timeRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    clock.attach(videoPath ? videoRef.current : null);
+    clock.attach(srcPath ? videoRef.current : null);
     return () => clock.attach(null);
-  }, [videoPath]);
+  }, [srcPath]);
 
   useEffect(() => {
     if (videoRef.current) videoRef.current.volume = volume;
-  }, [volume, videoPath]);
+  }, [volume, srcPath]);
 
   // Per-frame readouts are written straight to the DOM, not through React state.
   useEffect(() => {
@@ -75,8 +80,21 @@ export function VideoPanel() {
   return (
     <div ref={boxRef} className="flex h-full flex-col overflow-hidden rounded-xl bg-video">
       <div className="relative min-h-0 flex-1 [container-type:size]">
-        {videoPath ? (
-          <video ref={videoRef} src={convertFileSrc(videoPath)} playsInline className="absolute inset-0 size-full object-contain" />
+        {videoPath && srcPath ? (
+          <video
+            key={srcPath}
+            ref={videoRef}
+            src={convertFileSrc(srcPath)}
+            playsInline
+            className="absolute inset-0 size-full object-contain"
+          />
+        ) : videoPath ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-white/70">
+            <span>{proxyProgress != null ? "Creating editing proxy…" : "Preparing playback…"}</span>
+            {proxyProgress != null && (
+              <span className="tabular-nums text-white/50">{Math.round(proxyProgress * 100)}%</span>
+            )}
+          </div>
         ) : (
           <button
             type="button"

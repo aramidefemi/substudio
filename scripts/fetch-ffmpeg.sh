@@ -58,6 +58,20 @@ build_lgpl_ffmpeg() {
   if [[ ! -d "$src/.git" ]]; then
     git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git "$src"
   fi
+  # MED-02: AAC + MP4 for editing proxies; on macOS also VideoToolbox H.264 (system framework, not GPL).
+  # Waveform PCM fallback still uses pcm_f32le / wav / null. Dev can fall back to PATH ffmpeg.
+  local encoders="pcm_f32le,aac"
+  local muxers="null,wav,mp4"
+  local vt_flags=()
+  case "$(uname -s)" in
+    Darwin)
+      encoders+=",h264_videotoolbox"
+      vt_flags=(
+        --enable-hwaccel=videotoolbox
+        --extra-ldflags="-framework VideoToolbox -framework CoreMedia -framework CoreVideo -framework CoreFoundation"
+      )
+      ;;
+  esac
   (
     cd "$src"
     ./configure \
@@ -66,12 +80,13 @@ build_lgpl_ffmpeg() {
       --disable-network --disable-devices --disable-autodetect \
       --enable-protocol=file,pipe \
       --enable-demuxer=mov,matroska,avi,mpegts,mp3,wav,flac,ogg,aac,ac3 \
-      --enable-muxer=null,wav \
+      --enable-muxer="$muxers" \
       --enable-parser=h264,hevc,aac,mpegaudio,opus,vorbis,ac3 \
       --enable-decoder=h264,hevc,aac,mp3,pcm_s16le,pcm_s16be,pcm_s24le,pcm_s32le,pcm_f32le,flac,opus,vorbis,ac3,eac3 \
-      --enable-encoder=pcm_f32le \
+      --enable-encoder="$encoders" \
       --enable-filter=aresample,aformat \
-      --disable-hwaccels --disable-iconv
+      --disable-iconv \
+      "${vt_flags[@]}"
     make -j"$(sysctl -n hw.ncpu 2>/dev/null || nproc)" ffmpeg
     cp -f ffmpeg "$BIN/ffmpeg-$TRIPLE"
     chmod +x "$BIN/ffmpeg-$TRIPLE"

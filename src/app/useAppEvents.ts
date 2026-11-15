@@ -1,7 +1,7 @@
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect } from "react";
-import { loadMedia } from "@/features/media/store";
+import { ensurePlayback, loadMedia } from "@/features/media/store";
 import { clock } from "@/features/playback/clock";
 import { useSettings } from "@/features/settings/store";
 import { cueIndexAt, select, useSubtitles } from "@/features/subtitles/store";
@@ -64,18 +64,21 @@ export function useAppEvents() {
     return useSubtitles.subscribe(sync);
   }, []);
 
-  // MED-01: probe + frame timestamps whenever the open video changes; adopt fps (TIM-07).
+  // MED-01/02: probe + frame timestamps + playback path; adopt fps (TIM-07).
   useEffect(() => {
     let gen = 0;
     let lastPath = useSubtitles.getState().videoPath;
     const run = async (path: string | null) => {
       const my = ++gen;
       const info = await loadMedia(path);
-      if (my !== gen || !info?.fps || !(info.fps > 0) || !Number.isFinite(info.fps)) return;
-      const rounded = Math.round(info.fps * 1000) / 1000;
-      if (Math.abs(useSubtitles.getState().fps - rounded) > 1e-6) {
-        useSubtitles.setState({ fps: rounded });
+      if (my !== gen) return;
+      if (info?.fps && info.fps > 0 && Number.isFinite(info.fps)) {
+        const rounded = Math.round(info.fps * 1000) / 1000;
+        if (Math.abs(useSubtitles.getState().fps - rounded) > 1e-6) {
+          useSubtitles.setState({ fps: rounded });
+        }
       }
+      await ensurePlayback(path);
     };
     void run(lastPath);
     return useSubtitles.subscribe((s) => {

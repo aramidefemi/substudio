@@ -1,4 +1,4 @@
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { Channel, invoke, isTauri } from "@tauri-apps/api/core";
 import type { SpellCheckResult, SpellListKind, SpellSuggestResult } from "@/features/spellcheck/types";
 import type { CueData, SubtitleFormat } from "@/features/subtitles/types";
 
@@ -59,6 +59,15 @@ export interface ProjectFile {
   ruleProfile?: unknown;
 }
 
+/** MED-02: source vs cached/encoded editing proxy for `<video>`. */
+export interface PlaybackDecision {
+  sourcePath: string;
+  playbackPath: string;
+  usingProxy: boolean;
+  fromCache: boolean;
+  reason: string | null;
+}
+
 /** Typed wrappers for the Rust commands in `src-tauri/src/lib.rs`. */
 export const commands = {
   readSubtitles: (path: string) => invoke<CueData[]>("read_subtitles", { path }),
@@ -86,6 +95,12 @@ export const commands = {
   probeMedia: (path: string) => invoke<MediaInfo>("probe_media", { path }),
   /** Source frame timestamps as SSFT `ArrayBuffer` (MED-01). */
   mediaFrameTimes: (path: string) => invoke<ArrayBuffer>("media_frame_times", { path }),
+  /**
+   * Resolve playback path (MED-02). Plays source when WebKit-safe; otherwise
+   * builds/reuses an H.264 editing proxy. Progress is 0–1 while encoding.
+   */
+  ensurePlayback: (path: string, onProgress: Channel<number>) =>
+    invoke<PlaybackDecision>("ensure_playback", { path, onProgress }),
   spellCheckTexts: (texts: string[], language: string, checkToneMarked?: boolean) =>
     invoke<SpellCheckResult>("spell_check_texts", { texts, language, checkToneMarked }),
   spellSuggest: (word: string, language: string) =>

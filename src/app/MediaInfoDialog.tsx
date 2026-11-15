@@ -49,6 +49,8 @@ export function MediaInfoDialog() {
   const videoPath = useSubtitles((s) => s.videoPath);
   const info = useMedia((s) => s.info);
   const frameTimes = useMedia((s) => s.frameTimes);
+  const usingProxy = useMedia((s) => s.usingProxy);
+  const playbackPath = useMedia((s) => s.playbackPath);
   const loading = useMedia((s) => s.loading);
   const error = useMedia((s) => s.error);
 
@@ -92,6 +94,16 @@ export function MediaInfoDialog() {
               value={info.bitRate ? `${Math.round(info.bitRate / 1000)} kb/s` : "—"}
             />
             <Row label="Source" value={info.source} />
+            <Row
+              label="Playback"
+              value={
+                !playbackPath
+                  ? "…"
+                  : usingProxy
+                    ? "Editing proxy (H.264)"
+                    : "Source (WebKit)"
+              }
+            />
             {info.note && <p className="text-xs text-muted-foreground">{info.note}</p>}
             {info.tracks.length > 0 && (
               <div className="space-y-2">
