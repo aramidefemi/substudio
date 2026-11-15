@@ -1,9 +1,10 @@
 //! Subtitle format modules beyond SubRip / WebVTT.
 //!
-//! - FMT-01 (Package B): ASS/SSA → `ass` (lands separately; do not edit here)
-//! - FMT-02 Package C: YouTube SBV → `sbv`
-//! - FMT-02 sibling: TTML/DFXP → `ttml` (add `pub mod ttml;` when ready)
+//! - FMT-01 (Package B): ASS/SSA → `ass` (lands separately; keep when merging)
+//! - FMT-02: YouTube SBV → `sbv`; TTML/DFXP → `ttml`
 //!
-//! Orchestrator wires these into `SubtitleFormat` + `files`/`lib` dispatch.
+//! Central dispatch lives in `subtitles` / `files`.
 
+// pub mod ass; // FMT-01 — uncomment / keep when Package B merges
 pub mod sbv;
+pub mod ttml;

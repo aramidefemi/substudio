@@ -6,6 +6,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 
+use crate::formats::{sbv, ttml};
 use crate::subtitles::{self, Cue, SubtitleFormat};
 
 const BACKUP_DIR: &str = "auto-backup";
@@ -194,6 +195,9 @@ pub fn write_auto_backup(
     let ext = match format {
         SubtitleFormat::Srt => "srt",
         SubtitleFormat::Vtt => "vtt",
+        SubtitleFormat::Sbv => "sbv",
+        SubtitleFormat::Ttml => "ttml",
+        SubtitleFormat::Dfxp => "dfxp",
     };
     let name = format!(
         "{}_{}.{}",
@@ -220,7 +224,8 @@ pub fn list_backups(app_data: &Path) -> Result<Vec<BackupInfo>, String> {
             continue;
         }
         let Some(ext) = path.extension().and_then(|e| e.to_str()) else { continue };
-        if !matches!(ext.to_ascii_lowercase().as_str(), "srt" | "vtt") {
+        let ext = ext.to_ascii_lowercase();
+        if !is_subtitle_ext(&ext) {
             continue;
         }
         let meta = entry.metadata().map_err(|e| e.to_string())?;
@@ -260,6 +265,12 @@ pub fn ensure_backup_dir(app_data: &Path) -> Result<String, String> {
     let dir = backup_dir(app_data);
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir.to_string_lossy().into_owned())
+}
+
+fn is_subtitle_ext(ext: &str) -> bool {
+    matches!(ext, "srt" | "vtt")
+        || sbv::EXTENSIONS.contains(&ext)
+        || ttml::EXTENSIONS.contains(&ext)
 }
 
 #[cfg(test)]

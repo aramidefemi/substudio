@@ -32,7 +32,7 @@ struct SpellSuggestResult {
     suggestions: Vec<String>,
 }
 
-/// Reads a .srt/.vtt file, detecting the encoding when it isn't UTF-8 (FIL-04).
+/// Reads a subtitle file (.srt/.vtt/.sbv/.ttml/.dfxp), detecting encoding when it isn't UTF-8 (FIL-04).
 #[tauri::command]
 async fn read_subtitles(path: String) -> Result<Vec<Cue>, String> {
     let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;

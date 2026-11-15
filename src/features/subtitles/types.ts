@@ -22,4 +22,4 @@ export interface Cue extends CueData {
   original?: string;
 }
 
-export type SubtitleFormat = "srt" | "vtt";
+export type SubtitleFormat = "srt" | "vtt" | "sbv" | "ttml" | "dfxp";

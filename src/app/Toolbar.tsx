@@ -249,6 +249,9 @@ export function Toolbar() {
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => runCommand("file.saveAs")}>SubRip (.srt)</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => runCommand("file.saveAsVtt")}>WebVTT (.vtt)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsSbv")}>YouTube SBV (.sbv)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsTtml")}>TTML (.ttml)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsDfxp")}>DFXP (.dfxp)</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>

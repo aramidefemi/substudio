@@ -1,7 +1,12 @@
 //! Reading and writing subtitle files. Times are seconds as `f64`; the
 //! frontend owns display formats (frames vs milliseconds).
+//!
+//! Format-specific parsers live under `formats/` (SBV, TTML/DFXP; ASS when
+//! FMT-01 lands). Dispatch here stays thin.
 
 use serde::{Deserialize, Serialize};
+
+use crate::formats::{sbv, ttml};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cue {
@@ -15,11 +20,25 @@ pub struct Cue {
 pub enum SubtitleFormat {
     Srt,
     Vtt,
+    Sbv,
+    Ttml,
+    Dfxp,
 }
 
-/// Parses SubRip or WebVTT text. Blocks without a valid `-->` timing line are skipped.
+/// Parses SubRip, WebVTT, SBV, or TTML/DFXP. Invalid blocks are skipped.
 pub fn parse(input: &str) -> Vec<Cue> {
-    let text = input.trim_start_matches('\u{feff}').replace("\r\n", "\n").replace('\r', "\n");
+    let text = input.trim_start_matches('\u{feff}');
+    if ttml::looks_like_ttml(text) {
+        return ttml::parse(text);
+    }
+    if sbv::looks_like_sbv(text) {
+        return sbv::parse(text);
+    }
+    parse_srt_vtt(text)
+}
+
+fn parse_srt_vtt(input: &str) -> Vec<Cue> {
+    let text = input.replace("\r\n", "\n").replace('\r', "\n");
     let mut cues = Vec::new();
 
     for block in text.split("\n\n") {
@@ -27,7 +46,11 @@ pub fn parse(input: &str) -> Vec<Cue> {
         let Some(timing) = lines.next() else { continue };
         let Some((start, end)) = parse_timing(timing) else { continue };
         let body: Vec<&str> = lines.collect();
-        cues.push(Cue { start, end, text: body.join("\n").trim().to_string() });
+        cues.push(Cue {
+            start,
+            end,
+            text: body.join("\n").trim().to_string(),
+        });
     }
 
     cues.sort_by(|a, b| a.start.total_cmp(&b.start));
@@ -35,6 +58,14 @@ pub fn parse(input: &str) -> Vec<Cue> {
 }
 
 pub fn serialize(cues: &[Cue], format: SubtitleFormat) -> String {
+    match format {
+        SubtitleFormat::Sbv => sbv::serialize(cues),
+        SubtitleFormat::Ttml | SubtitleFormat::Dfxp => ttml::serialize(cues),
+        SubtitleFormat::Srt | SubtitleFormat::Vtt => serialize_srt_vtt(cues, format),
+    }
+}
+
+fn serialize_srt_vtt(cues: &[Cue], format: SubtitleFormat) -> String {
     let mut out = String::new();
     if format == SubtitleFormat::Vtt {
         out.push_str("WEBVTT\n\n");
@@ -116,5 +147,24 @@ mod tests {
     fn writes_vtt() {
         let out = serialize(&[Cue { start: 3661.5, end: 3662.0, text: "Hi".into() }], SubtitleFormat::Vtt);
         assert_eq!(out, "WEBVTT\n\n01:01:01.500 --> 01:01:02.000\nHi\n\n");
+    }
+
+    #[test]
+    fn dispatches_sbv() {
+        let cues = parse("0:00:00.000,0:00:01.500\nHello\n\n");
+        assert_eq!(cues, vec![Cue { start: 0.0, end: 1.5, text: "Hello".into() }]);
+        assert_eq!(parse(&serialize(&cues, SubtitleFormat::Sbv)), cues);
+    }
+
+    #[test]
+    fn dispatches_ttml() {
+        let xml = r#"<?xml version="1.0"?><tt xmlns="http://www.w3.org/ns/ttml"><body><div>
+<p begin="00:00:00.000" end="00:00:01.500">Hi</p>
+</div></body></tt>"#;
+        let cues = parse(xml);
+        assert_eq!(cues, vec![Cue { start: 0.0, end: 1.5, text: "Hi".into() }]);
+        let out = serialize(&cues, SubtitleFormat::Dfxp);
+        assert!(out.contains("xmlns=\"http://www.w3.org/ns/ttml\""));
+        assert_eq!(parse(&out), cues);
     }
 }

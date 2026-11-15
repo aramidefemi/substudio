@@ -6,15 +6,9 @@
 //! - [`looks_like_sbv`] — heuristic for auto-detect before dispatch.
 //! - [`EXTENSIONS`] — `["sbv"]`.
 //!
-//! **Wire-up remaining (orchestrator):** add `SubtitleFormat::Sbv`, dispatch in
-//! `subtitles::parse` / `serialize` and `files` (extension → format), Tauri
-//! open/save filters, and frontend commands/types. Do not merge ASS here.
-//!
 //! **Format:** timing line `H:MM:SS.mmm,H:MM:SS.mmm` (comma, not `-->`), then
 //! one or more text lines, blank line between cues. No cue indices. Invalid
 //! blocks are skipped (same error style as SRT/VTT — no `Result`).
-
-#![allow(dead_code)] // public API; SubtitleFormat dispatch is orchestrator-owned
 
 use crate::subtitles::Cue;
 

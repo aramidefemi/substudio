@@ -28,6 +28,6 @@ describe("planDrop", () => {
     const plan = planDrop(["/a/film.mkv"]);
     expect(plan.subtitle).toBeNull();
     expect(plan.video).toBeNull();
-    expect(describeDrop(plan)).toMatch(/Only/);
+    expect(describeDrop(plan)).toMatch(/\.sbv/);
   });
 });

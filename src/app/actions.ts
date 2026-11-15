@@ -162,8 +162,21 @@ async function confirmDiscard(): Promise<boolean> {
 }
 
 function formatOf(path: string): SubtitleFormat {
-  return path.toLowerCase().endsWith(".vtt") ? "vtt" : "srt";
+  const lower = path.toLowerCase();
+  if (lower.endsWith(".vtt")) return "vtt";
+  if (lower.endsWith(".sbv")) return "sbv";
+  if (lower.endsWith(".ttml")) return "ttml";
+  if (lower.endsWith(".dfxp")) return "dfxp";
+  return "srt";
 }
+
+const FORMAT_FILTER: Record<SubtitleFormat, { name: string; extensions: string[] }> = {
+  srt: { name: "SubRip", extensions: ["srt"] },
+  vtt: { name: "WebVTT", extensions: ["vtt"] },
+  sbv: { name: "YouTube SBV", extensions: ["sbv"] },
+  ttml: { name: "TTML", extensions: ["ttml"] },
+  dfxp: { name: "DFXP", extensions: ["dfxp"] },
+};
 
 async function rememberMtime(path: string) {
   try {
@@ -323,7 +336,9 @@ export async function openVideo() {
 export async function openDroppedFiles(paths: readonly string[]) {
   const plan = planDrop(paths);
   if (!plan.subtitle && !plan.video) {
-    toast.error("Can't open this file", { description: "Drop a .srt or .vtt subtitle, or an .mp4, .mov, .m4v or .webm video." });
+    toast.error("Can't open this file", {
+      description: "Drop a .srt, .vtt, .sbv, .ttml or .dfxp subtitle, or an .mp4, .mov, .m4v or .webm video.",
+    });
     return;
   }
   if (plan.subtitle) {
@@ -367,7 +382,7 @@ export async function saveAs(format: SubtitleFormat = "srt") {
   const base = stripExtension(fileName(filePath ?? videoPath ?? "Untitled"));
   const path = await saveDialog({
     defaultPath: `${base}.${format}`,
-    filters: [format === "vtt" ? { name: "WebVTT", extensions: ["vtt"] } : { name: "SubRip", extensions: ["srt"] }],
+    filters: [FORMAT_FILTER[format]],
   });
   if (path) await writeTo(path, format);
 }
@@ -583,7 +598,7 @@ export async function saveSelectedAs(format: SubtitleFormat = "srt") {
   const base = stripExtension(fileName(filePath ?? videoPath ?? "Untitled"));
   const path = await saveDialog({
     defaultPath: `${base}.selection.${format}`,
-    filters: [format === "vtt" ? { name: "WebVTT", extensions: ["vtt"] } : { name: "SubRip", extensions: ["srt"] }],
+    filters: [FORMAT_FILTER[format]],
   });
   if (!path) return;
   try {
