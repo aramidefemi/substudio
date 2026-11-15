@@ -52,6 +52,8 @@ export const MENU: MenuGroup[] = [
       "file.openKeepingVideo",
       "file.importEncoding",
       "file.importPlainText",
+      "file.openOriginal",
+      "file.closeOriginal",
       { submenu: "Open Recent", items: ["file.recent", "file.recent.clear"] },
       "file.openVideo",
       "-",
@@ -83,6 +85,7 @@ export const MENU: MenuGroup[] = [
       "edit.copy",
       "edit.paste",
       "edit.pastePlainText",
+      "edit.pasteOriginal",
       "edit.selectAll",
       "edit.invertSelection",
       "-",
@@ -204,6 +207,7 @@ export const MENU: MenuGroup[] = [
         items: [
           ["view.column.cps", "CPS"],
           ["view.column.gap", "Gap"],
+          ["view.column.original", "Original"],
         ],
       },
       {

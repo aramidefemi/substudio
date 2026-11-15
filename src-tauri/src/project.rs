@@ -1,8 +1,9 @@
 //! Project sidecar (FIL-03): `<name>.substudio.json` next to `<name>.srt`.
 //!
-//! Holds what the SRT can't: the video, fps, timecode mode, bookmarks and the
-//! last selected cue. The subtitle file itself is never touched. A missing or
-//! unreadable sidecar is treated as "no project info", never as an error.
+//! Holds what the SRT can't: the video, fps, timecode mode, bookmarks, the
+//! original/script column (FIL-07), and the last selected cue. The subtitle
+//! file itself is never touched. A missing or unreadable sidecar is treated as
+//! "no project info", never as an error.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -30,6 +31,16 @@ pub struct BookmarkRef {
     pub note: String,
 }
 
+/// Original/script text for one cue (FIL-07). Not written to the SRT.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OriginalRef {
+    pub index: usize,
+    pub start: f64,
+    #[serde(default)]
+    pub text: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Project {
@@ -43,6 +54,10 @@ pub struct Project {
     pub timecode: Option<String>,
     pub bookmarks: Vec<BookmarkRef>,
     pub selected: Option<CueRef>,
+    /// Path of the last opened original/script file, if any.
+    pub original_path: Option<String>,
+    /// Per-cue original/script texts (translation mode).
+    pub originals: Vec<OriginalRef>,
 }
 
 impl Default for Project {
@@ -55,6 +70,8 @@ impl Default for Project {
             timecode: None,
             bookmarks: Vec::new(),
             selected: None,
+            original_path: None,
+            originals: Vec::new(),
         }
     }
 }
@@ -77,6 +94,7 @@ pub fn read(subtitle: &Path) -> Option<Project> {
     let mut project: Project = serde_json::from_str(&text).ok()?;
     project.fps = project.fps.filter(|f| f.is_finite() && *f > 0.0 && *f <= 1000.0);
     project.bookmarks.retain(|b| b.start.is_finite());
+    project.originals.retain(|o| o.start.is_finite());
     project.video_path = resolve_video(&path, project.video_path.take(), project.video_relative.as_deref());
     Some(project)
 }
@@ -158,6 +176,12 @@ mod tests {
             timecode: Some("ms".into()),
             bookmarks: vec![BookmarkRef { index: 3, start: 12.5, note: "Check this".into() }],
             selected: Some(CueRef { index: 7, start: 30.04 }),
+            original_path: Some("/films/script-yo.txt".into()),
+            originals: vec![OriginalRef {
+                index: 0,
+                start: 1.0,
+                text: "Báwo ni".into(),
+            }],
             ..Project::default()
         };
         write(&srt, &project).unwrap();
@@ -168,6 +192,8 @@ mod tests {
         assert_eq!(back.timecode.as_deref(), Some("ms"));
         assert_eq!(back.bookmarks, project.bookmarks);
         assert_eq!(back.selected, project.selected);
+        assert_eq!(back.original_path, project.original_path);
+        assert_eq!(back.originals, project.originals);
         assert_eq!(fs::read_to_string(&srt).unwrap(), "1\n00:00:01,000 --> 00:00:02,000\nHi\n");
         assert!(!dir.join("film.substudio.json.tmp").exists());
         let _ = fs::remove_dir_all(&dir);

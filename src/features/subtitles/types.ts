@@ -15,6 +15,11 @@ export interface Cue extends CueData {
    * cleared when start/end are set. Not written to SRT.
    */
   untimed?: boolean;
+  /**
+   * Source/script text beside the translation (FIL-07). Present (possibly "")
+   * while an original is open. Saved in the project sidecar, not the SRT.
+   */
+  original?: string;
 }
 
 export type SubtitleFormat = "srt" | "vtt";

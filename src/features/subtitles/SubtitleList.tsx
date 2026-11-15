@@ -19,10 +19,11 @@ import {
 } from "./store";
 import { formatDuration, formatTime } from "./timecode";
 
-function columnTemplate(cps: boolean, gap: boolean) {
+function columnTemplate(cps: boolean, gap: boolean, original: boolean) {
   const parts = ["48px", "118px", "118px", "80px"];
   if (cps) parts.push("56px");
   if (gap) parts.push("72px");
+  if (original) parts.push("minmax(0,1fr)");
   parts.push("minmax(0,1fr)");
   return parts.join(" ");
 }
@@ -75,11 +76,12 @@ export function SubtitleList() {
   const rowHeight = ROW_HEIGHT[useSettings((s) => s.density)];
   const showCps = useSettings((s) => s.showCpsColumn);
   const showGap = useSettings((s) => s.showGapColumn);
+  const showOriginal = useSettings((s) => s.showOriginalColumn);
   const showFormatting = useSettings((s) => s.showFormattingInGrid);
   const privacy = useSettings((s) => s.privacy);
   const scrollRef = useRef<HTMLDivElement>(null);
   const selectedSet = new Set(selectedIds);
-  const gridTemplateColumns = columnTemplate(showCps, showGap);
+  const gridTemplateColumns = columnTemplate(showCps, showGap, showOriginal);
   const rowClass = "grid items-center";
 
   // eslint-disable-next-line react-hooks/incompatible-library -- opted out with "use no memo"
@@ -108,6 +110,7 @@ export function SubtitleList() {
         <span className="px-3">Duration</span>
         {showCps && <span className="px-3">CPS</span>}
         {showGap && <span className="px-3">Gap</span>}
+        {showOriginal && <span className="px-3">Original</span>}
         <span className="px-3">Text</span>
       </div>
 
@@ -190,6 +193,11 @@ export function SubtitleList() {
                 {showGap && (
                   <Cell>
                     {isUntimed(cue) || gap === null ? "—" : formatDuration(Math.max(0, gap), fmt)}
+                  </Cell>
+                )}
+                {showOriginal && (
+                  <Cell className="text-muted-foreground">
+                    {textHidden ? "••••" : <GridText text={cue.original ?? ""} showFormatting={showFormatting} />}
                   </Cell>
                 )}
                 <Cell issue={issues.text}>

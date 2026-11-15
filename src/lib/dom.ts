@@ -1,5 +1,7 @@
 /** id of the subtitle text box, so shortcuts and double-clicks can focus it. */
 export const CUE_TEXT_ID = "cue-text";
+/** Original/script text box when translation mode is on (FIL-07). */
+export const CUE_ORIGINAL_ID = "cue-original";
 
 export const focusCueText = () => document.getElementById(CUE_TEXT_ID)?.focus();
 

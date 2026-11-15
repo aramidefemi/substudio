@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  applyOriginals,
   beginHeldCue,
+  clearOriginals,
   endHeldCue,
   setPairTexts,
   deleteSelected,
@@ -41,6 +43,7 @@ import {
   restoreHistoryTo,
   undo,
   updateCue,
+  updateOriginal,
   useSubtitles,
 } from "./store";
 import { DEFAULT_DURATION, MIN_GAP } from "./timing";
@@ -423,5 +426,57 @@ describe("script timing pass (SCR-02)", () => {
     expect(setEndAddNewAndGoToNew(3)).toBeNull();
     expect(useSubtitles.getState().cues).toHaveLength(2);
     expect(useSubtitles.getState().selectedId).toBe(b!.id);
+  });
+});
+
+describe("original column (FIL-07)", () => {
+  const originals = () => useSubtitles.getState().cues.map((c) => c.original);
+
+  it("pairs by index and clears on close", () => {
+    loadDocument(
+      [
+        { start: 0, end: 1, text: "A" },
+        { start: 2, end: 3, text: "B" },
+        { start: 4, end: 5, text: "C" },
+      ],
+      null,
+    );
+    applyOriginals(["Ẹyọkan", "Méjì"], "/films/yo.txt");
+    expect(originals()).toEqual(["Ẹyọkan", "Méjì", undefined]);
+    expect(useSubtitles.getState().originalPath).toBe("/films/yo.txt");
+    clearOriginals();
+    expect(originals()).toEqual([undefined, undefined, undefined]);
+    expect(useSubtitles.getState().originalPath).toBeNull();
+  });
+
+  it("survives split at cursor and merge", () => {
+    const a = useSubtitles.getState().cues[0]!;
+    updateCue(a.id, { text: "aa bb", end: 2 });
+    updateOriginal(a.id, "YO YO");
+    select(a.id);
+    splitSelectedAtCursor(2);
+    expect(texts().slice(0, 2)).toEqual(["aa", "bb"]);
+    expect(originals().slice(0, 2)).toEqual(["YO", "YO"]);
+    select(useSubtitles.getState().cues[0]!.id);
+    mergeWithNext("keepBreaks");
+    expect(texts()[0]).toBe("aa\nbb");
+    expect(originals()[0]).toBe("YO\nYO");
+  });
+
+  it("keeps original on the left when splitting at time", () => {
+    const a = useSubtitles.getState().cues[0]!;
+    updateCue(a.id, { text: "hello", end: 4 });
+    updateOriginal(a.id, "bawo");
+    select(a.id);
+    splitSelectedAtTime(2);
+    expect(originals().slice(0, 2)).toEqual(["bawo", ""]);
+  });
+
+  it("copies original on duplicate", () => {
+    const a = useSubtitles.getState().cues[0]!;
+    updateOriginal(a.id, "src");
+    select(a.id);
+    duplicateSelected();
+    expect(originals().filter((o) => o === "src")).toHaveLength(2);
   });
 });

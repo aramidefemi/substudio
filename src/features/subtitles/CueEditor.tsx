@@ -7,10 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSettings } from "@/features/settings/store";
-import { CUE_TEXT_ID } from "@/lib/dom";
+import { CUE_ORIGINAL_ID, CUE_TEXT_ID } from "@/lib/dom";
 import { cn } from "@/lib/utils";
+import { hasOriginal } from "./original";
 import { cueStats, DEFAULT_RULES } from "./rules";
-import { isUntimed, selectRelative, selectSelectedCue, selectTimeFormat, updateCue, useSubtitles } from "./store";
+import {
+  isUntimed,
+  selectRelative,
+  selectSelectedCue,
+  selectTimeFormat,
+  updateCue,
+  updateOriginal,
+  useSubtitles,
+} from "./store";
 import { timesForUntimed } from "./timing";
 import { formatDuration, formatTime, nudgeStep, parseDuration, parseTime } from "./timecode";
 
@@ -64,12 +73,14 @@ function TimeField({ id, label, value, format, parse, step, disabled, onCommit }
 export function CueEditor() {
   const cue = useSubtitles(selectSelectedCue);
   const fmt = useSubtitles(useShallow(selectTimeFormat));
+  const showOriginal = useSettings((s) => s.showOriginalColumn);
   const hideText = useSettings((s) => s.privacy) === "text";
   const disabled = !cue || hideText;
   const untimed = cue ? isUntimed(cue) : false;
   const stats = cue && !untimed ? cueStats(cue) : null;
   const step = nudgeStep(fmt);
   const timeLabel = (base: string) => (untimed ? `${base} (untimed)` : base);
+  const originalOpen = showOriginal || (cue ? hasOriginal(cue) : false);
 
   return (
     <div className="grid h-full grid-cols-[150px_minmax(0,1fr)] gap-4 overflow-auto rounded-xl bg-card p-3">
@@ -120,6 +131,27 @@ export function CueEditor() {
       </div>
 
       <div className="flex min-w-0 flex-col gap-1">
+        {originalOpen && (
+          <div className="flex min-h-0 flex-1 flex-col gap-1">
+            <label htmlFor={CUE_ORIGINAL_ID} className="text-xs font-medium text-muted-foreground">
+              Original
+            </label>
+            <Textarea
+              id={CUE_ORIGINAL_ID}
+              disabled={disabled}
+              value={hideText ? "••••" : (cue?.original ?? "")}
+              placeholder={
+                !cue
+                  ? "Select a subtitle"
+                  : hideText
+                    ? "Hidden by screen privacy"
+                    : "Source / script text"
+              }
+              onChange={(e) => cue && !hideText && updateOriginal(cue.id, e.target.value, `original:${cue.id}`)}
+              className="min-h-0 flex-1 resize-none text-[15px] font-medium leading-snug text-muted-foreground"
+            />
+          </div>
+        )}
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-1">
             <label htmlFor={CUE_TEXT_ID} className="font-medium">

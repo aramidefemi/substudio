@@ -164,7 +164,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | FIL-04 | Encoding detection for legacy files (Windows-1252, etc.) + manual encoding pick | Import with encoding | S | ✅ Every open auto-detects: BOM → valid UTF-8 → `chardetng` guess (cargo-tested on a Windows-1252 SRT); the open toast names the detected encoding and that saving writes UTF-8. Manual Import with encoding kept. |
 | FIL-05 | Reload when changed outside the app | Reload when changed | S | ✅ Mtime poll; ask to reload. |
 | FIL-06 | Drag and drop video/subtitle onto the window | — | S | ✅ Tauri webview drag-drop; routes .srt/.vtt and .mp4/.mov/.m4v/.webm to the open logic (subtitle keeps the current video); overlay says what will open. |
-| FIL-07 | **Script / "original" column**: show source text (EN or YO, per film) beside each cue while she edits the translation | Translation mode ("Open original subtitle") | L | Stronger after SCR-00: bilingual Docs + both translation directions. Pairing is approximate (Doc ≠ 1:1 final cues); column should survive split/merge. Confirm UX once SCR-01 lands. |
+| FIL-07 | **Script / "original" column**: show source text (EN or YO, per film) beside each cue while she edits the translation | Translation mode ("Open original subtitle") | L | ✅ File › Open original… / Close original; paste original lines; Original column + editor field; index pairing; survives split/merge/duplicate; persisted in `.substudio.json` sidecar. |
 
 ### Script workflow (M1 — SCR-00 investigated ✅)
 

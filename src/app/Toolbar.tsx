@@ -22,6 +22,7 @@ import {
   setShowCpsColumn,
   setShowFormattingInGrid,
   setShowGapColumn,
+  setShowOriginalColumn,
   setTheme,
   useSettings,
   type Density,
@@ -98,6 +99,7 @@ export function Toolbar() {
   const density = useSettings((s) => s.density);
   const showCps = useSettings((s) => s.showCpsColumn);
   const showGap = useSettings((s) => s.showGapColumn);
+  const showOriginal = useSettings((s) => s.showOriginalColumn);
   const showFormatting = useSettings((s) => s.showFormattingInGrid);
   const privacy = useSettings((s) => s.privacy);
   const preview = useSettings((s) => s.preview);
@@ -165,6 +167,12 @@ export function Toolbar() {
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem checked={showGap} onCheckedChange={(v) => setShowGapColumn(v === true)}>
             Gap
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem
+            checked={showOriginal}
+            onCheckedChange={(v) => setShowOriginalColumn(v === true)}
+          >
+            Original
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
             checked={showFormatting}
