@@ -33,6 +33,8 @@ export interface Settings {
   autoBackupKeep: number;
   showCpsColumn: boolean;
   showGapColumn: boolean;
+  /** Original/script column beside translation text (FIL-07). */
+  showOriginalColumn: boolean;
   /** When true, render italic/bold in the grid; when false, strip tags. */
   showFormattingInGrid: boolean;
   privacy: PrivacyMode;
@@ -49,6 +51,7 @@ const DEFAULTS: Settings = {
   autoBackupKeep: 30,
   showCpsColumn: true,
   showGapColumn: true,
+  showOriginalColumn: false,
   showFormattingInGrid: true,
   privacy: "off",
   preview: DEFAULT_PREVIEW,
@@ -62,6 +65,8 @@ export const setTheme = (theme: ThemePreference) => useSettings.setState({ theme
 export const setDensity = (density: Density) => useSettings.setState({ density });
 export const setShowCpsColumn = (showCpsColumn: boolean) => useSettings.setState({ showCpsColumn });
 export const setShowGapColumn = (showGapColumn: boolean) => useSettings.setState({ showGapColumn });
+export const setShowOriginalColumn = (showOriginalColumn: boolean) =>
+  useSettings.setState({ showOriginalColumn });
 export const setShowFormattingInGrid = (showFormattingInGrid: boolean) =>
   useSettings.setState({ showFormattingInGrid });
 export const setPrivacy = (privacy: PrivacyMode) => useSettings.setState({ privacy });

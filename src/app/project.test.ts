@@ -3,9 +3,9 @@ import type { Cue } from "@/features/subtitles/types";
 import { buildProject, matchCueRef, restoreProject } from "./project";
 
 const cues: Cue[] = [
-  { id: "a", start: 1, end: 2, text: "One" },
+  { id: "a", start: 1, end: 2, text: "One", original: "Ẹyọkan" },
   { id: "b", start: 3, end: 4, text: "Two", bookmark: "check" },
-  { id: "c", start: 5.04, end: 6, text: "Three", bookmark: "" },
+  { id: "c", start: 5.04, end: 6, text: "Three", bookmark: "", original: "" },
 ];
 
 describe("matchCueRef", () => {
@@ -25,8 +25,15 @@ describe("matchCueRef", () => {
 });
 
 describe("sidecar round trip", () => {
-  it("saves bookmarks and selection by index + start and restores them", () => {
-    const project = buildProject({ cues, selectedId: "c", videoPath: "/films/a.mp4", fps: 24, timecode: "ms" });
+  it("saves bookmarks, originals and selection by index + start and restores them", () => {
+    const project = buildProject({
+      cues,
+      selectedId: "c",
+      videoPath: "/films/a.mp4",
+      originalPath: "/films/script.txt",
+      fps: 24,
+      timecode: "ms",
+    });
     expect(project).toEqual({
       videoPath: "/films/a.mp4",
       fps: 24,
@@ -36,13 +43,28 @@ describe("sidecar round trip", () => {
         { index: 2, start: 5.04, note: "" },
       ],
       selected: { index: 2, start: 5.04 },
+      originalPath: "/films/script.txt",
+      originals: [
+        { index: 0, start: 1, text: "Ẹyọkan" },
+        { index: 2, start: 5.04, text: "" },
+      ],
     });
     const back = restoreProject(cues, project);
     expect([...back.bookmarks]).toEqual([
       [1, "check"],
       [2, ""],
     ]);
-    expect(back).toMatchObject({ selectedIndex: 2, fps: 24, timecode: "ms", videoPath: "/films/a.mp4" });
+    expect([...back.originals]).toEqual([
+      [0, "Ẹyọkan"],
+      [2, ""],
+    ]);
+    expect(back).toMatchObject({
+      selectedIndex: 2,
+      fps: 24,
+      timecode: "ms",
+      videoPath: "/films/a.mp4",
+      originalPath: "/films/script.txt",
+    });
   });
 
   it("ignores junk values from a hand-edited file", () => {
@@ -52,7 +74,16 @@ describe("sidecar round trip", () => {
       timecode: "seconds" as never,
       bookmarks: [{ index: 9, start: 99, note: "gone" }],
       selected: null,
+      originals: [{ index: 9, start: 99, text: "gone" }],
     });
-    expect(back).toEqual({ bookmarks: new Map(), selectedIndex: -1, fps: null, timecode: null, videoPath: null });
+    expect(back).toEqual({
+      bookmarks: new Map(),
+      originals: new Map(),
+      selectedIndex: -1,
+      fps: null,
+      timecode: null,
+      videoPath: null,
+      originalPath: null,
+    });
   });
 });

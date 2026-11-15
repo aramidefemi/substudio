@@ -35,10 +35,12 @@ import {
   type NudgeMode,
   type SetStartOpts,
 } from "./timing";
+import { hasOriginal, pairOriginalsByIndex, splitOriginalByWeight } from "./original";
 import { plainTextLines } from "./plainText";
 import type { Cue, CueData } from "./types";
 
 export type { MergeMode };
+export { hasOriginal };
 
 /** Script-import cue that has not been given real start/end yet (SCR-01). */
 export const isUntimed = (c: { untimed?: boolean }) => c.untimed === true;
@@ -65,6 +67,8 @@ export interface SubtitleState extends Doc {
   selectionAnchor: string | null;
   filePath: string | null;
   videoPath: string | null;
+  /** Path of the opened original/script file, if any (FIL-07). Not the translation. */
+  originalPath: string | null;
   dirty: boolean;
   timecode: TimecodeMode;
   fps: number;
@@ -85,6 +89,7 @@ export const useSubtitles = create<SubtitleState>()(() => ({
   selectionAnchor: null,
   filePath: null,
   videoPath: null,
+  originalPath: null,
   dirty: false,
   timecode: "frames",
   fps: 25,
@@ -186,6 +191,7 @@ export function summarizePatches(patches: readonly Patch[]): string {
   const paths = patches.map((p) => p.path.map(String).join("."));
   const joined = paths.join(" ");
   if (/\.bookmark\b|bookmark$/.test(joined)) return "Bookmark";
+  if (/\.original\b|original$/.test(joined)) return "Edit original";
   if (/\.text\b|text$/.test(joined)) return "Edit text";
   if (/\.start|\.end/.test(joined)) return "Change timing";
   if (patches.some((p) => p.op === "add" && p.path[0] === "cues")) return "Add line";
@@ -229,6 +235,7 @@ export function loadDocument(cues: CueData[], filePath: string | null, keepVideo
     selectedIds: id ? [id] : [],
     selectionAnchor: id,
     filePath,
+    originalPath: null,
     dirty: false,
     past: [],
     future: [],
@@ -244,6 +251,7 @@ export function newDocument(keepVideo = false) {
     selectedIds: [],
     selectionAnchor: null,
     filePath: null,
+    originalPath: null,
     dirty: false,
     past: [],
     future: [],
@@ -917,12 +925,16 @@ export function duplicateSelected() {
   const ids = block.map(() => newId());
   edit((doc) => {
     const insertAt = Math.max(...indices) + 1;
-    const copies = block.map((c, j) => ({
-      id: ids[j]!,
-      start: c.start + offset,
-      end: c.end + offset,
-      text: c.text,
-    }));
+    const copies = block.map((c, j) => {
+      const copy: Cue = {
+        id: ids[j]!,
+        start: c.start + offset,
+        end: c.end + offset,
+        text: c.text,
+      };
+      if (hasOriginal(c)) copy.original = c.original;
+      return copy;
+    });
     doc.cues.splice(insertAt, 0, ...copies);
   });
   setSelection(ids, ids[0]!, ids[0]!);
@@ -942,12 +954,21 @@ export function splitSelectedAtCursor(cursor: number): string | null {
   const cue = get().cues[i]!;
   const parts = splitCueAtCursor(cue, cursor);
   if (!parts) return null;
+  const [leftOrig, rightOrig] = splitOriginalByWeight(
+    cue.original,
+    parts.left.text.length,
+    parts.right.text.length,
+  );
   const rightId = newId();
   edit((doc) => {
     const c = doc.cues[i]!;
     c.end = parts.left.end;
     c.text = parts.left.text;
-    doc.cues.splice(i + 1, 0, { id: rightId, ...parts.right });
+    if (leftOrig !== undefined) c.original = leftOrig;
+    else delete c.original;
+    const right: Cue = { id: rightId, ...parts.right };
+    if (rightOrig !== undefined) right.original = rightOrig;
+    doc.cues.splice(i + 1, 0, right);
   });
   select(rightId);
   return rightId;
@@ -965,7 +986,10 @@ export function splitSelectedAtTime(t: number): string | null {
     const c = doc.cues[i]!;
     c.end = parts.left.end;
     c.text = parts.left.text;
-    doc.cues.splice(i + 1, 0, { id: rightId, ...parts.right });
+    const right: Cue = { id: rightId, ...parts.right };
+    // Keep the script on the timed-left half; empty original on the new right if mode is on.
+    if (hasOriginal(cue)) right.original = "";
+    doc.cues.splice(i + 1, 0, right);
   });
   select(rightId);
   return rightId;
@@ -982,6 +1006,9 @@ function mergePair(i: number, neighbor: number, mode: MergeMode): string | null 
     const left = doc.cues.find((c) => c.id === keepId)!;
     const right = doc.cues.find((c) => c.id === dropId)!;
     left.text = mergeTexts(left.text, right.text, mode);
+    if (hasOriginal(left) || hasOriginal(right)) {
+      left.original = mergeTexts(left.original ?? "", right.original ?? "", mode);
+    }
     left.end = right.end;
     doc.cues = doc.cues.filter((c) => c.id !== dropId);
   });
@@ -1018,11 +1045,19 @@ export function mergeSelected(mode: MergeMode = "keepBreaks") {
     block.map((c) => c.text),
     mode,
   );
+  const anyOriginal = block.some(hasOriginal);
+  const original = anyOriginal
+    ? mergeMany(
+        block.map((c) => c.original ?? ""),
+        mode,
+      )
+    : undefined;
   const end = block[block.length - 1]!.end;
   edit((doc) => {
     const keep = doc.cues.find((c) => c.id === keepId)!;
     keep.text = text;
     keep.end = end;
+    if (original !== undefined) keep.original = original;
     const remove = new Set(drop);
     doc.cues = doc.cues.filter((c) => !remove.has(c.id));
   });
@@ -1066,5 +1101,52 @@ export function restoreBookmarks(marks: ReadonlyMap<number, string>) {
   if (!marks.size) return;
   set((s) => ({
     cues: s.cues.map((c, i) => (marks.has(i) ? { ...c, bookmark: marks.get(i)! } : c)),
+  }));
+}
+
+/* ---------- original / script column (FIL-07) ---------- */
+
+export const selectHasOriginals = (s: SubtitleState) => s.cues.some(hasOriginal);
+
+/** Pair script lines onto cues by index. One undo step. */
+export function applyOriginals(lines: readonly string[], path: string | null = null) {
+  const paired = pairOriginalsByIndex(get().cues.length, lines);
+  edit((doc) => {
+    doc.cues.forEach((c, i) => {
+      const text = paired[i];
+      if (text !== undefined) c.original = text;
+      else delete c.original;
+    });
+  });
+  set({ originalPath: path });
+}
+
+/** Remove the original column from every cue. One undo step. */
+export function clearOriginals() {
+  if (!selectHasOriginals(get())) {
+    if (get().originalPath) set({ originalPath: null });
+    return;
+  }
+  edit((doc) => {
+    for (const c of doc.cues) delete c.original;
+  });
+  set({ originalPath: null });
+}
+
+/** Edit one cue's original text (typing merges via `key`). */
+export function updateOriginal(id: string, text: string, key?: string) {
+  edit((doc) => {
+    const cue = doc.cues.find((c) => c.id === id);
+    if (!cue || cue.original === text) return;
+    cue.original = text;
+  }, key);
+}
+
+/** Restores originals by cue index from the sidecar without an undo step. */
+export function restoreOriginals(texts: ReadonlyMap<number, string>, path: string | null = null) {
+  if (!texts.size && !path) return;
+  set((s) => ({
+    originalPath: path,
+    cues: s.cues.map((c, i) => (texts.has(i) ? { ...c, original: texts.get(i)! } : c)),
   }));
 }

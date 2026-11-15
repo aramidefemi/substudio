@@ -224,7 +224,7 @@ The **Plan** column maps each feature to our backlog (`docs/backlog.md`):
 
 | Feature | What it does | Plan |
 |---|---|---|
-| Open/close original; edit original mode; save original | Second text column per cue | M1 ❓ (her script workflow) |
+| Open/close original; edit original mode; save original | Second text column per cue | ✅ (open/close/edit + sidecar; save-as-original file is M2) |
 | Copy text between original ⇄ translation; switch them; merge original into translation | Column ops | M2 |
 | Lock original to translation timing | Keep both in sync | M2 |
 | Make empty translation from current | Start a translation | M2 |

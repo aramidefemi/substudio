@@ -35,7 +35,7 @@ export interface MediaInfo {
   note: string | null;
 }
 
-/** Mirrors `project::Project` in Rust: the `<name>.substudio.json` sidecar (FIL-03). */
+/** Mirrors `project::Project` in Rust: the `<name>.substudio.json` sidecar (FIL-03 / FIL-07). */
 export interface ProjectFile {
   version?: number;
   videoPath: string | null;
@@ -44,6 +44,10 @@ export interface ProjectFile {
   timecode: "frames" | "ms" | null;
   bookmarks: { index: number; start: number; note: string }[];
   selected: { index: number; start: number } | null;
+  /** Last opened original/script file (FIL-07). */
+  originalPath?: string | null;
+  /** Per-cue original/script texts (FIL-07). */
+  originals?: { index: number; start: number; text: string }[];
 }
 
 /** Typed wrappers for the Rust commands in `src-tauri/src/lib.rs`. */

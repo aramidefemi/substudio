@@ -11,12 +11,14 @@ import {
   setShowCpsColumn,
   setShowFormattingInGrid,
   setShowGapColumn,
+  setShowOriginalColumn,
   useSettings,
 } from "@/features/settings/store";
 import { nextBookmarkIndex } from "@/features/subtitles/bookmarks";
-import { findEmpty, findError, lineFromVideo } from "@/features/subtitles/navigation";
 import { parseCues, serializeCues } from "@/features/subtitles/clipboard";
 import { toggleItalic } from "@/features/subtitles/format";
+import { findEmpty, findError, lineFromVideo } from "@/features/subtitles/navigation";
+import { plainTextLines } from "@/features/subtitles/plainText";
 import {
   deleteSelected,
   duplicateSelected,
@@ -39,6 +41,8 @@ import {
   moveSelectedBy,
   newDocument,
   nudgeSelectedEdgeBy,
+  applyOriginals,
+  clearOriginals,
   insertPlainText,
   pasteCues,
   redo,
@@ -46,6 +50,7 @@ import {
   removeCues,
   replaceWithPlainText,
   restoreBookmarks,
+  restoreOriginals,
   rippleDeleteSelected,
   select,
   selectAll,
@@ -167,7 +172,7 @@ function seekWhenVideoReady(t: number) {
   window.setTimeout(off, 15_000);
 }
 
-/** Restores video, fps, timecode, bookmarks and the last selected line. Missing or bad sidecar: nothing happens. */
+/** Restores video, fps, timecode, bookmarks, originals and the last selected line. Missing or bad sidecar: nothing happens. */
 async function applySidecar(path: string) {
   let file;
   try {
@@ -179,6 +184,8 @@ async function applySidecar(path: string) {
   const s = useSubtitles.getState();
   const p = restoreProject(s.cues, file);
   restoreBookmarks(p.bookmarks);
+  restoreOriginals(p.originals, p.originalPath);
+  if (p.originals.size) setShowOriginalColumn(true);
   if (p.fps || p.timecode) {
     useSubtitles.setState({ ...(p.fps ? { fps: p.fps } : {}), ...(p.timecode ? { timecode: p.timecode } : {}) });
   }
@@ -628,6 +635,79 @@ export async function pasteAction() {
   }
 }
 
+/** FIL-07: open an SRT/VTT (or plain text) as the original/script column, paired by index. */
+export async function openOriginalSubtitles() {
+  if (!inTauri) return desktopOnly();
+  if (!useSubtitles.getState().cues.length) {
+    toast("Open a translation first", { description: "The original column pairs onto existing lines by index." });
+    return;
+  }
+  const path = await open({
+    filters: [
+      { name: "Subtitles or text", extensions: [...SUBTITLE_EXTENSIONS, "txt", "text"] },
+      SUBTITLE_FILTER,
+      PLAIN_TEXT_FILTER,
+    ],
+    title: "Open original / script",
+  });
+  if (!path) return;
+  try {
+    const lower = path.toLowerCase();
+    let lines: string[];
+    if (lower.endsWith(".txt") || lower.endsWith(".text")) {
+      lines = plainTextLines(await commands.readTextFile(path));
+    } else {
+      const read = await commands.readSubtitlesDetect(path);
+      lines = read.cues.map((c) => c.text);
+    }
+    if (!lines.length) {
+      toast("No lines found", { description: fileName(path) });
+      return;
+    }
+    const cueCount = useSubtitles.getState().cues.length;
+    applyOriginals(lines, path);
+    setShowOriginalColumn(true);
+    const paired = Math.min(lines.length, cueCount);
+    const extra =
+      lines.length > cueCount
+        ? ` · ${lines.length - cueCount} script line${lines.length - cueCount === 1 ? "" : "s"} unused`
+        : cueCount > lines.length
+          ? ` · ${cueCount - lines.length} cue${cueCount - lines.length === 1 ? "" : "s"} without original`
+          : "";
+    toast.success(`Opened original (${paired} paired)`, {
+      description: `${fileName(path)}${extra}`,
+    });
+  } catch (err) {
+    toast.error("Could not open original", { description: String(err) });
+  }
+}
+
+/** FIL-07: paste clipboard lines into the original column by index. */
+export async function pasteOriginalAction() {
+  try {
+    const text = await readClipboard();
+    const lines = plainTextLines(text);
+    if (!lines.length) {
+      toast("Clipboard has no lines");
+      return;
+    }
+    if (!useSubtitles.getState().cues.length) {
+      toast("Open a translation first", { description: "Paste original lines onto existing cues." });
+      return;
+    }
+    applyOriginals(lines, null);
+    setShowOriginalColumn(true);
+    toast.success(`Pasted ${Math.min(lines.length, useSubtitles.getState().cues.length)} original line${lines.length === 1 ? "" : "s"}`);
+  } catch (err) {
+    toast.error("Could not paste original", { description: String(err) });
+  }
+}
+
+export function closeOriginalAction() {
+  clearOriginals();
+  toast("Closed original");
+}
+
 /** SCR-01: File → Import plain text… — replace document with untimed lines. */
 export async function importPlainTextFile() {
   if (!inTauri) return desktopOnly();
@@ -703,6 +783,11 @@ export function toggleCpsColumn() {
 export function toggleGapColumn() {
   const next = !useSettings.getState().showGapColumn;
   setShowGapColumn(next);
+}
+
+export function toggleOriginalColumn() {
+  const next = !useSettings.getState().showOriginalColumn;
+  setShowOriginalColumn(next);
 }
 
 export function toggleFormattingInGrid() {
