@@ -39,10 +39,12 @@ import {
   moveSelectedBy,
   newDocument,
   nudgeSelectedEdgeBy,
+  insertPlainText,
   pasteCues,
   redo,
   removeBlankLines,
   removeCues,
+  replaceWithPlainText,
   restoreBookmarks,
   rippleDeleteSelected,
   select,
@@ -123,6 +125,7 @@ export const useUi = create<{
 
 const SUBTITLE_FILTER = { name: "Subtitles", extensions: SUBTITLE_EXTENSIONS };
 const VIDEO_FILTER = { name: "Video", extensions: VIDEO_EXTENSIONS };
+const PLAIN_TEXT_FILTER = { name: "Plain text", extensions: ["txt", "text"] };
 
 const desktopOnly = () => {
   toast("Files open in the desktop app", { description: "Run `pnpm tauri dev` instead of `pnpm dev`." });
@@ -622,6 +625,56 @@ export async function pasteAction() {
     toast.success(`Pasted ${cues.length} line${cues.length === 1 ? "" : "s"}`);
   } catch (err) {
     toast.error("Could not paste", { description: String(err) });
+  }
+}
+
+/** SCR-01: File → Import plain text… — replace document with untimed lines. */
+export async function importPlainTextFile() {
+  if (!inTauri) return desktopOnly();
+  if (!(await confirmDiscard())) return;
+  const path = await open({ filters: [PLAIN_TEXT_FILTER], title: "Import plain text" });
+  if (!path) return;
+  try {
+    const text = await commands.readTextFile(path);
+    const n = replaceWithPlainText(text, true);
+    setKnownMtime(null);
+    if (!n) {
+      toast("No lines found", { description: "The file had no non-empty lines." });
+      return;
+    }
+    toast.success(`Imported ${n} untimed line${n === 1 ? "" : "s"}`, {
+      description: `${fileName(path)} — time them with Set start / Set end or Hold to time`,
+    });
+  } catch (err) {
+    toast.error("Could not import plain text", { description: String(err) });
+  }
+}
+
+/** SCR-01: Edit → Paste plain text — clipboard lines → untimed cues (replace if empty). */
+export async function pastePlainTextAction() {
+  if (isEditable(document.activeElement)) {
+    document.execCommand("paste");
+    return;
+  }
+  try {
+    const text = await readClipboard();
+    if (!text.trim()) {
+      toast("Clipboard is empty");
+      return;
+    }
+    const empty = useSubtitles.getState().cues.length === 0;
+    const n = empty ? replaceWithPlainText(text, true) : insertPlainText(text);
+    if (!n) {
+      toast("No lines found", { description: "Clipboard had no non-empty lines." });
+      return;
+    }
+    toast.success(
+      empty
+        ? `Imported ${n} untimed line${n === 1 ? "" : "s"}`
+        : `Added ${n} untimed line${n === 1 ? "" : "s"}`,
+    );
+  } catch (err) {
+    toast.error("Could not paste plain text", { description: String(err) });
   }
 }
 

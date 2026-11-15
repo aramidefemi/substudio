@@ -9,7 +9,9 @@ import {
   insertAtEnd,
   insertBeforeSelected,
   insertCue,
+  insertPlainText,
   invertSelection,
+  isUntimed,
   loadDocument,
   mergeSelected,
   mergeWithNext,
@@ -21,11 +23,13 @@ import {
   redo,
   removeBlankLines,
   removeCues,
+  replaceWithPlainText,
   rippleDeleteSelected,
   select,
   selectAll,
   selectRangeTo,
   setEndAddNewAndGoToNew,
+  setSelectedStartAt,
   setVideo,
   snapAllTimesToFrames,
   splitSelectedAtCursor,
@@ -327,5 +331,35 @@ describe("setPairTexts", () => {
   it("does nothing without a next line", () => {
     setPairTexts(1, "x", "y");
     expect(texts()).toEqual(["A", "B"]);
+  });
+});
+
+describe("plain text import (SCR-01)", () => {
+  it("replaces the document with untimed lines", () => {
+    const n = replaceWithPlainText("One\n\nTwo\n  \nThree");
+    expect(n).toBe(3);
+    const { cues, dirty, filePath } = useSubtitles.getState();
+    expect(cues.map((c) => c.text)).toEqual(["One", "Two", "Three"]);
+    expect(cues.every(isUntimed)).toBe(true);
+    expect(dirty).toBe(true);
+    expect(filePath).toBeNull();
+  });
+
+  it("inserts untimed lines after the selection and undoes", () => {
+    select(useSubtitles.getState().cues[0]!.id);
+    expect(insertPlainText("X\nY")).toBe(2);
+    expect(texts()).toEqual(["A", "X", "Y", "B"]);
+    expect(useSubtitles.getState().cues.slice(1, 3).every(isUntimed)).toBe(true);
+    undo();
+    expect(texts()).toEqual(["A", "B"]);
+  });
+
+  it("clears untimed when start is set", () => {
+    replaceWithPlainText("Line");
+    setSelectedStartAt(3);
+    const c = useSubtitles.getState().cues[0]!;
+    expect(isUntimed(c)).toBe(false);
+    expect(c.start).toBe(3);
+    expect(c.end).toBe(5);
   });
 });

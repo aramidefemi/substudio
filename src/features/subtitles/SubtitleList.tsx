@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { formatRuns, gapAfter, stripTags } from "./format";
 import { checkCue, cueStats } from "./rules";
 import {
+  isUntimed,
   select,
   selectRangeTo,
   selectSelectedIndex,
@@ -120,7 +121,7 @@ export function SubtitleList() {
       >
         {cues.length === 0 && (
           <p className="p-6 text-center text-muted-foreground">
-            No subtitles yet. Open a file, or add one from the waveform.
+            No subtitles yet. Open a file, import plain text, or add one from the waveform.
           </p>
         )}
         <div style={{ height: virtualizer.getTotalSize() }} className="relative w-full">
@@ -142,7 +143,7 @@ export function SubtitleList() {
                   else if (e.metaKey || e.ctrlKey) toggleSelect(cue.id);
                   else {
                     select(cue.id);
-                    clock.seek(cue.start);
+                    if (!isUntimed(cue)) clock.seek(cue.start);
                   }
                 }}
                 onDoubleClick={focusCueText}
@@ -164,16 +165,32 @@ export function SubtitleList() {
                     <title>{cue.bookmark ? `Bookmark: ${cue.bookmark}` : "Bookmarked"}</title>
                   </Bookmark>
                 )}
-                <Cell issue={issues.start}>{formatTime(cue.start, fmt)}</Cell>
-                <Cell>{formatTime(cue.end, fmt)}</Cell>
-                <Cell issue={issues.duration}>{formatDuration(cue.end - cue.start, fmt)}</Cell>
+                {isUntimed(cue) ? (
+                  <>
+                    <Cell className="text-muted-foreground">
+                      <span title="Untimed — set start/end when you time this line">—</span>
+                    </Cell>
+                    <Cell className="text-muted-foreground">—</Cell>
+                    <Cell className="text-muted-foreground">
+                      <span title="Untimed">Untimed</span>
+                    </Cell>
+                  </>
+                ) : (
+                  <>
+                    <Cell issue={issues.start}>{formatTime(cue.start, fmt)}</Cell>
+                    <Cell>{formatTime(cue.end, fmt)}</Cell>
+                    <Cell issue={issues.duration}>{formatDuration(cue.end - cue.start, fmt)}</Cell>
+                  </>
+                )}
                 {showCps && (
                   <Cell issue={issues.text?.includes("chars/sec") ? issues.text : undefined}>
-                    {stats.chars ? stats.cps.toFixed(1) : "—"}
+                    {isUntimed(cue) || !stats.chars ? "—" : stats.cps.toFixed(1)}
                   </Cell>
                 )}
                 {showGap && (
-                  <Cell>{gap === null ? "—" : formatDuration(Math.max(0, gap), fmt)}</Cell>
+                  <Cell>
+                    {isUntimed(cue) || gap === null ? "—" : formatDuration(Math.max(0, gap), fmt)}
+                  </Cell>
                 )}
                 <Cell issue={issues.text}>
                   {textHidden ? "••••" : <GridText text={cue.text} showFormatting={showFormatting} />}

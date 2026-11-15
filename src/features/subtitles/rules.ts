@@ -1,4 +1,6 @@
-import type { CueData } from "./types";
+import type { Cue, CueData } from "./types";
+
+const isUntimed = (c: CueData) => (c as Cue).untimed === true;
 
 /** Reading-speed and timing limits. Will become per-client presets. */
 export interface Rules {
@@ -36,9 +38,19 @@ export interface CueIssues {
 }
 
 export function checkCue(cue: CueData, prev: CueData | undefined, rules = DEFAULT_RULES): CueIssues {
-  const s = cueStats(cue);
   const issues: CueIssues = {};
-  if (prev && cue.start < prev.end - 1e-6) issues.start = "Overlaps the previous subtitle";
+  // Untimed script lines are placeholders until the timing pass (SCR-01/02).
+  if (isUntimed(cue)) {
+    const longest = Math.max(0, ...cue.text.split("\n").map((l) => l.length));
+    if (longest > rules.maxLineLength) {
+      issues.text = `Line too long: ${longest} chars (max ${rules.maxLineLength})`;
+    }
+    return issues;
+  }
+  const s = cueStats(cue);
+  if (prev && !isUntimed(prev) && cue.start < prev.end - 1e-6) {
+    issues.start = "Overlaps the previous subtitle";
+  }
   if (s.duration < rules.minDuration) issues.duration = `Too short: under ${rules.minDuration} s`;
   else if (s.duration > rules.maxDuration) issues.duration = `Too long: over ${rules.maxDuration} s`;
   if (s.cps > rules.maxCps) {

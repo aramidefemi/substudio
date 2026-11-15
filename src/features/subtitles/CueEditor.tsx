@@ -10,7 +10,7 @@ import { useSettings } from "@/features/settings/store";
 import { CUE_TEXT_ID } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 import { cueStats, DEFAULT_RULES } from "./rules";
-import { selectRelative, selectSelectedCue, selectTimeFormat, updateCue, useSubtitles } from "./store";
+import { isUntimed, selectRelative, selectSelectedCue, selectTimeFormat, updateCue, useSubtitles } from "./store";
 import { formatDuration, formatTime, nudgeStep, parseDuration, parseTime } from "./timecode";
 
 interface TimeFieldProps {
@@ -65,42 +65,52 @@ export function CueEditor() {
   const fmt = useSubtitles(useShallow(selectTimeFormat));
   const hideText = useSettings((s) => s.privacy) === "text";
   const disabled = !cue || hideText;
-  const stats = cue ? cueStats(cue) : null;
+  const untimed = cue ? isUntimed(cue) : false;
+  const stats = cue && !untimed ? cueStats(cue) : null;
   const step = nudgeStep(fmt);
+  const timeLabel = (base: string) => (untimed ? `${base} (untimed)` : base);
 
   return (
     <div className="grid h-full grid-cols-[150px_minmax(0,1fr)] gap-4 overflow-auto rounded-xl bg-card p-3">
       <div className="flex flex-col gap-2">
         <TimeField
           id="cue-start"
-          label="Start"
+          label={timeLabel("Start")}
           value={cue?.start ?? 0}
-          format={(t) => formatTime(t, fmt)}
+          format={(t) => (untimed ? "—" : formatTime(t, fmt))}
           parse={(s) => parseTime(s, fmt)}
           step={step}
           disabled={disabled}
           // Moving the start keeps the duration, like Subtitle Edit.
-          onCommit={(t) => cue && updateCue(cue.id, { start: t, end: t + (cue.end - cue.start) })}
+          onCommit={(t) => cue && updateCue(cue.id, { start: t, end: t + Math.max(cue.end - cue.start, 2) })}
         />
         <TimeField
           id="cue-end"
-          label="End"
+          label={timeLabel("End")}
           value={cue?.end ?? 0}
-          format={(t) => formatTime(t, fmt)}
+          format={(t) => (untimed ? "—" : formatTime(t, fmt))}
           parse={(s) => parseTime(s, fmt)}
           step={step}
           disabled={disabled}
-          onCommit={(t) => cue && t > cue.start && updateCue(cue.id, { end: t })}
+          onCommit={(t) => {
+            if (!cue) return;
+            if (untimed) updateCue(cue.id, { start: Math.max(0, t - 2), end: Math.max(t, 0.05) });
+            else if (t > cue.start) updateCue(cue.id, { end: t });
+          }}
         />
         <TimeField
           id="cue-duration"
-          label="Duration"
+          label={timeLabel("Duration")}
           value={cue ? cue.end - cue.start : 0}
-          format={(d) => formatDuration(d, fmt)}
+          format={(d) => (untimed ? "Untimed" : formatDuration(d, fmt))}
           parse={(s) => parseDuration(s, fmt)}
           step={step}
           disabled={disabled}
-          onCommit={(d) => cue && d > 0 && updateCue(cue.id, { end: cue.start + d })}
+          onCommit={(d) => {
+            if (!cue || d <= 0) return;
+            if (untimed) updateCue(cue.id, { start: 0, end: d });
+            else updateCue(cue.id, { end: cue.start + d });
+          }}
         />
       </div>
 

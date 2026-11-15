@@ -56,6 +56,8 @@ export const commands = {
     invoke<CueData[]>("read_subtitles_encoded", { path, encoding }),
   writeSubtitles: (path: string, cues: CueData[], format: SubtitleFormat) =>
     invoke<void>("write_subtitles", { path, cues, format }),
+  /** Plain UTF-8 text (SCR-01 script import). */
+  readTextFile: (path: string) => invoke<string>("read_text_file", { path }),
   readProject: (subtitlePath: string) => invoke<ProjectFile | null>("read_project", { subtitlePath }),
   writeProject: (subtitlePath: string, project: ProjectFile) =>
     invoke<void>("write_project", { subtitlePath, project }),

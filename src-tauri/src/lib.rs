@@ -35,6 +35,14 @@ async fn write_subtitles(path: String, cues: Vec<Cue>, format: SubtitleFormat) -
     std::fs::write(&path, subtitles::serialize(&cues, format)).map_err(|e| e.to_string())
 }
 
+/// Raw UTF-8 text for script import (SCR-01). BOM is stripped.
+#[tauri::command]
+async fn read_text_file(path: String) -> Result<String, String> {
+    let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+    let text = String::from_utf8_lossy(&bytes);
+    Ok(text.strip_prefix('\u{FEFF}').unwrap_or(&text).to_string())
+}
+
 /// Project sidecar next to the subtitle; `None` when missing or unreadable (FIL-03).
 #[tauri::command]
 async fn read_project(subtitle_path: String) -> Option<project::Project> {
@@ -152,6 +160,7 @@ pub fn run() {
             read_subtitles_detect,
             read_subtitles_encoded,
             write_subtitles,
+            read_text_file,
             read_project,
             write_project,
             file_mtime,

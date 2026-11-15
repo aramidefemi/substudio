@@ -33,9 +33,13 @@ import {
   type NudgeMode,
   type SetStartOpts,
 } from "./timing";
+import { plainTextLines } from "./plainText";
 import type { Cue, CueData } from "./types";
 
 export type { MergeMode };
+
+/** Script-import cue that has not been given real start/end yet (SCR-01). */
+export const isUntimed = (c: { untimed?: boolean }) => c.untimed === true;
 
 enablePatches();
 
@@ -125,15 +129,13 @@ function setSelection(ids: string[], primary: string | null, anchor: string | nu
 }
 
 /** Index of the cue under `t`, or -1. Cues are kept sorted by start. */
-export function cueIndexAt(cues: readonly CueData[], t: number): number {
-  let lo = 0;
-  let hi = cues.length - 1;
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    const c = cues[mid]!;
-    if (t < c.start) hi = mid - 1;
-    else if (t > c.end) lo = mid + 1;
-    else return mid;
+/** Timed cue under playhead `t`. Untimed (SCR-01) cues are never matches. */
+export function cueIndexAt(cues: readonly Cue[], t: number): number {
+  for (let i = 0; i < cues.length; i++) {
+    const c = cues[i]!;
+    if (isUntimed(c)) continue;
+    if (t < c.start) return -1;
+    if (t <= c.end) return i;
   }
   return -1;
 }
@@ -351,12 +353,17 @@ export function selectedCues(): Cue[] {
 /* ---------- cue edits ---------- */
 
 const byStart = (a: CueData, b: CueData) => a.start - b.start;
+const DEFAULT_DURATION = 2;
 
 export function updateCue(id: string, patch: Partial<CueData>, key?: string) {
   edit((doc) => {
     const cue = doc.cues.find((c) => c.id === id);
     if (!cue) return;
     Object.assign(cue, patch);
+    if (patch.start !== undefined || patch.end !== undefined) {
+      delete cue.untimed;
+      if (cue.end <= cue.start) cue.end = cue.start + DEFAULT_DURATION;
+    }
     if (patch.start !== undefined) doc.cues.sort(byStart);
   }, key);
 }
@@ -517,23 +524,58 @@ export function moveAllBy(kind: TimingStep, dir: 1 | -1) {
   edit((doc) => shiftAll(doc.cues, delta));
 }
 
+function timeUntimedCue(c: Cue, t: number, edge: "start" | "end") {
+  if (edge === "start") {
+    c.start = Math.max(0, t);
+    c.end = c.start + DEFAULT_DURATION;
+  } else {
+    c.end = Math.max(MIN_GAP, t);
+    c.start = Math.max(0, c.end - DEFAULT_DURATION);
+  }
+  delete c.untimed;
+}
+
 export function setSelectedStartAt(t: number, opts?: SetStartOpts) {
   const i = primaryIndex();
   if (i < 0) return;
-  edit((doc) => setStartAt(doc.cues, i, t, opts));
+  edit((doc) => {
+    const c = doc.cues[i]!;
+    if (isUntimed(c)) {
+      timeUntimedCue(c, t, "start");
+      doc.cues.sort(byStart);
+      return;
+    }
+    setStartAt(doc.cues, i, t, opts);
+  });
 }
 
 export function setSelectedEndAt(t: number) {
   const i = primaryIndex();
   if (i < 0) return;
-  edit((doc) => setEndAt(doc.cues, i, t));
+  edit((doc) => {
+    const c = doc.cues[i]!;
+    if (isUntimed(c)) {
+      timeUntimedCue(c, t, "end");
+      doc.cues.sort(byStart);
+      return;
+    }
+    setEndAt(doc.cues, i, t);
+  });
 }
 
 /** Set end at `t`, select next (if any). */
 export function setEndAndGoToNext(t: number) {
   const i = primaryIndex();
   if (i < 0) return;
-  edit((doc) => setEndAt(doc.cues, i, t));
+  edit((doc) => {
+    const c = doc.cues[i]!;
+    if (isUntimed(c)) {
+      timeUntimedCue(c, t, "end");
+      doc.cues.sort(byStart);
+      return;
+    }
+    setEndAt(doc.cues, i, t);
+  });
   selectRelative(1);
 }
 
@@ -541,7 +583,15 @@ export function setEndAndGoToNext(t: number) {
 export function setStartAndGoToNext(t: number, opts?: SetStartOpts) {
   const i = primaryIndex();
   if (i < 0) return;
-  edit((doc) => setStartAt(doc.cues, i, t, opts));
+  edit((doc) => {
+    const c = doc.cues[i]!;
+    if (isUntimed(c)) {
+      timeUntimedCue(c, t, "start");
+      doc.cues.sort(byStart);
+      return;
+    }
+    setStartAt(doc.cues, i, t, opts);
+  });
   selectRelative(1);
 }
 
@@ -656,7 +706,61 @@ export function pasteCues(incoming: readonly CueData[]) {
   setSelection(ids, ids[0]!, ids[0]!);
 }
 
-const DEFAULT_DURATION = 2;
+/**
+ * Replace the document with untimed cues from plain text (SCR-01).
+ * Keeps video by default; clears path and history (like opening a new file).
+ */
+export function replaceWithPlainText(text: string, keepVideo = true): number {
+  const lines = plainTextLines(text);
+  const cues: Cue[] = lines.map((line) => ({
+    id: newId(),
+    start: 0,
+    end: 0,
+    text: line,
+    untimed: true,
+  }));
+  const id = cues[0]?.id ?? null;
+  set({
+    cues,
+    selectedId: id,
+    selectedIds: id ? [id] : [],
+    selectionAnchor: id,
+    filePath: null,
+    dirty: true,
+    past: [],
+    future: [],
+    ...(keepVideo ? {} : { videoPath: null }),
+  });
+  return cues.length;
+}
+
+/**
+ * Insert untimed cues from plain text after the primary selection (or at end).
+ * Undoable. Returns how many lines were added.
+ */
+export function insertPlainText(text: string): number {
+  const lines = plainTextLines(text);
+  if (!lines.length) return 0;
+  const s = get();
+  const primary = primaryIndex();
+  const anchor = primary >= 0 ? s.cues[primary]! : s.cues.at(-1);
+  const base = anchor ? anchor.end : 0;
+  const at = primary >= 0 ? primary + 1 : s.cues.length;
+  const ids = lines.map(() => newId());
+  edit((doc) => {
+    const added: Cue[] = lines.map((line, i) => ({
+      id: ids[i]!,
+      start: base,
+      end: base,
+      text: line,
+      untimed: true,
+    }));
+    doc.cues.splice(at, 0, ...added);
+    doc.cues.sort(byStart);
+  });
+  setSelection(ids, ids[0]!, ids[0]!);
+  return lines.length;
+}
 
 function insertFitted(after: number, before: number | null, duration = DEFAULT_DURATION): string | null {
   const fit = fitCueInGap(after, before, duration);

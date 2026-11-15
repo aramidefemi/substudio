@@ -37,7 +37,7 @@ export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
   const mid = waveH / 2;
   const maxAmp = mid - 6;
   const x = (t: number) => (t - start) * pps;
-  const visible = s.cues.filter((c) => c.end >= start && c.start <= end);
+  const visible = s.cues.filter((c) => !c.untimed && c.end >= start && c.start <= end);
 
   ctx.fillStyle = k["timeline-bg"];
   ctx.fillRect(0, 0, w, h);

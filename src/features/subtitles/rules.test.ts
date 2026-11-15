@@ -25,6 +25,12 @@ describe("checkCue", () => {
   it("flags long cues like a 37-second song", () => {
     expect(checkCue({ start: 0, end: 37.8, text: "(Singing)" }, undefined).duration).toMatch(/Too long/);
   });
+
+  it("skips timing checks for untimed script lines", () => {
+    const cue = { start: 0, end: 0, text: "Hello", untimed: true as const };
+    expect(checkCue(cue, undefined)).toEqual({});
+    expect(checkCue(cue, { start: 0, end: 5, text: "prev" })).toEqual({});
+  });
 });
 
 describe("listIssues", () => {
