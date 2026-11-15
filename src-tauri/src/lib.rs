@@ -1,3 +1,4 @@
+mod burn;
 mod ffmpeg_bin;
 mod files;
 mod formats;
@@ -19,6 +20,15 @@ use spellcheck::{CheckOptions, ListKind};
 use subtitles::{Cue, SubtitleFormat};
 use tauri::{Emitter, Manager};
 use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+/// Flags for the single running burn-in job (DLV-01).
+#[derive(Clone, Default)]
+struct BurnJob {
+    running: Arc<AtomicBool>,
+    cancel: Arc<AtomicBool>,
+}
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -200,6 +210,38 @@ async fn ensure_playback(
     .map_err(|e| e.to_string())?
 }
 
+/// Burn the cues into a new `.mp4` (DLV-01). One job at a time; progress 0–1 over `on_progress`.
+#[tauri::command]
+async fn burn_subtitles(
+    job: tauri::State<'_, BurnJob>,
+    source_path: String,
+    dest_path: String,
+    cues: Vec<Cue>,
+    styles: Option<Vec<AssStyle>>,
+    on_progress: tauri::ipc::Channel<f32>,
+) -> Result<burn::BurnOutcome, String> {
+    if job.running.swap(true, Ordering::SeqCst) {
+        return Err("A burn-in is already running".into());
+    }
+    job.cancel.store(false, Ordering::SeqCst);
+    let cancel = job.cancel.clone();
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        burn::burn(&source_path, &dest_path, &cues, styles.as_deref(), &cancel, |p| {
+            let _ = on_progress.send(p);
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())
+    .and_then(|r| r);
+    job.running.store(false, Ordering::SeqCst);
+    result
+}
+
+#[tauri::command]
+fn cancel_burn(job: tauri::State<'_, BurnJob>) {
+    job.cancel.store(true, Ordering::SeqCst);
+}
+
 /// Waveform peaks for a media file as raw bytes (see `waveform::Peaks::to_bytes`),
 /// cached in the app cache dir. `audio_track` is the 0-based audio stream ordinal
 /// (PLY-05). Progress (0–1) streams over `on_progress`.
@@ -347,6 +389,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_window_state::Builder::new().build())
+        .manage(BurnJob::default())
         .setup(|app| {
             menu::install_base(app.handle())?;
             Ok(())
@@ -377,6 +420,8 @@ pub fn run() {
             media_frame_times,
             detect_shot_changes,
             ensure_playback,
+            burn_subtitles,
+            cancel_burn,
             spell_check_texts,
             spell_suggest,
             spell_list_words,

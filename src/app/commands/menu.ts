@@ -67,6 +67,7 @@ export const MENU: MenuGroup[] = [
       "file.saveAsDfxp",
       "file.customTextExport",
       "file.saveSelected",
+      "file.burnIn",
       "-",
       "file.openContainingFolder",
       "file.openDataFolder",

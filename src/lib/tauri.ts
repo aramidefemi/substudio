@@ -76,6 +76,11 @@ export interface PlaybackDecision {
   reason: string | null;
 }
 
+export interface BurnOutcome {
+  path: string;
+  encoder: string;
+}
+
 /** Typed wrappers for the Rust commands in `src-tauri/src/lib.rs`. */
 export const commands = {
   readSubtitles: (path: string) => invoke<CueData[]>("read_subtitles", { path }),
@@ -120,6 +125,15 @@ export const commands = {
    */
   ensurePlayback: (path: string, onProgress: Channel<number>) =>
     invoke<PlaybackDecision>("ensure_playback", { path, onProgress }),
+  /** Burn cues into a new `.mp4` (DLV-01). Rejects with "Cancelled" after `cancelBurn`. */
+  burnSubtitles: (
+    sourcePath: string,
+    destPath: string,
+    cues: CueData[],
+    styles: AssStyle[] | null,
+    onProgress: Channel<number>,
+  ) => invoke<BurnOutcome>("burn_subtitles", { sourcePath, destPath, cues, styles, onProgress }),
+  cancelBurn: () => invoke<void>("cancel_burn"),
   spellCheckTexts: (texts: string[], language: string, checkToneMarked?: boolean) =>
     invoke<SpellCheckResult>("spell_check_texts", { texts, language, checkToneMarked }),
   spellSuggest: (word: string, language: string) =>

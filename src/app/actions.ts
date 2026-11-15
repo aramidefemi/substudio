@@ -1,6 +1,8 @@
+import { Channel } from "@tauri-apps/api/core";
 import { ask, open, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { toast } from "sonner";
 import { create } from "zustand";
+import { BURN_CANCELLED, burnedName, percent, withMp4 } from "@/features/export/burn";
 import { nextShot, previousShot } from "@/features/media/shotChanges";
 import {
   generateShotChanges,
@@ -101,7 +103,7 @@ import {
 } from "@/features/subtitles/textOps";
 import type { AssStyle, CueData, SubtitleFormat } from "@/features/subtitles/types";
 import { cueTextSelection, focusCueText, isEditable, setCueTextSelection } from "@/lib/dom";
-import { commands, fileName, inTauri, stripExtension } from "@/lib/tauri";
+import { commands, fileName, inTauri, parentDir, stripExtension } from "@/lib/tauri";
 import { planDrop, SUBTITLE_EXTENSIONS, VIDEO_EXTENSIONS } from "./drop";
 import { restoreProject } from "./project";
 import { applyProjectProfile, currentProject } from "./ruleProfiles";
@@ -635,6 +637,53 @@ export async function saveSelectedAs(format: SubtitleFormat = "srt") {
     });
   } catch (err) {
     toast.error("Could not save selection", { description: String(err) });
+  }
+}
+
+/** Burn the cues into a new MP4 next to the video (DLV-01). The source is never modified. */
+export async function burnIntoVideo() {
+  if (!inTauri) return desktopOnly();
+  const { videoPath, cues } = useSubtitles.getState();
+  if (!videoPath || !cues.length) {
+    toast("Nothing to burn in", { description: "Open a video and add subtitles first." });
+    return;
+  }
+  const picked = await saveDialog({
+    title: "Burn subtitles into video",
+    defaultPath: `${parentDir(videoPath)}/${burnedName(videoPath)}`,
+    filters: [{ name: "MP4 video", extensions: ["mp4"] }],
+  });
+  if (!picked) return;
+  const dest = withMp4(picked);
+  const id = "burn-in";
+  const show = (p: number) =>
+    toast.loading(`Burning subtitles into ${fileName(dest)}…`, {
+      id,
+      description: percent(p),
+      duration: Infinity,
+      action: { label: "Cancel", onClick: () => void commands.cancelBurn() },
+    });
+  show(0);
+  const onProgress = new Channel<number>();
+  onProgress.onmessage = show;
+  try {
+    const { path, encoder } = await commands.burnSubtitles(
+      videoPath,
+      dest,
+      cues,
+      useSubtitles.getState().assStyles,
+      onProgress,
+    );
+    toast.success(`Saved ${fileName(path)}`, {
+      id,
+      description: encoder === "libx264" ? "Encoded with x264" : "Hardware encoded",
+      duration: 8000,
+      action: { label: "Show", onClick: () => void commands.revealPath(path) },
+    });
+  } catch (err) {
+    const msg = String(err);
+    if (msg === BURN_CANCELLED) toast("Burn-in cancelled", { id, duration: 4000 });
+    else toast.error("Could not burn subtitles", { id, description: msg, duration: Infinity, closeButton: true });
   }
 }
 

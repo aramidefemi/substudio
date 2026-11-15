@@ -59,6 +59,7 @@ build_lgpl_ffmpeg() {
     git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git "$src"
   fi
   # MED-02: AAC + MP4 for editing proxies; on macOS also VideoToolbox H.264 (system framework, not GPL).
+  # DLV-01 burn-in needs the libass `subtitles` filter (ISC; needs `brew install libass pkg-config`).
   # Waveform PCM fallback still uses pcm_f32le / wav / null. Dev can fall back to PATH ffmpeg.
   local encoders="pcm_f32le,aac"
   local muxers="null,wav,mp4"
@@ -84,7 +85,8 @@ build_lgpl_ffmpeg() {
       --enable-parser=h264,hevc,aac,mpegaudio,opus,vorbis,ac3 \
       --enable-decoder=h264,hevc,aac,mp3,pcm_s16le,pcm_s16be,pcm_s24le,pcm_s32le,pcm_f32le,flac,opus,vorbis,ac3,eac3 \
       --enable-encoder="$encoders" \
-      --enable-filter=aresample,aformat \
+      --enable-libass \
+      --enable-filter=aresample,aformat,subtitles,format,scale,null \
       --disable-iconv \
       "${vt_flags[@]}"
     make -j"$(sysctl -n hw.ncpu 2>/dev/null || nproc)" ffmpeg
