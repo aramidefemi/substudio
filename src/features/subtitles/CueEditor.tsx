@@ -1,5 +1,5 @@
 import { Italic } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { toggleItalicAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSettings } from "@/features/settings/store";
+import { useSpell } from "@/features/spellcheck/store";
+import type { SpellIssue } from "@/features/spellcheck/types";
 import { CUE_ORIGINAL_ID, CUE_TEXT_ID } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 import { hasOriginal } from "./original";
@@ -22,6 +24,36 @@ import {
 } from "./store";
 import { timesForUntimed } from "./timing";
 import { formatDuration, formatTime, nudgeStep, parseDuration, parseTime } from "./timecode";
+
+function SpellOverlay({ text, issues }: { text: string; issues: SpellIssue[] }) {
+  if (!issues.length) return null;
+  const parts: { t: string; bad: boolean }[] = [];
+  let i = 0;
+  const sorted = [...issues].sort((a, b) => a.start - b.start);
+  for (const issue of sorted) {
+    if (issue.start < i) continue;
+    if (issue.start > i) parts.push({ t: text.slice(i, issue.start), bad: false });
+    parts.push({ t: text.slice(issue.start, issue.end), bad: true });
+    i = issue.end;
+  }
+  if (i < text.length) parts.push({ t: text.slice(i), bad: false });
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 overflow-hidden px-2.5 py-2 text-[15px] leading-snug font-medium whitespace-pre-wrap text-transparent"
+    >
+      {parts.map((p, idx) =>
+        p.bad ? (
+          <span key={idx} className="underline decoration-destructive decoration-2 underline-offset-2">
+            {p.t}
+          </span>
+        ) : (
+          <span key={idx}>{p.t}</span>
+        ),
+      )}
+    </div>
+  );
+}
 
 interface TimeFieldProps {
   id: string;
@@ -72,9 +104,16 @@ function TimeField({ id, label, value, format, parse, step, disabled, onCommit }
 
 export function CueEditor() {
   const cue = useSubtitles(selectSelectedCue);
+  const cueIndex = useSubtitles((s) => (cue ? s.cues.findIndex((c) => c.id === cue.id) : -1));
   const fmt = useSubtitles(useShallow(selectTimeFormat));
   const showOriginal = useSettings((s) => s.showOriginalColumn);
   const hideText = useSettings((s) => s.privacy) === "text";
+  const spellOn = useSpell((s) => s.enabled);
+  const liveIssues = useSpell((s) => s.liveIssues);
+  const issues = useMemo(
+    () => (spellOn && cueIndex >= 0 ? (liveIssues[cueIndex] ?? []) : []),
+    [spellOn, cueIndex, liveIssues],
+  );
   const disabled = !cue || hideText;
   const untimed = cue ? isUntimed(cue) : false;
   const stats = cue && !untimed ? cueStats(cue) : null;
@@ -181,22 +220,26 @@ export function CueEditor() {
             </span>
           )}
         </div>
-        <Textarea
-          id={CUE_TEXT_ID}
-          disabled={disabled}
-          value={hideText ? "••••" : (cue?.text ?? "")}
-          placeholder={!cue ? "Select a subtitle" : hideText ? "Hidden by screen privacy" : ""}
-          onChange={(e) => cue && !hideText && updateCue(cue.id, { text: e.target.value }, `text:${cue.id}`)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") e.currentTarget.blur();
-            // ⌘↩ next line; ⌘⇧↩ is the "go to next line and play" command.
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
-              e.preventDefault();
-              selectRelative(1);
-            }
-          }}
-          className="min-h-0 flex-1 resize-none text-[15px] font-medium leading-snug"
-        />
+        <div className="relative min-h-0 flex-1">
+          {!hideText && cue && <SpellOverlay text={cue.text} issues={issues} />}
+          <Textarea
+            id={CUE_TEXT_ID}
+            disabled={disabled}
+            spellCheck={false}
+            value={hideText ? "••••" : (cue?.text ?? "")}
+            placeholder={!cue ? "Select a subtitle" : hideText ? "Hidden by screen privacy" : ""}
+            onChange={(e) => cue && !hideText && updateCue(cue.id, { text: e.target.value }, `text:${cue.id}`)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") e.currentTarget.blur();
+              // ⌘↩ next line; ⌘⇧↩ is the "go to next line and play" command.
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+                e.preventDefault();
+                selectRelative(1);
+              }
+            }}
+            className="h-full min-h-0 resize-none bg-transparent text-[15px] font-medium leading-snug"
+          />
+        </div>
         {stats && (
           <div className="flex justify-between text-xs tabular-nums text-muted-foreground">
             <span className={cn(stats.longestLine > DEFAULT_RULES.maxLineLength && "font-medium text-destructive")}>

@@ -321,6 +321,21 @@ export const MENU: MenuGroup[] = [
       "waveform.guessTimes",
     ],
   },
+  {
+    submenu: "Tools",
+    items: [
+      "tools.fixCommon",
+      "tools.beautify",
+      "tools.spellCheck",
+      "-",
+      "tools.multipleReplace",
+      "tools.textTools",
+      "tools.removeHi",
+      "-",
+      "file.statistics",
+      "file.compare",
+    ],
+  },
 ];
 
 /** Mirrors `MenuSpec` in `src-tauri/src/menu.rs`. */

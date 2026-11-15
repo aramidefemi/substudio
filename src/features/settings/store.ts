@@ -9,6 +9,7 @@ import {
   stepOption,
   type PreviewStyle,
 } from "./preview";
+import type { ReplaceSet } from "@/features/subtitles/multipleReplace";
 import type { ThemePreference } from "./themes";
 
 export type Density = "compact" | "comfortable";
@@ -40,6 +41,8 @@ export interface Settings {
   privacy: PrivacyMode;
   /** Subtitle drawn over the video: size, box or outline, vertical position. */
   preview: PreviewStyle;
+  /** Saved multiple-replace rule sets (QLT-04). */
+  multipleReplaceSets: ReplaceSet[];
 }
 
 const DEFAULTS: Settings = {
@@ -55,6 +58,7 @@ const DEFAULTS: Settings = {
   showFormattingInGrid: true,
   privacy: "off",
   preview: DEFAULT_PREVIEW,
+  multipleReplaceSets: [],
 };
 
 const RECENT_LIMIT = 12;
@@ -124,7 +128,14 @@ export async function loadSettings() {
   try {
     const store = await load("settings.json", { defaults: {}, autoSave: 200 });
     const saved = await store.get<Partial<Settings>>("settings");
-    if (saved) useSettings.setState({ ...DEFAULTS, ...saved, preview: normalizePreview(saved.preview) });
+    if (saved) {
+      useSettings.setState({
+        ...DEFAULTS,
+        ...saved,
+        preview: normalizePreview(saved.preview),
+        multipleReplaceSets: saved.multipleReplaceSets ?? [],
+      });
+    }
     useSettings.subscribe((s) => void store.set("settings", s));
   } catch (err) {
     console.error("Could not load settings", err);

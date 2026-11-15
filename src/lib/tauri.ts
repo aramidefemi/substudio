@@ -1,4 +1,5 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import type { SpellCheckResult, SpellListKind, SpellSuggestResult } from "@/features/spellcheck/types";
 import type { CueData, SubtitleFormat } from "@/features/subtitles/types";
 
 /** False when the frontend runs in a plain browser via `pnpm dev`. */
@@ -83,6 +84,13 @@ export const commands = {
   probeMedia: (path: string) => invoke<MediaInfo>("probe_media", { path }),
   /** Source frame timestamps as SSFT `ArrayBuffer` (MED-01). */
   mediaFrameTimes: (path: string) => invoke<ArrayBuffer>("media_frame_times", { path }),
+  spellCheckTexts: (texts: string[], language: string, checkToneMarked?: boolean) =>
+    invoke<SpellCheckResult>("spell_check_texts", { texts, language, checkToneMarked }),
+  spellSuggest: (word: string, language: string) =>
+    invoke<SpellSuggestResult>("spell_suggest", { word, language }),
+  spellListWords: (kind: SpellListKind) => invoke<string[]>("spell_list_words", { kind }),
+  spellAddWord: (kind: SpellListKind, word: string) => invoke<boolean>("spell_add_word", { kind, word }),
+  spellRemoveWord: (kind: SpellListKind, word: string) => invoke<boolean>("spell_remove_word", { kind, word }),
 };
 
 export const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path;

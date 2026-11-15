@@ -3,13 +3,31 @@ mod files;
 mod media;
 mod menu;
 mod project;
+mod spell_engine;
+mod spellcheck;
 mod subtitles;
 mod waveform;
 
 use files::BackupInfo;
 use media::MediaInfo;
+use spellcheck::{CheckOptions, ListKind};
 use subtitles::{Cue, SubtitleFormat};
 use tauri::{Emitter, Manager};
+use std::collections::HashMap;
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SpellCheckResult {
+    engine: Option<&'static str>,
+    language: String,
+    issues: Vec<Vec<spellcheck::Issue>>,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SpellSuggestResult {
+    suggestions: Vec<String>,
+}
 
 /// Reads a .srt/.vtt file, detecting the encoding when it isn't UTF-8 (FIL-04).
 #[tauri::command]
@@ -156,6 +174,119 @@ fn set_menu(app: tauri::AppHandle, spec: Vec<menu::MenuSpec>) -> Result<(), Stri
     menu::install(&app, &spec).map_err(|e| e.to_string())
 }
 
+fn spell_dir(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+    let data = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    Ok(spellcheck::lists_dir(&data))
+}
+
+/// Batch-check cue texts (QLT-03). Uses names list + user dictionary + system engine.
+#[tauri::command]
+async fn spell_check_texts(
+    app: tauri::AppHandle,
+    texts: Vec<String>,
+    language: String,
+    check_tone_marked: Option<bool>,
+) -> Result<SpellCheckResult, String> {
+    let dir = spell_dir(&app)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let lists = spellcheck::read_lists(&dir);
+        let opts = CheckOptions {
+            language: language.clone(),
+            check_tone_marked: check_tone_marked.unwrap_or(false),
+        };
+        let mut cache = HashMap::new();
+        match spell_engine::system_engine() {
+            Some(engine) => {
+                let issues = spellcheck::check_texts(engine.as_ref(), &lists, &texts, &opts, &mut cache);
+                Ok(SpellCheckResult {
+                    engine: Some(engine.name()),
+                    language,
+                    issues,
+                })
+            }
+            None => {
+                // No engine: still honour her lists / tone-mark skips by treating
+                // everything else as unknown (so the UI can show names-only mode).
+                struct AcceptNone;
+                impl spellcheck::SpellEngine for AcceptNone {
+                    fn name(&self) -> &'static str {
+                        "none"
+                    }
+                    fn languages(&self) -> Vec<String> {
+                        vec![]
+                    }
+                    fn is_known(&self, _word: &str, _language: &str) -> bool {
+                        false
+                    }
+                    fn suggest(&self, _word: &str, _language: &str) -> Vec<String> {
+                        vec![]
+                    }
+                }
+                let engine = AcceptNone;
+                let issues = spellcheck::check_texts(&engine, &lists, &texts, &opts, &mut cache);
+                Ok(SpellCheckResult {
+                    engine: None,
+                    language,
+                    issues,
+                })
+            }
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+async fn spell_suggest(word: String, language: String) -> Result<SpellSuggestResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let suggestions = spell_engine::system_engine()
+            .map(|e| e.suggest(&word, &language))
+            .unwrap_or_default();
+        Ok(SpellSuggestResult { suggestions })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+async fn spell_list_words(app: tauri::AppHandle, kind: String) -> Result<Vec<String>, String> {
+    let dir = spell_dir(&app)?;
+    let kind = parse_list_kind(&kind)?;
+    Ok(spellcheck::read_list(&dir, kind).words())
+}
+
+#[tauri::command]
+async fn spell_add_word(app: tauri::AppHandle, kind: String, word: String) -> Result<bool, String> {
+    let dir = spell_dir(&app)?;
+    let kind = parse_list_kind(&kind)?;
+    let mut list = spellcheck::read_list(&dir, kind);
+    let added = list.add(&word);
+    if added {
+        spellcheck::write_list(&dir, kind, &list)?;
+    }
+    Ok(added)
+}
+
+#[tauri::command]
+async fn spell_remove_word(app: tauri::AppHandle, kind: String, word: String) -> Result<bool, String> {
+    let dir = spell_dir(&app)?;
+    let kind = parse_list_kind(&kind)?;
+    let mut list = spellcheck::read_list(&dir, kind);
+    let removed = list.remove(&word);
+    if removed {
+        spellcheck::write_list(&dir, kind, &list)?;
+    }
+    Ok(removed)
+}
+
+fn parse_list_kind(kind: &str) -> Result<ListKind, String> {
+    match kind {
+        "names" => Ok(ListKind::Names),
+        "dictionary" => Ok(ListKind::Dictionary),
+        _ => Err(format!("unknown spell list: {kind}")),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -189,6 +320,11 @@ pub fn run() {
             ensure_data_folder,
             probe_media,
             media_frame_times,
+            spell_check_texts,
+            spell_suggest,
+            spell_list_words,
+            spell_add_word,
+            spell_remove_word,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

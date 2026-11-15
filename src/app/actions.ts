@@ -112,6 +112,12 @@ export const useUi = create<{
   bookmarksOpen: boolean;
   /** Cue whose bookmark note is being edited, if any. */
   bookmarkNoteFor: string | null;
+  fixCommonOpen: boolean;
+  beautifyOpen: boolean;
+  spellOpen: boolean;
+  multipleReplaceOpen: boolean;
+  toolsOpen: boolean;
+  removeHiOpen: boolean;
 }>()(() => ({
   findOpen: false,
   recentOpen: false,
@@ -126,6 +132,12 @@ export const useUi = create<{
   errorsOpen: false,
   bookmarksOpen: false,
   bookmarkNoteFor: null,
+  fixCommonOpen: false,
+  beautifyOpen: false,
+  spellOpen: false,
+  multipleReplaceOpen: false,
+  toolsOpen: false,
+  removeHiOpen: false,
 }));
 
 const SUBTITLE_FILTER = { name: "Subtitles", extensions: SUBTITLE_EXTENSIONS };
@@ -485,6 +497,15 @@ export const openRecentDialog = () => useUi.setState({ recentOpen: true });
 export const openEncodingDialog = () => useUi.setState({ encodingOpen: true });
 export const openBackupDialog = () => useUi.setState({ backupOpen: true });
 export const openStatistics = () => useUi.setState({ statsOpen: true });
+export const openFixCommon = () => useUi.setState({ fixCommonOpen: true });
+export const openBeautify = () => useUi.setState({ beautifyOpen: true });
+export const openSpellCheck = () => {
+  useUi.setState({ spellOpen: true });
+  void import("@/features/spellcheck/session").then((m) => m.runSpellSession());
+};
+export const openMultipleReplace = () => useUi.setState({ multipleReplaceOpen: true });
+export const openTextTools = () => useUi.setState({ toolsOpen: true });
+export const openRemoveHi = () => useUi.setState({ removeHiOpen: true });
 export const openMediaInfo = () => {
   if (!useSubtitles.getState().videoPath) {
     toast("No video open", { description: "Open a video to see media information." });

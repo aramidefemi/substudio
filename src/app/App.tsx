@@ -7,6 +7,7 @@ import { VideoPanel } from "@/features/playback/VideoPanel";
 import { CueEditor } from "@/features/subtitles/CueEditor";
 import { SubtitleList } from "@/features/subtitles/SubtitleList";
 import { Waveform } from "@/features/waveform/Waveform";
+import { BeautifyDialog } from "./BeautifyDialog";
 import { BookmarkNoteDialog } from "./BookmarkNoteDialog";
 import { GoToLineDialog } from "./GoToLineDialog";
 import { BookmarksDialog } from "./BookmarksDialog";
@@ -14,17 +15,23 @@ import { CompareDialog } from "./CompareDialog";
 import { DropOverlay } from "./DropOverlay";
 import { EncodingDialog } from "./EncodingDialog";
 import { ErrorsPanel } from "./ErrorsPanel";
+import { FixCommonDialog } from "./FixCommonDialog";
 import { CommandPalette } from "./commands/CommandPalette";
 import { FindDialog } from "./FindDialog";
 import { HistoryDialog } from "./HistoryDialog";
 import { MediaInfoDialog } from "./MediaInfoDialog";
+import { MultipleReplaceDialog } from "./MultipleReplaceDialog";
 import { RecentDialog } from "./RecentDialog";
+import { RemoveHiDialog } from "./RemoveHiDialog";
 import { ReplaceDialog } from "./ReplaceDialog";
 import { RestoreBackupDialog } from "./RestoreBackupDialog";
+import { SpellCheckDialog } from "./SpellCheckDialog";
 import { StatisticsDialog } from "./StatisticsDialog";
+import { ToolsDialog } from "./ToolsDialog";
 import { Toolbar } from "./Toolbar";
 import { useAppEvents } from "./useAppEvents";
 import { useFileSafety } from "./useFileSafety";
+import { useLiveSpellCheck } from "./useLiveSpellCheck";
 
 /** Gaps between panels are the resize handles. */
 const Gap = ({ vertical }: { vertical?: boolean }) => (
@@ -41,6 +48,7 @@ const Gap = ({ vertical }: { vertical?: boolean }) => (
 export default function App() {
   useAppEvents();
   useFileSafety();
+  useLiveSpellCheck();
   const main = useDefaultLayout({ id: "layout.main" });
   const top = useDefaultLayout({ id: "layout.top" });
   const left = useDefaultLayout({ id: "layout.left" });
@@ -92,6 +100,12 @@ export default function App() {
       <CompareDialog />
       <MediaInfoDialog />
       <HistoryDialog />
+      <FixCommonDialog />
+      <BeautifyDialog />
+      <SpellCheckDialog />
+      <MultipleReplaceDialog />
+      <ToolsDialog />
+      <RemoveHiDialog />
       <DropOverlay />
       <Toaster position="bottom-center" />
     </TooltipProvider>

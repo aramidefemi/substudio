@@ -143,6 +143,14 @@ export const COMMANDS: Command[] = [
   { id: "file.statistics", label: "Statistics…", group: "File", run: a.openStatistics },
   { id: "file.mediaInfo", label: "Media information…", group: "File", run: a.openMediaInfo },
 
+  /* ---------- Tools (QLT) ---------- */
+  { id: "tools.fixCommon", label: "Fix common errors…", group: "Tools", run: a.openFixCommon },
+  { id: "tools.beautify", label: "Beautify time codes…", group: "Tools", run: a.openBeautify },
+  { id: "tools.spellCheck", label: "Spell check…", group: "Tools", run: a.openSpellCheck },
+  { id: "tools.multipleReplace", label: "Multiple replace…", group: "Tools", run: a.openMultipleReplace },
+  { id: "tools.textTools", label: "Change casing / merge…", group: "Tools", run: a.openTextTools },
+  { id: "tools.removeHi", label: "Remove text for hearing impaired…", group: "Tools", run: a.openRemoveHi },
+
   /* ---------- Edit ---------- */
   { id: "edit.undo", label: "Undo", group: "Edit", keys: ["$mod+KeyZ"], run: a.undoAction },
   { id: "edit.redo", label: "Redo", group: "Edit", keys: ["$mod+Shift+KeyZ"], run: a.redoAction },
