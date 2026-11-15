@@ -7,8 +7,11 @@ import { VideoPanel } from "@/features/playback/VideoPanel";
 import { CueEditor } from "@/features/subtitles/CueEditor";
 import { SubtitleList } from "@/features/subtitles/SubtitleList";
 import { Waveform } from "@/features/waveform/Waveform";
+import { AdjustTimesDialog } from "./AdjustTimesDialog";
 import { BeautifyDialog } from "./BeautifyDialog";
 import { BookmarkNoteDialog } from "./BookmarkNoteDialog";
+import { ChangeFrameRateDialog } from "./ChangeFrameRateDialog";
+import { ChangeSpeedDialog } from "./ChangeSpeedDialog";
 import { GoToLineDialog } from "./GoToLineDialog";
 import { BookmarksDialog } from "./BookmarksDialog";
 import { CompareDialog } from "./CompareDialog";
@@ -94,7 +97,10 @@ export default function App() {
       <BookmarksDialog />
       <BookmarkNoteDialog />
       <GoToLineDialog />
+      <AdjustTimesDialog />
       <VisualSyncDialog />
+      <ChangeFrameRateDialog />
+      <ChangeSpeedDialog />
       <RuleProfilesDialog />
       <CommandPalette />
       <RecentDialog />
