@@ -10,6 +10,7 @@ import {
   type PreviewStyle,
 } from "./preview";
 import type { ReplaceSet } from "@/features/subtitles/multipleReplace";
+import { normalizePresets, type CustomTextPreset } from "@/features/export/customText";
 import type { ThemePreference } from "./themes";
 import { DEFAULT_PROFILE_ID, normalizeProfiles, type RuleProfile } from "@/features/subtitles/ruleProfiles";
 
@@ -48,6 +49,8 @@ export interface Settings {
   ruleProfiles: RuleProfile[];
   /** Profile last chosen; used for documents whose sidecar names none. */
   lastRuleProfileId: string;
+  /** User custom-text export presets (FMT-03); starters live in code. */
+  customTextPresets: CustomTextPreset[];
 }
 
 const DEFAULTS: Settings = {
@@ -66,6 +69,7 @@ const DEFAULTS: Settings = {
   multipleReplaceSets: [],
   ruleProfiles: [],
   lastRuleProfileId: DEFAULT_PROFILE_ID,
+  customTextPresets: [],
 };
 
 const RECENT_LIMIT = 12;
@@ -146,6 +150,24 @@ export function clearRecent() {
   useSettings.setState({ recentSubtitles: [], recentVideos: [] });
 }
 
+
+export function saveCustomTextPreset(preset: CustomTextPreset) {
+  useSettings.setState((s) => {
+    const exists = s.customTextPresets.some((p) => p.id === preset.id);
+    return {
+      customTextPresets: exists
+        ? s.customTextPresets.map((p) => (p.id === preset.id ? preset : p))
+        : [...s.customTextPresets, preset],
+    };
+  });
+}
+
+export function deleteCustomTextPreset(id: string) {
+  useSettings.setState((s) => ({
+    customTextPresets: s.customTextPresets.filter((p) => p.id !== id),
+  }));
+}
+
 export const ROW_HEIGHT: Record<Density, number> = { compact: 28, comfortable: 36 };
 
 /** Loads saved settings before first paint, then saves every change. */
@@ -162,6 +184,7 @@ export async function loadSettings() {
         multipleReplaceSets: saved.multipleReplaceSets ?? [],
         ruleProfiles: normalizeProfiles(saved.ruleProfiles),
         lastRuleProfileId: typeof saved.lastRuleProfileId === "string" ? saved.lastRuleProfileId : DEFAULT_PROFILE_ID,
+        customTextPresets: normalizePresets(saved.customTextPresets),
       });
     }
     useSettings.subscribe((s) => void store.set("settings", s));

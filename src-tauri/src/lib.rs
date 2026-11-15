@@ -73,6 +73,12 @@ async fn read_text_file(path: String) -> Result<String, String> {
     Ok(text.strip_prefix('\u{FEFF}').unwrap_or(&text).to_string())
 }
 
+/// UTF-8 text write for custom exports (FMT-03).
+#[tauri::command]
+async fn write_text_file(path: String, contents: String) -> Result<(), String> {
+    std::fs::write(&path, contents).map_err(|e| e.to_string())
+}
+
 /// Project sidecar next to the subtitle; `None` when missing or unreadable (FIL-03).
 #[tauri::command]
 async fn read_project(subtitle_path: String) -> Option<project::Project> {
@@ -356,6 +362,7 @@ pub fn run() {
             read_subtitles_encoded,
             write_subtitles,
             read_text_file,
+            write_text_file,
             read_project,
             write_project,
             file_mtime,

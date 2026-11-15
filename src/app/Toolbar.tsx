@@ -254,6 +254,7 @@ export function Toolbar() {
           <DropdownMenuItem onSelect={() => runCommand("file.saveAsSbv")}>YouTube SBV (.sbv)</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => runCommand("file.saveAsTtml")}>TTML (.ttml)</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => runCommand("file.saveAsDfxp")}>DFXP (.dfxp)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.customTextExport")}>Custom text…</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>

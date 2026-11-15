@@ -94,6 +94,8 @@ export const commands = {
     invoke<void>("write_subtitles", { path, cues, format, styles: styles ?? null }),
   /** Plain UTF-8 text (SCR-01 script import). */
   readTextFile: (path: string) => invoke<string>("read_text_file", { path }),
+  writeTextFile: (path: string, contents: string) =>
+    invoke<void>("write_text_file", { path, contents }),
   readProject: (subtitlePath: string) => invoke<ProjectFile | null>("read_project", { subtitlePath }),
   writeProject: (subtitlePath: string, project: ProjectFile) =>
     invoke<void>("write_project", { subtitlePath, project }),

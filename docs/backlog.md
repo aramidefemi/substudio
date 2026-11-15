@@ -210,7 +210,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 |---|---|---|---|
 | FMT-01 | Advanced SubStation (ASS/SSA) read/write, basic styles | ASSA | L | ✅ Rust `formats/ass.rs`; open/save `.ass`/`.ssa`; basic styles (name, font, size, primary colour, bold/italic, alignment) in session state beside cues; dialogue `\N` + `{\i}`/`{\b}` ↔ newlines/HTML. Drawing/karaoke/font collector stay P. |
 | FMT-02 | TTML/DFXP, SBV, Final Cut Pro XML, Premiere/DaVinci markers | Formats | M each | 🟡 SBV+TTML/DFXP done; Final Cut Pro XML and Premiere/DaVinci markers deferred |
-| FMT-03 | Custom text export (templates) | Export custom text | M |
+| FMT-03 | Custom text export (templates) | Export custom text | M | ✅ Pure-TS templates (`{number}`, `{start}`/`{end}`/`{duration}`, `{text}`, `{lineN}`, `{style}`); preview + export; starter + saved presets in settings; File › Export custom text. |
 | DLV-01 | Burn subtitles into video (ffmpeg, hardware encode) | Burn-in | L |
 | DLV-02 | Embed subtitles as a track (mux) | Embed subtitles | M |
 | DLV-03 | Batch convert (folder → format, with chained fixes) | Batch convert | L |
