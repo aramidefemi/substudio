@@ -2,6 +2,7 @@ import { isBookmarked } from "@/features/subtitles/bookmarks";
 import { hasOriginal } from "@/features/subtitles/original";
 import type { TimecodeMode } from "@/features/subtitles/timecode";
 import type { Cue, CueData } from "@/features/subtitles/types";
+import { snapshotOf, type RuleProfile } from "@/features/subtitles/ruleProfiles";
 import type { ProjectFile } from "@/lib/tauri";
 
 /** SRT stores milliseconds, so a cue's start can drift by rounding; a frame at 60 fps is ~17 ms. */
@@ -39,6 +40,8 @@ export interface ProjectSource {
   originalPath: string | null;
   fps: number;
   timecode: TimecodeMode;
+  /** The active rule profile, saved as a snapshot so the project keeps its rules elsewhere. */
+  ruleProfile?: RuleProfile;
 }
 
 /** What goes in the sidecar for the current document. */
@@ -58,6 +61,7 @@ export function buildProject(s: ProjectSource): ProjectFile {
     selected: selectedIndex >= 0 ? { index: selectedIndex, start: s.cues[selectedIndex]!.start } : null,
     originalPath: s.originalPath,
     originals,
+    ...(s.ruleProfile ? { ruleProfile: snapshotOf(s.ruleProfile) } : {}),
   };
 }
 
@@ -69,6 +73,8 @@ export interface RestoredProject {
   timecode: TimecodeMode | null;
   videoPath: string | null;
   originalPath: string | null;
+  /** Raw rule profile snapshot; resolve it with `resolveSnapshot`. */
+  ruleProfile: unknown;
 }
 
 /** Turns a sidecar back into document state, matching cue refs against the loaded cues. */
@@ -91,5 +97,6 @@ export function restoreProject(cues: readonly CueData[], p: ProjectFile): Restor
     timecode: p.timecode === "frames" || p.timecode === "ms" ? p.timecode : null,
     videoPath: typeof p.videoPath === "string" && p.videoPath ? p.videoPath : null,
     originalPath: typeof p.originalPath === "string" && p.originalPath ? p.originalPath : null,
+    ruleProfile: p.ruleProfile ?? null,
   };
 }

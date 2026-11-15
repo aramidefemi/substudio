@@ -58,6 +58,9 @@ pub struct Project {
     pub original_path: Option<String>,
     /// Per-cue original/script texts (translation mode).
     pub originals: Vec<OriginalRef>,
+    /// Snapshot of the project's rule profile (RUL-01): `{ id, name, limits }`.
+    /// Kept as raw JSON; the frontend validates it.
+    pub rule_profile: Option<serde_json::Value>,
 }
 
 impl Default for Project {
@@ -72,6 +75,7 @@ impl Default for Project {
             selected: None,
             original_path: None,
             originals: Vec::new(),
+            rule_profile: None,
         }
     }
 }
@@ -182,6 +186,7 @@ mod tests {
                 start: 1.0,
                 text: "Báwo ni".into(),
             }],
+            rule_profile: Some(serde_json::json!({ "id": "netflix-en", "name": "Netflix (English)", "limits": { "maxCps": 20 } })),
             ..Project::default()
         };
         write(&srt, &project).unwrap();
@@ -194,6 +199,7 @@ mod tests {
         assert_eq!(back.selected, project.selected);
         assert_eq!(back.original_path, project.original_path);
         assert_eq!(back.originals, project.originals);
+        assert_eq!(back.rule_profile, project.rule_profile);
         assert_eq!(fs::read_to_string(&srt).unwrap(), "1\n00:00:01,000 --> 00:00:02,000\nHi\n");
         assert!(!dir.join("film.substudio.json.tmp").exists());
         let _ = fs::remove_dir_all(&dir);

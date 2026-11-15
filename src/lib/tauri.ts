@@ -55,6 +55,8 @@ export interface ProjectFile {
   originalPath?: string | null;
   /** Per-cue original/script texts (FIL-07). */
   originals?: { index: number; start: number; text: string }[];
+  /** Snapshot of the project's rule profile (RUL-01): `{ id, name, limits }`. Validated on the TS side. */
+  ruleProfile?: unknown;
 }
 
 /** Typed wrappers for the Rust commands in `src-tauri/src/lib.rs`. */

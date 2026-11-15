@@ -1,4 +1,4 @@
-import { checkCue } from "@/features/subtitles/rules";
+import { checkCue, type Rules } from "@/features/subtitles/rules";
 import { cueIndexAt } from "@/features/subtitles/store";
 import type { Cue } from "@/features/subtitles/types";
 import { peakBetween, type Peaks } from "./peaks";
@@ -28,6 +28,8 @@ interface Scene {
   /** Centred status text (no video, loading, error). */
   message: string | null;
   tokens: CanvasTokens;
+  /** Active rule profile limits, for the error-coloured cue numbers. */
+  rules: Rules;
 }
 
 export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
@@ -74,7 +76,7 @@ export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
     const i = s.cues.indexOf(c);
     const x0 = x(c.start) + CUE_INSET_X;
     const cw = Math.max(0, x(c.end) - x(c.start) - CUE_INSET_X * 2);
-    const issues = checkCue(c, s.cues[i - 1]);
+    const issues = checkCue(c, s.cues[i - 1], s.rules);
 
     ctx.save();
     ctx.beginPath();

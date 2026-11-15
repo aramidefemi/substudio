@@ -11,6 +11,7 @@ import {
 } from "./preview";
 import type { ReplaceSet } from "@/features/subtitles/multipleReplace";
 import type { ThemePreference } from "./themes";
+import { DEFAULT_PROFILE_ID, normalizeProfiles, type RuleProfile } from "@/features/subtitles/ruleProfiles";
 
 export type Density = "compact" | "comfortable";
 /** Screen privacy: hide names first, then cue text (for screen sharing). */
@@ -43,6 +44,10 @@ export interface Settings {
   preview: PreviewStyle;
   /** Saved multiple-replace rule sets (QLT-04). */
   multipleReplaceSets: ReplaceSet[];
+  /** User-created rule profiles (RUL-01); built-ins come from code. */
+  ruleProfiles: RuleProfile[];
+  /** Profile last chosen; used for documents whose sidecar names none. */
+  lastRuleProfileId: string;
 }
 
 const DEFAULTS: Settings = {
@@ -59,6 +64,8 @@ const DEFAULTS: Settings = {
   privacy: "off",
   preview: DEFAULT_PREVIEW,
   multipleReplaceSets: [],
+  ruleProfiles: [],
+  lastRuleProfileId: DEFAULT_PROFILE_ID,
 };
 
 const RECENT_LIMIT = 12;
@@ -85,6 +92,25 @@ export const stepPreviewSize = (delta: number) =>
 /** One position step higher (+1) or lower (−1); the list runs low → top. */
 export const stepPreviewPosition = (delta: number) =>
   setPreview({ position: stepOption(PREVIEW_POSITIONS, useSettings.getState().preview.position, delta) });
+
+/** Adds or replaces a user rule profile by id. */
+export function saveRuleProfile(profile: RuleProfile) {
+  useSettings.setState((s) => {
+    const exists = s.ruleProfiles.some((p) => p.id === profile.id);
+    return {
+      ruleProfiles: exists ? s.ruleProfiles.map((p) => (p.id === profile.id ? profile : p)) : [...s.ruleProfiles, profile],
+    };
+  });
+}
+
+export function deleteRuleProfile(id: string) {
+  useSettings.setState((s) => ({
+    ruleProfiles: s.ruleProfiles.filter((p) => p.id !== id),
+    lastRuleProfileId: s.lastRuleProfileId === id ? DEFAULT_PROFILE_ID : s.lastRuleProfileId,
+  }));
+}
+
+export const setLastRuleProfileId = (lastRuleProfileId: string) => useSettings.setState({ lastRuleProfileId });
 
 /** Cycles off → names → text → off. */
 export function cyclePrivacy(): PrivacyMode {
@@ -134,6 +160,8 @@ export async function loadSettings() {
         ...saved,
         preview: normalizePreview(saved.preview),
         multipleReplaceSets: saved.multipleReplaceSets ?? [],
+        ruleProfiles: normalizeProfiles(saved.ruleProfiles),
+        lastRuleProfileId: typeof saved.lastRuleProfileId === "string" ? saved.lastRuleProfileId : DEFAULT_PROFILE_ID,
       });
     }
     useSettings.subscribe((s) => void store.set("settings", s));

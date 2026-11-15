@@ -21,6 +21,7 @@ import { focusCueText, focusSubtitleList, focusWaveform } from "@/lib/dom";
 import * as a from "../actions";
 import * as fr from "../findReplace";
 import { openGoToLine } from "../goToLine";
+import { openRuleProfiles } from "../ruleProfiles";
 import { defineCommands, type Command } from "./registry";
 
 type Dir = 1 | -1;
@@ -143,7 +144,8 @@ export const COMMANDS: Command[] = [
   { id: "file.statistics", label: "Statistics…", group: "File", run: a.openStatistics },
   { id: "file.mediaInfo", label: "Media information…", group: "File", run: a.openMediaInfo },
 
-  /* ---------- Tools (QLT) ---------- */
+  /* ---------- Tools ---------- */
+  { id: "tools.ruleProfiles", label: "Rule profiles…", group: "Tools", run: openRuleProfiles },
   { id: "tools.fixCommon", label: "Fix common errors…", group: "Tools", run: a.openFixCommon },
   { id: "tools.beautify", label: "Beautify time codes…", group: "Tools", run: a.openBeautify },
   { id: "tools.spellCheck", label: "Spell check…", group: "Tools", run: a.openSpellCheck },

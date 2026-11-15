@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkCue, cueStats, listIssues } from "./rules";
+import { checkCue, cueStats, DEFAULT_RULES, listIssues } from "./rules";
 
 describe("cueStats", () => {
   it("counts characters per line and reading speed", () => {
@@ -22,6 +22,13 @@ describe("checkCue", () => {
     expect(issues.text).toMatch(/Reads too fast/);
   });
 
+  it("flags too many lines and reports every text problem", () => {
+    const text = "Mo ti rí ọmọ náà\nní ọjà Ọ̀yọ́\nlánàá";
+    expect(checkCue({ start: 0, end: 3, text }, undefined).text).toBe("Too many lines: 3 (max 2)");
+    const both = checkCue({ start: 0, end: 1, text: "A very long line that keeps on going past the limit" }, undefined);
+    expect(both.text).toMatch(/Reads too fast.*; Line too long: 51 chars/);
+  });
+
   it("flags long cues like a 37-second song", () => {
     expect(checkCue({ start: 0, end: 37.8, text: "(Singing)" }, undefined).duration).toMatch(/Too long/);
   });
@@ -30,6 +37,13 @@ describe("checkCue", () => {
     const cue = { start: 0, end: 0, text: "Hello", untimed: true as const };
     expect(checkCue(cue, undefined)).toEqual({});
     expect(checkCue(cue, { start: 0, end: 5, text: "prev" })).toEqual({});
+  });
+
+  it("flags a gap shorter than minGap when the profile asks for one", () => {
+    const prev = { start: 0, end: 2, text: "One" };
+    const cue = { start: 2.02, end: 4, text: "Two" };
+    expect(checkCue(cue, prev).start).toBeUndefined();
+    expect(checkCue(cue, prev, { ...DEFAULT_RULES, minGap: 0.08 }).start).toMatch(/Gap too short/);
   });
 });
 

@@ -72,6 +72,8 @@ export interface SubtitleState extends Doc {
   dirty: boolean;
   timecode: TimecodeMode;
   fps: number;
+  /** Active rule profile for this project (RUL-01); saved in the sidecar. */
+  ruleProfileId: string;
   past: HistoryEntry[];
   future: HistoryEntry[];
 }
@@ -93,6 +95,7 @@ export const useSubtitles = create<SubtitleState>()(() => ({
   dirty: false,
   timecode: "frames",
   fps: 25,
+  ruleProfileId: "default",
   past: [],
   future: [],
 }));
@@ -276,6 +279,10 @@ export function getKnownMtime() {
 
 export function setKnownMtime(ms: number | null) {
   knownMtimeMs = ms;
+}
+
+export function setRuleProfileId(ruleProfileId: string) {
+  set({ ruleProfileId });
 }
 
 export function toggleTimecode() {

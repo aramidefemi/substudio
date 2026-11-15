@@ -11,8 +11,9 @@ import { useSpell } from "@/features/spellcheck/store";
 import type { SpellIssue } from "@/features/spellcheck/types";
 import { CUE_ORIGINAL_ID, CUE_TEXT_ID } from "@/lib/dom";
 import { cn } from "@/lib/utils";
+import { useRules } from "./activeRules";
 import { hasOriginal } from "./original";
-import { cueStats, DEFAULT_RULES } from "./rules";
+import { cueStats } from "./rules";
 import {
   isUntimed,
   selectRelative,
@@ -117,6 +118,7 @@ export function CueEditor() {
   const disabled = !cue || hideText;
   const untimed = cue ? isUntimed(cue) : false;
   const stats = cue && !untimed ? cueStats(cue) : null;
+  const rules = useRules();
   const step = nudgeStep(fmt);
   const timeLabel = (base: string) => (untimed ? `${base} (untimed)` : base);
   const originalOpen = showOriginal || (cue ? hasOriginal(cue) : false);
@@ -215,7 +217,7 @@ export function CueEditor() {
             </Tooltip>
           </div>
           {stats && (
-            <span className={cn("tabular-nums text-muted-foreground", stats.cps > DEFAULT_RULES.maxCps && "font-medium text-destructive")}>
+            <span className={cn("tabular-nums text-muted-foreground", stats.cps > rules.maxCps && "font-medium text-destructive")}>
               Chars: {stats.chars} / {stats.cps.toFixed(1)} cps
             </span>
           )}
@@ -242,7 +244,7 @@ export function CueEditor() {
         </div>
         {stats && (
           <div className="flex justify-between text-xs tabular-nums text-muted-foreground">
-            <span className={cn(stats.longestLine > DEFAULT_RULES.maxLineLength && "font-medium text-destructive")}>
+            <span className={cn((stats.longestLine > rules.maxLineLength || stats.lineCount > rules.maxLines) && "font-medium text-destructive")}>
               Line length: {stats.lineLengths.join(" / ")}
             </span>
             <span>Total chars: {stats.chars}</span>

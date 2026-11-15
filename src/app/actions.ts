@@ -14,6 +14,7 @@ import {
   setShowOriginalColumn,
   useSettings,
 } from "@/features/settings/store";
+import { getRules } from "@/features/subtitles/activeRules";
 import { nextBookmarkIndex } from "@/features/subtitles/bookmarks";
 import { parseCues, serializeCues } from "@/features/subtitles/clipboard";
 import { toggleItalic } from "@/features/subtitles/format";
@@ -94,7 +95,8 @@ import type { CueData, SubtitleFormat } from "@/features/subtitles/types";
 import { cueTextSelection, focusCueText, isEditable, setCueTextSelection } from "@/lib/dom";
 import { commands, fileName, inTauri, stripExtension } from "@/lib/tauri";
 import { planDrop, SUBTITLE_EXTENSIONS, VIDEO_EXTENSIONS } from "./drop";
-import { buildProject, restoreProject } from "./project";
+import { restoreProject } from "./project";
+import { applyProjectProfile, currentProject } from "./ruleProfiles";
 
 /** Transient UI state that several components toggle. */
 export const useUi = create<{
@@ -184,17 +186,21 @@ function seekWhenVideoReady(t: number) {
   window.setTimeout(off, 15_000);
 }
 
-/** Restores video, fps, timecode, bookmarks, originals and the last selected line. Missing or bad sidecar: nothing happens. */
+/**
+ * Restores video, fps, timecode, rule profile, bookmarks, originals and the last selected line.
+ * Missing or bad sidecar: only the rule profile falls back to the last chosen one.
+ */
 async function applySidecar(path: string) {
   let file;
   try {
     file = await commands.readProject(path);
   } catch {
-    return;
+    file = null;
   }
-  if (!file) return;
+  if (!file) return applyProjectProfile(null);
   const s = useSubtitles.getState();
   const p = restoreProject(s.cues, file);
+  applyProjectProfile(p.ruleProfile);
   restoreBookmarks(p.bookmarks);
   restoreOriginals(p.originals, p.originalPath);
   if (p.originals.size) setShowOriginalColumn(true);
@@ -223,7 +229,7 @@ async function applySidecar(path: string) {
 /** Written next to the subtitle on every save; never blocks or fails the save itself. */
 async function writeSidecar(path: string) {
   try {
-    await commands.writeProject(path, buildProject(useSubtitles.getState()));
+    await commands.writeProject(path, currentProject());
   } catch (err) {
     console.warn("Could not write the project sidecar", err);
   }
@@ -885,11 +891,13 @@ export function unbreakAction() {
 }
 
 export function autoBreakAction() {
-  mapSelectedTexts(autoBreak);
+  const max = getRules().maxLineLength;
+  mapSelectedTexts((t) => autoBreak(t, max));
 }
 
 export function balanceLinesAction() {
-  mapSelectedTexts(balanceLines);
+  const max = getRules().maxLineLength;
+  mapSelectedTexts((t) => balanceLines(t, max));
 }
 
 export function breakAtFirstSpaceAction() {
@@ -956,7 +964,7 @@ const selectedIndex = () => {
 };
 
 export function goToError(dir: 1 | -1) {
-  goToIndex(findError(useSubtitles.getState().cues, selectedIndex(), dir), dir > 0 ? "No more errors below" : "No more errors above");
+  goToIndex(findError(useSubtitles.getState().cues, selectedIndex(), dir, getRules()), dir > 0 ? "No more errors below" : "No more errors above");
 }
 
 export function goToNextEmpty() {

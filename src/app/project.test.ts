@@ -67,6 +67,25 @@ describe("sidecar round trip", () => {
     });
   });
 
+  it("saves the active rule profile as a snapshot", () => {
+    const ruleProfile = {
+      id: "user-1",
+      name: "Client A",
+      limits: { minDuration: 1, maxDuration: 6, maxCps: 15, maxLineLength: 37, maxLines: 2, minGap: 80, minGapUnit: "ms" as const },
+    };
+    const project = buildProject({
+      cues,
+      selectedId: null,
+      videoPath: null,
+      originalPath: null,
+      fps: 25,
+      timecode: "frames",
+      ruleProfile,
+    });
+    expect(project.ruleProfile).toEqual(ruleProfile);
+    expect(restoreProject(cues, project).ruleProfile).toEqual(ruleProfile);
+  });
+
   it("ignores junk values from a hand-edited file", () => {
     const back = restoreProject(cues, {
       videoPath: "",
@@ -84,6 +103,7 @@ describe("sidecar round trip", () => {
       timecode: null,
       videoPath: null,
       originalPath: null,
+      ruleProfile: null,
     });
   });
 });

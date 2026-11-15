@@ -1,12 +1,17 @@
-import { CircleCheck, TriangleAlert } from "lucide-react";
+import { CircleCheck, SlidersHorizontal, TriangleAlert } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useRules } from "@/features/subtitles/activeRules";
 import { clock } from "@/features/playback/clock";
 import { listIssues, type IssueColumn } from "@/features/subtitles/rules";
 import { select, selectTimeFormat, useSubtitles } from "@/features/subtitles/store";
 import { formatTime } from "@/features/subtitles/timecode";
 import { cn } from "@/lib/utils";
 import { useUi } from "./actions";
+import { ProfileSelect } from "./ProfileSelect";
+import { openRuleProfiles } from "./ruleProfiles";
 
 const COLUMN_LABEL: Record<IssueColumn, string> = { start: "Start", duration: "Duration", text: "Text" };
 
@@ -19,7 +24,8 @@ export function ErrorsPanel() {
   const cues = useSubtitles((s) => s.cues);
   const selectedId = useSubtitles((s) => s.selectedId);
   const fmt = useSubtitles(useShallow(selectTimeFormat));
-  const issues = open ? listIssues(cues) : [];
+  const rules = useRules();
+  const issues = open ? listIssues(cues, rules) : [];
   const lines = new Set(issues.map((i) => i.index)).size;
 
   return (
@@ -36,10 +42,21 @@ export function ErrorsPanel() {
               : "No problems found"}
           </DialogDescription>
         </DialogHeader>
+        <div className="flex items-center gap-2">
+          <ProfileSelect className="min-w-0 flex-1" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon-sm" aria-label="Edit rule profiles" onClick={openRuleProfiles}>
+                <SlidersHorizontal />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Edit rule profiles</TooltipContent>
+          </Tooltip>
+        </div>
         {issues.length === 0 ? (
           <p className="flex items-center gap-2 text-muted-foreground">
             <CircleCheck aria-hidden className="size-4" />
-            Timing, reading speed and line length are within the limits.
+            Timing, gaps, reading speed and line length are within the limits.
           </p>
         ) : (
           <ul aria-label="Problems" className="-mx-1 min-h-0 flex-1 overflow-auto">

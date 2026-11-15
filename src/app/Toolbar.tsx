@@ -35,6 +35,7 @@ import {
   type PreviewSize,
 } from "@/features/settings/preview";
 import { THEMES, type ThemePreference } from "@/features/settings/themes";
+import { useActiveProfile, useRules } from "@/features/subtitles/activeRules";
 import { listIssues } from "@/features/subtitles/rules";
 import { useSubtitles } from "@/features/subtitles/store";
 import type { TimecodeMode } from "@/features/subtitles/timecode";
@@ -66,9 +67,12 @@ function ToolButton({ command, label, disabled, children }: { command: string; l
 
 /** Live problem count; opens the errors list. The icon and number carry the signal, not colour. */
 function ErrorsButton() {
-  const count = useSubtitles((s) => listIssues(s.cues).length);
+  const rules = useRules();
+  const profile = useActiveProfile();
+  const count = useSubtitles((s) => listIssues(s.cues, rules).length);
   const open = useUi((s) => s.errorsOpen);
-  const title = commandTitle("view.errors", count ? `${count} problem${count === 1 ? "" : "s"}: list errors` : "No problems: list errors");
+  const summary = count ? `${count} problem${count === 1 ? "" : "s"}` : "No problems";
+  const title = commandTitle("view.errors", `${summary} (${profile.name}): list errors`);
   return (
     <Tooltip>
       <TooltipTrigger asChild>

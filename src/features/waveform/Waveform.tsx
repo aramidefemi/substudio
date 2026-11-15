@@ -3,6 +3,7 @@ import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { clock } from "@/features/playback/clock";
 import { onThemeChange } from "@/features/settings/appearance";
 import { useSettings } from "@/features/settings/store";
+import { getRules } from "@/features/subtitles/activeRules";
 import { select, useSubtitles } from "@/features/subtitles/store";
 import { WAVEFORM_ID } from "@/lib/dom";
 import { menuTarget, setPointerTime, type MenuTarget } from "./context";
@@ -66,6 +67,7 @@ export function Waveform() {
         region: useRegion.getState().region,
         message: waveformMessage(status, progress, error, useSubtitles.getState().videoPath),
         tokens: canvasTokens(),
+        rules: getRules(),
       });
     };
     const schedule = () => {

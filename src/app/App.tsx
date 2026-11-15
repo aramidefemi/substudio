@@ -25,6 +25,7 @@ import { RecentDialog } from "./RecentDialog";
 import { RemoveHiDialog } from "./RemoveHiDialog";
 import { ReplaceDialog } from "./ReplaceDialog";
 import { RestoreBackupDialog } from "./RestoreBackupDialog";
+import { RuleProfilesDialog } from "./RuleProfilesDialog";
 import { SpellCheckDialog } from "./SpellCheckDialog";
 import { StatisticsDialog } from "./StatisticsDialog";
 import { ToolsDialog } from "./ToolsDialog";
@@ -92,6 +93,7 @@ export default function App() {
       <BookmarksDialog />
       <BookmarkNoteDialog />
       <GoToLineDialog />
+      <RuleProfilesDialog />
       <CommandPalette />
       <RecentDialog />
       <EncodingDialog />

@@ -7,6 +7,7 @@ import { ROW_HEIGHT, useSettings } from "@/features/settings/store";
 import { focusCueText, SUBTITLE_LIST_ID } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 import { formatRuns, gapAfter, stripTags } from "./format";
+import { useRules } from "./activeRules";
 import { checkCue, cueStats } from "./rules";
 import {
   isUntimed,
@@ -79,6 +80,7 @@ export function SubtitleList() {
   const showOriginal = useSettings((s) => s.showOriginalColumn);
   const showFormatting = useSettings((s) => s.showFormattingInGrid);
   const privacy = useSettings((s) => s.privacy);
+  const rules = useRules();
   const scrollRef = useRef<HTMLDivElement>(null);
   const selectedSet = new Set(selectedIds);
   const gridTemplateColumns = columnTemplate(showCps, showGap, showOriginal);
@@ -131,7 +133,7 @@ export function SubtitleList() {
           {virtualizer.getVirtualItems().map((row) => {
             const cue = cues[row.index]!;
             const prev = cues[row.index - 1];
-            const issues = checkCue(cue, prev);
+            const issues = checkCue(cue, prev, rules);
             const selected = selectedSet.has(cue.id);
             const stats = cueStats(cue);
             const gap = gapAfter(prev, cue);
