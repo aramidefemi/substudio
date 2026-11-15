@@ -8,6 +8,7 @@ import { select, useSubtitles } from "@/features/subtitles/store";
 import { WAVEFORM_ID } from "@/lib/dom";
 import { menuTarget, setPointerTime, type MenuTarget } from "./context";
 import { drawWaveform } from "./draw";
+import { useMedia } from "@/features/media/store";
 import { loadPeaks, usePeaks } from "./peaks";
 import { attachPointer } from "./pointer";
 import { createCueFromRegion, regionContains, useRegion } from "./region";
@@ -112,12 +113,21 @@ export function Waveform() {
     };
   }, []);
 
-  // Decode (or fetch the cached) waveform whenever the video changes.
+  // Decode (or fetch the cached) waveform whenever the video or audio track changes.
   useEffect(() => {
-    void loadPeaks(useSubtitles.getState().videoPath);
-    return useSubtitles.subscribe((s, prev) => {
-      if (s.videoPath !== prev.videoPath) void loadPeaks(s.videoPath);
-    });
+    const reload = () => {
+      void loadPeaks(useSubtitles.getState().videoPath, useMedia.getState().audioTrack);
+    };
+    reload();
+    const unsubs = [
+      useSubtitles.subscribe((s, prev) => {
+        if (s.videoPath !== prev.videoPath) reload();
+      }),
+      useMedia.subscribe((s, prev) => {
+        if (s.audioTrack !== prev.audioTrack) reload();
+      }),
+    ];
+    return () => unsubs.forEach((u) => u());
   }, []);
 
   const timeAt = (clientX: number) => {

@@ -268,6 +268,23 @@ export const MENU: MenuGroup[] = [
           ["playback.speed.normal", "Normal"],
         ],
       },
+      "-",
+      {
+        submenu: "Audio Track",
+        items: [
+          "playback.audioTrack.prev",
+          "playback.audioTrack.next",
+          "-",
+          ["playback.audioTrack.0", "Track 1"],
+          ["playback.audioTrack.1", "Track 2"],
+          ["playback.audioTrack.2", "Track 3"],
+          ["playback.audioTrack.3", "Track 4"],
+          ["playback.audioTrack.4", "Track 5"],
+          ["playback.audioTrack.5", "Track 6"],
+          ["playback.audioTrack.6", "Track 7"],
+          ["playback.audioTrack.7", "Track 8"],
+        ],
+      },
     ],
   },
   {

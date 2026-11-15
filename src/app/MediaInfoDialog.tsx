@@ -1,7 +1,9 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useMedia } from "@/features/media/store";
+import { audioTrackLabel, listAudioTracks } from "@/features/media/audioTracks";
+import { setAudioTrack, useMedia } from "@/features/media/store";
 import { useSubtitles } from "@/features/subtitles/store";
 import type { MediaInfo } from "@/lib/tauri";
+import { cn } from "@/lib/utils";
 import { useUi } from "./actions";
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -51,8 +53,10 @@ export function MediaInfoDialog() {
   const frameTimes = useMedia((s) => s.frameTimes);
   const usingProxy = useMedia((s) => s.usingProxy);
   const playbackPath = useMedia((s) => s.playbackPath);
+  const audioTrack = useMedia((s) => s.audioTrack);
   const loading = useMedia((s) => s.loading);
   const error = useMedia((s) => s.error);
+  const audio = info ? listAudioTracks(info.tracks) : [];
 
   return (
     <Dialog open={open} onOpenChange={(mediaInfoOpen) => useUi.setState({ mediaInfoOpen })}>
@@ -97,17 +101,41 @@ export function MediaInfoDialog() {
             <Row
               label="Playback"
               value={
-                !playbackPath
-                  ? "…"
-                  : usingProxy
-                    ? "Editing proxy (H.264)"
-                    : "Source (WebKit)"
+                !playbackPath ? "…" : usingProxy ? "Editing proxy (H.264)" : "Source (WebKit)"
               }
             />
             {info.note && <p className="text-xs text-muted-foreground">{info.note}</p>}
+            {audio.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-sm font-semibold">Audio tracks</div>
+                <ul className="divide-y divide-border rounded-md border border-border">
+                  {audio.map((t, ordinal) => {
+                    const selected = ordinal === audioTrack;
+                    return (
+                      <li key={`${t.index}-audio`}>
+                        <button
+                          type="button"
+                          onClick={() => setAudioTrack(ordinal)}
+                          className={cn(
+                            "flex w-full flex-col px-3 py-2 text-left text-sm transition-colors",
+                            selected ? "bg-accent text-accent-foreground" : "hover:bg-muted/60",
+                          )}
+                          aria-pressed={selected}
+                        >
+                          <div className="font-medium">
+                            {audioTrackLabel(t, ordinal)}
+                            {selected ? " · selected" : ""}
+                          </div>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
             {info.tracks.length > 0 && (
               <div className="space-y-2">
-                <div className="text-sm font-semibold">Tracks</div>
+                <div className="text-sm font-semibold">All tracks</div>
                 <ul className="divide-y divide-border rounded-md border border-border">
                   {info.tracks.map((t) => (
                     <li key={`${t.index}-${t.kind}`} className="px-3 py-2 text-sm">

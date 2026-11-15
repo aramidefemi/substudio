@@ -42,6 +42,8 @@ export interface ProjectSource {
   timecode: TimecodeMode;
   /** The active rule profile, saved as a snapshot so the project keeps its rules elsewhere. */
   ruleProfile?: RuleProfile;
+  /** 0-based audio stream ordinal (PLY-05); omitted when unknown. */
+  audioTrack?: number | null;
 }
 
 /** What goes in the sidecar for the current document. */
@@ -53,6 +55,10 @@ export function buildProject(s: ProjectSource): ProjectFile {
     hasOriginal(c) ? [{ index, start: c.start, text: c.original ?? "" }] : [],
   );
   const selectedIndex = s.cues.findIndex((c) => c.id === s.selectedId);
+  const audioTrack =
+    typeof s.audioTrack === "number" && Number.isFinite(s.audioTrack) && s.audioTrack >= 0
+      ? Math.trunc(s.audioTrack)
+      : null;
   return {
     videoPath: s.videoPath,
     fps: s.fps,
@@ -62,6 +68,7 @@ export function buildProject(s: ProjectSource): ProjectFile {
     originalPath: s.originalPath,
     originals,
     ...(s.ruleProfile ? { ruleProfile: snapshotOf(s.ruleProfile) } : {}),
+    audioTrack,
   };
 }
 
@@ -75,6 +82,7 @@ export interface RestoredProject {
   originalPath: string | null;
   /** Raw rule profile snapshot; resolve it with `resolveSnapshot`. */
   ruleProfile: unknown;
+  audioTrack: number | null;
 }
 
 /** Turns a sidecar back into document state, matching cue refs against the loaded cues. */
@@ -98,5 +106,9 @@ export function restoreProject(cues: readonly CueData[], p: ProjectFile): Restor
     videoPath: typeof p.videoPath === "string" && p.videoPath ? p.videoPath : null,
     originalPath: typeof p.originalPath === "string" && p.originalPath ? p.originalPath : null,
     ruleProfile: p.ruleProfile ?? null,
+    audioTrack:
+      typeof p.audioTrack === "number" && Number.isFinite(p.audioTrack) && p.audioTrack >= 0
+        ? Math.trunc(p.audioTrack)
+        : null,
   };
 }

@@ -115,14 +115,17 @@ impl PeakBuilder {
     }
 }
 
-/// Decodes the first audio track. `progress` gets 0.0–1.0 at most ~100 times.
-pub fn compute(path: &Path, mut progress: impl FnMut(f32)) -> Result<Peaks, String> {
-    match compute_symphonia(path, &mut progress) {
+/// Decodes audio track `audio_track` (0-based among audio streams).
+/// `progress` gets 0.0–1.0 at most ~100 times.
+pub fn compute(path: &Path, audio_track: u32, mut progress: impl FnMut(f32)) -> Result<Peaks, String> {
+    match compute_symphonia(path, audio_track, &mut progress) {
         Ok(peaks) => Ok(peaks),
-        Err(sym_err) if needs_ffmpeg_fallback(&sym_err) => match compute_ffmpeg(path, &mut progress) {
-            Ok(peaks) => Ok(peaks),
-            Err(ff_err) => Err(combine_errors(&sym_err, &ff_err)),
-        },
+        Err(sym_err) if needs_ffmpeg_fallback(&sym_err) => {
+            match compute_ffmpeg(path, audio_track, &mut progress) {
+                Ok(peaks) => Ok(peaks),
+                Err(ff_err) => Err(combine_errors(&sym_err, &ff_err)),
+            }
+        }
         Err(err) => Err(err),
     }
 }
@@ -144,7 +147,22 @@ fn combine_errors(sym_err: &str, ff_err: &str) -> String {
     }
 }
 
-fn compute_symphonia(path: &Path, progress: &mut dyn FnMut(f32)) -> Result<Peaks, String> {
+fn audio_track_at(
+    format: &dyn symphonia::core::formats::FormatReader,
+    ordinal: u32,
+) -> Result<&symphonia::core::formats::Track, String> {
+    let audio: Vec<_> = format.tracks().iter().filter(|t| matches_audio(t)).collect();
+    if audio.is_empty() {
+        return Err("No audio track found".into());
+    }
+    Ok(audio.get(ordinal as usize).or_else(|| audio.first()).expect("non-empty"))
+}
+
+fn matches_audio(track: &symphonia::core::formats::Track) -> bool {
+    track.track_type() == Some(TrackType::Audio)
+}
+
+fn compute_symphonia(path: &Path, audio_track: u32, progress: &mut dyn FnMut(f32)) -> Result<Peaks, String> {
     let file = File::open(path).map_err(|e| e.to_string())?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
     let mut hint = Hint::new();
@@ -155,7 +173,7 @@ fn compute_symphonia(path: &Path, progress: &mut dyn FnMut(f32)) -> Result<Peaks
         .probe(&hint, mss, FormatOptions::default(), MetadataOptions::default())
         .map_err(|e| format!("Unsupported media format: {e}"))?;
 
-    let track = format.default_track(TrackType::Audio).ok_or("No audio track found")?;
+    let track = audio_track_at(format.as_ref(), audio_track)?;
     let track_id = track.id;
     let total = track.duration.map(|d| d.get());
     let params = track
@@ -216,8 +234,9 @@ fn find_ffmpeg() -> Option<PathBuf> {
 }
 
 /// Decode via ffmpeg to mono f32 PCM and build the same peak format.
-fn compute_ffmpeg(path: &Path, progress: &mut dyn FnMut(f32)) -> Result<Peaks, String> {
+fn compute_ffmpeg(path: &Path, audio_track: u32, progress: &mut dyn FnMut(f32)) -> Result<Peaks, String> {
     let ffmpeg = find_ffmpeg().ok_or("ffmpeg not found on PATH")?;
+    let map = format!("0:a:{audio_track}");
     let mut child = Command::new(&ffmpeg)
         .args([
             "-hide_banner",
@@ -228,6 +247,8 @@ fn compute_ffmpeg(path: &Path, progress: &mut dyn FnMut(f32)) -> Result<Peaks, S
         ])
         .arg(path)
         .args([
+            "-map",
+            &map,
             "-vn",
             "-sn",
             "-dn",
@@ -296,8 +317,8 @@ fn compute_ffmpeg(path: &Path, progress: &mut dyn FnMut(f32)) -> Result<Peaks, S
     Ok(builder.finish())
 }
 
-/// Cache file for `path`, keyed by path, size and modification time.
-fn cache_file(path: &Path, cache_dir: &Path) -> Result<PathBuf, String> {
+/// Cache file for `path` + audio track, keyed by path, size, mtime and track.
+fn cache_file(path: &Path, cache_dir: &Path, audio_track: u32) -> Result<PathBuf, String> {
     let meta = fs::metadata(path).map_err(|e| e.to_string())?;
     let mtime = meta
         .modified()
@@ -306,21 +327,26 @@ fn cache_file(path: &Path, cache_dir: &Path) -> Result<PathBuf, String> {
         .map(|d| d.as_millis())
         .unwrap_or(0);
     let mut h = DefaultHasher::new();
-    (path, meta.len(), mtime, VERSION).hash(&mut h);
+    (path, meta.len(), mtime, VERSION, audio_track).hash(&mut h);
     Ok(cache_dir.join("waveforms").join(format!("{:016x}.sspk", h.finish())))
 }
 
-/// Cached peaks bytes for `path`, computing and caching them on a miss.
-pub fn load_or_compute(path: &str, cache_dir: &Path, mut progress: impl FnMut(f32)) -> Result<Vec<u8>, String> {
+/// Cached peaks bytes for `path` / `audio_track`, computing and caching them on a miss.
+pub fn load_or_compute(
+    path: &str,
+    cache_dir: &Path,
+    audio_track: u32,
+    mut progress: impl FnMut(f32),
+) -> Result<Vec<u8>, String> {
     let media = Path::new(path);
-    let cached = cache_file(media, cache_dir)?;
+    let cached = cache_file(media, cache_dir, audio_track)?;
     if let Ok(bytes) = fs::read(&cached) {
         if Peaks::from_bytes(&bytes).is_some() {
             progress(1.0);
             return Ok(bytes);
         }
     }
-    let bytes = compute(media, &mut progress)?.to_bytes();
+    let bytes = compute(media, audio_track, &mut progress)?.to_bytes();
     if let Some(dir) = cached.parent() {
         // A failed cache write only costs a recompute next time.
         let _ = fs::create_dir_all(dir).and_then(|_| fs::write(&cached, &bytes));
@@ -376,7 +402,7 @@ mod tests {
         let wav = dir.join("clip.wav");
         write_wav(&wav, 8000, 1, 1);
         let mut reports = Vec::new();
-        let peaks = compute(&wav, |p| reports.push(p)).unwrap();
+        let peaks = compute(&wav, 0, |p| reports.push(p)).unwrap();
         assert!((peaks.rate - 100.0).abs() < 1e-9);
         assert_eq!(peaks.values.len(), 200);
         assert!(peaks.values[..100].iter().all(|&v| v == 0), "first second is silent");
@@ -399,14 +425,16 @@ mod tests {
         let dir = temp_dir("cache");
         let wav = dir.join("clip.wav");
         write_wav(&wav, 8000, 0, 1);
-        let first = load_or_compute(wav.to_str().unwrap(), &dir, |_| {}).unwrap();
-        let cached = cache_file(&wav, &dir).unwrap();
+        let first = load_or_compute(wav.to_str().unwrap(), &dir, 0, |_| {}).unwrap();
+        let cached = cache_file(&wav, &dir, 0).unwrap();
         assert!(cached.exists());
         // Second call is served from the cache file.
         fs::write(&cached, Peaks { rate: 1.0, values: vec![9] }.to_bytes()).unwrap();
-        let second = load_or_compute(wav.to_str().unwrap(), &dir, |_| {}).unwrap();
+        let second = load_or_compute(wav.to_str().unwrap(), &dir, 0, |_| {}).unwrap();
         assert_ne!(first, second);
         assert_eq!(Peaks::from_bytes(&second).unwrap().values, vec![9]);
+        // A different audio track ordinal uses a different cache key.
+        assert_ne!(cache_file(&wav, &dir, 0).unwrap(), cache_file(&wav, &dir, 1).unwrap());
     }
 
     #[test]
@@ -419,11 +447,51 @@ mod tests {
         let wav = dir.join("clip.wav");
         write_wav(&wav, 8000, 1, 1);
         // Force the ffmpeg path directly.
-        let peaks = compute_ffmpeg(&wav, &mut |_| {}).unwrap();
+        let peaks = compute_ffmpeg(&wav, 0, &mut |_| {}).unwrap();
         assert!((peaks.rate - 100.0).abs() < 1e-9);
         assert_eq!(peaks.values.len(), 200);
         assert!(peaks.values[..100].iter().all(|&v| v == 0));
         assert!(peaks.values[100..].iter().all(|&v| v > 100));
+    }
+
+    #[test]
+    fn ffmpeg_selects_audio_track_by_ordinal() {
+        let Some(_) = find_ffmpeg() else {
+            eprintln!("skipping: ffmpeg not installed");
+            return;
+        };
+        let dir = temp_dir("multitrack");
+        let out = dir.join("multi.m4a");
+        let status = Command::new(find_ffmpeg().unwrap())
+            .args([
+                "-hide_banner",
+                "-nostdin",
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                "sine=f=440:d=0.5",
+                "-f",
+                "lavfi",
+                "-i",
+                "sine=f=880:d=0.5",
+                "-map",
+                "0:a",
+                "-map",
+                "1:a",
+                "-c:a",
+                "aac",
+            ])
+            .arg(&out)
+            .status()
+            .expect("spawn ffmpeg");
+        assert!(status.success());
+        let t0 = compute_ffmpeg(&out, 0, &mut |_| {}).unwrap();
+        let t1 = compute_ffmpeg(&out, 1, &mut |_| {}).unwrap();
+        assert!(!t0.values.is_empty());
+        assert!(!t1.values.is_empty());
+        // Different tones → different peak patterns (not bit-identical).
+        assert_ne!(t0.values, t1.values);
     }
 
     /// Real-media check: `SUBSTUDIO_TEST_MEDIA=/path/film.webm cargo test real_media -- --ignored --nocapture`
@@ -434,7 +502,7 @@ mod tests {
             return;
         };
         let started = std::time::Instant::now();
-        let peaks = compute(Path::new(&path), |_| {}).unwrap();
+        let peaks = compute(Path::new(&path), 0, |_| {}).unwrap();
         let seconds = peaks.values.len() as f64 / peaks.rate;
         let loud = peaks.values.iter().filter(|&&v| v > 25).count() as f64 / peaks.values.len().max(1) as f64;
         println!(
@@ -451,7 +519,7 @@ mod tests {
         let dir = temp_dir("noaudio");
         let junk = dir.join("notes.txt");
         fs::write(&junk, "not media").unwrap();
-        assert!(compute(&junk, |_| {}).is_err());
+        assert!(compute(&junk, 0, |_| {}).is_err());
     }
 
     #[test]

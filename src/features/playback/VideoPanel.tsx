@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { formatRuns } from "@/features/subtitles/format";
 import { cueIndexAt, selectTimeFormat, useSubtitles } from "@/features/subtitles/store";
 import { formatTime } from "@/features/subtitles/timecode";
+import { applyMediaAudioTrack } from "./audioTrack";
 import { clock, usePlaying } from "./clock";
 import { SeekBar } from "./SeekBar";
 
@@ -51,6 +52,22 @@ export function VideoPanel() {
   useEffect(() => {
     if (videoRef.current) videoRef.current.volume = volume;
   }, [volume, srcPath]);
+
+  // PLY-05: enable the selected audio stream when WebKit exposes audioTracks.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !srcPath) return;
+    const apply = () => applyMediaAudioTrack(video, useMedia.getState().audioTrack);
+    apply();
+    video.addEventListener("loadedmetadata", apply);
+    const unsub = useMedia.subscribe((s, prev) => {
+      if (s.audioTrack !== prev.audioTrack) apply();
+    });
+    return () => {
+      video.removeEventListener("loadedmetadata", apply);
+      unsub();
+    };
+  }, [srcPath]);
 
   // Per-frame readouts are written straight to the DOM, not through React state.
   useEffect(() => {

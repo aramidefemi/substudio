@@ -57,6 +57,8 @@ export interface ProjectFile {
   originals?: { index: number; start: number; text: string }[];
   /** Snapshot of the project's rule profile (RUL-01): `{ id, name, limits }`. Validated on the TS side. */
   ruleProfile?: unknown;
+  /** Selected audio stream ordinal among audio tracks (PLY-05). */
+  audioTrack?: number | null;
 }
 
 /** MED-02: source vs cached/encoded editing proxy for `<video>`. */

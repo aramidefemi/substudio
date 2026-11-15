@@ -1,3 +1,4 @@
+import { AUDIO_TRACK_COMMANDS } from "@/features/playback/audioCommands";
 import { clock } from "@/features/playback/clock";
 import {
   changeSpeed,
@@ -259,6 +260,7 @@ export const COMMANDS: Command[] = [
   { id: "playback.speed.faster", label: "Faster playback", group: "Playback", run: () => changeSpeed(1) },
   { id: "playback.speed.slower", label: "Slower playback", group: "Playback", run: () => changeSpeed(-1) },
   { id: "playback.speed.normal", label: "Normal speed", group: "Playback", run: resetSpeed },
+  ...AUDIO_TRACK_COMMANDS,
 
   /* ---------- View ---------- */
   { id: "view.theme.system", label: "Theme: match system", group: "View", run: () => setTheme("system") },

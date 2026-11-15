@@ -1,6 +1,7 @@
 import { ask, open, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { toast } from "sonner";
 import { create } from "zustand";
+import { preferAudioTrack } from "@/features/media/store";
 import { clock } from "@/features/playback/clock";
 import { playNeighbour } from "@/features/playback/transport";
 import {
@@ -211,12 +212,15 @@ async function applySidecar(path: string) {
   if (p.videoPath && !s.videoPath) {
     try {
       await commands.fileMtime(p.videoPath); // exists?
+      preferAudioTrack(p.videoPath, p.audioTrack);
       setVideo(p.videoPath);
       pushRecentVideo(p.videoPath);
       videoSet = true;
     } catch {
       toast("Video not found", { description: `${fileName(p.videoPath)} — open it again with ⇧⌘O.` });
     }
+  } else if (p.audioTrack != null) {
+    preferAudioTrack(s.videoPath ?? p.videoPath, p.audioTrack);
   }
   const cue = useSubtitles.getState().cues[p.selectedIndex];
   if (cue) {

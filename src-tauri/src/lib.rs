@@ -169,16 +169,19 @@ async fn ensure_playback(
 }
 
 /// Waveform peaks for a media file as raw bytes (see `waveform::Peaks::to_bytes`),
-/// cached in the app cache dir. Progress (0–1) streams over `on_progress`.
+/// cached in the app cache dir. `audio_track` is the 0-based audio stream ordinal
+/// (PLY-05). Progress (0–1) streams over `on_progress`.
 #[tauri::command]
 async fn waveform_peaks(
     app: tauri::AppHandle,
     path: String,
+    audio_track: Option<u32>,
     on_progress: tauri::ipc::Channel<f32>,
 ) -> Result<tauri::ipc::Response, String> {
     let cache_dir = app.path().app_cache_dir().map_err(|e| e.to_string())?;
+    let track = audio_track.unwrap_or(0);
     let bytes = tauri::async_runtime::spawn_blocking(move || {
-        waveform::load_or_compute(&path, &cache_dir, |p| {
+        waveform::load_or_compute(&path, &cache_dir, track, |p| {
             let _ = on_progress.send(p);
         })
     })

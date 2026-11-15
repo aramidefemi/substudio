@@ -4,6 +4,7 @@ import { saveRuleProfile, setLastRuleProfileId, useSettings } from "@/features/s
 import { getActiveProfile } from "@/features/subtitles/activeRules";
 import { findProfile, resolveSnapshot } from "@/features/subtitles/ruleProfiles";
 import { setRuleProfileId, useSubtitles } from "@/features/subtitles/store";
+import { useMedia } from "@/features/media/store";
 import { commands, inTauri } from "@/lib/tauri";
 import { buildProject } from "./project";
 
@@ -12,8 +13,13 @@ export const useRuleProfilesDialog = create<{ open: boolean }>()(() => ({ open: 
 export const openRuleProfiles = () => useRuleProfilesDialog.setState({ open: true });
 export const closeRuleProfiles = () => useRuleProfilesDialog.setState({ open: false });
 
-/** The sidecar for the current document, including the active profile snapshot. */
-export const currentProject = () => buildProject({ ...useSubtitles.getState(), ruleProfile: getActiveProfile() });
+/** The sidecar for the current document, including profile snapshot + audio track. */
+export const currentProject = () =>
+  buildProject({
+    ...useSubtitles.getState(),
+    ruleProfile: getActiveProfile(),
+    audioTrack: useMedia.getState().audioTrack,
+  });
 
 /**
  * Makes `id` the project's profile and the default for documents without one.

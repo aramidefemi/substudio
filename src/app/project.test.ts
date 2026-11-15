@@ -33,6 +33,7 @@ describe("sidecar round trip", () => {
       originalPath: "/films/script.txt",
       fps: 24,
       timecode: "ms",
+      audioTrack: 1,
     });
     expect(project).toEqual({
       videoPath: "/films/a.mp4",
@@ -48,6 +49,7 @@ describe("sidecar round trip", () => {
         { index: 0, start: 1, text: "Ẹyọkan" },
         { index: 2, start: 5.04, text: "" },
       ],
+      audioTrack: 1,
     });
     const back = restoreProject(cues, project);
     expect([...back.bookmarks]).toEqual([
@@ -64,6 +66,7 @@ describe("sidecar round trip", () => {
       timecode: "ms",
       videoPath: "/films/a.mp4",
       originalPath: "/films/script.txt",
+      audioTrack: 1,
     });
   });
 
@@ -94,6 +97,7 @@ describe("sidecar round trip", () => {
       bookmarks: [{ index: 9, start: 99, note: "gone" }],
       selected: null,
       originals: [{ index: 9, start: 99, text: "gone" }],
+      audioTrack: -2,
     });
     expect(back).toEqual({
       bookmarks: new Map(),
@@ -104,6 +108,7 @@ describe("sidecar round trip", () => {
       videoPath: null,
       originalPath: null,
       ruleProfile: null,
+      audioTrack: null,
     });
   });
 });

@@ -10,6 +10,7 @@ export interface Peaks {
 
 interface PeaksState {
   path: string | null;
+  audioTrack: number;
   status: "idle" | "loading" | "ready" | "error";
   /** 0–1 while loading. */
   progress: number;
@@ -17,9 +18,14 @@ interface PeaksState {
   error: string | null;
 }
 
-const IDLE: Omit<PeaksState, "path"> = { status: "idle", progress: 0, peaks: null, error: null };
+const IDLE: Omit<PeaksState, "path" | "audioTrack"> = {
+  status: "idle",
+  progress: 0,
+  peaks: null,
+  error: null,
+};
 
-export const usePeaks = create<PeaksState>()(() => ({ path: null, ...IDLE }));
+export const usePeaks = create<PeaksState>()(() => ({ path: null, audioTrack: 0, ...IDLE }));
 
 const HEADER_LEN = 17;
 
@@ -46,20 +52,25 @@ export function peakBetween(p: Peaks, t0: number, t1: number): number {
 
 let generation = 0;
 
-/** Loads (or reuses Rust's cached) peaks for a video; a newer call cancels older ones. */
-export async function loadPeaks(path: string | null) {
+/** Loads (or reuses Rust's cached) peaks for a video + audio track; newer calls cancel older ones. */
+export async function loadPeaks(path: string | null, audioTrack = 0) {
   const gen = ++generation;
+  const track = Math.max(0, Math.trunc(audioTrack));
   if (!path || !inTauri) {
-    usePeaks.setState({ path, ...IDLE });
+    usePeaks.setState({ path, audioTrack: track, ...IDLE });
     return;
   }
-  usePeaks.setState({ path, ...IDLE, status: "loading" });
+  usePeaks.setState({ path, audioTrack: track, ...IDLE, status: "loading" });
   const onProgress = new Channel<number>();
   onProgress.onmessage = (progress) => {
     if (gen === generation) usePeaks.setState({ progress });
   };
   try {
-    const buffer = await invoke<ArrayBuffer>("waveform_peaks", { path, onProgress });
+    const buffer = await invoke<ArrayBuffer>("waveform_peaks", {
+      path,
+      audioTrack: track,
+      onProgress,
+    });
     if (gen !== generation) return;
     const peaks = parsePeaks(buffer);
     usePeaks.setState(

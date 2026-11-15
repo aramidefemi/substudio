@@ -61,6 +61,8 @@ pub struct Project {
     /// Snapshot of the project's rule profile (RUL-01): `{ id, name, limits }`.
     /// Kept as raw JSON; the frontend validates it.
     pub rule_profile: Option<serde_json::Value>,
+    /// Selected audio stream ordinal among audio tracks (PLY-05).
+    pub audio_track: Option<u32>,
 }
 
 impl Default for Project {
@@ -76,6 +78,7 @@ impl Default for Project {
             original_path: None,
             originals: Vec::new(),
             rule_profile: None,
+            audio_track: None,
         }
     }
 }
@@ -200,8 +203,23 @@ mod tests {
         assert_eq!(back.original_path, project.original_path);
         assert_eq!(back.originals, project.originals);
         assert_eq!(back.rule_profile, project.rule_profile);
+        assert_eq!(back.audio_track, None);
         assert_eq!(fs::read_to_string(&srt).unwrap(), "1\n00:00:01,000 --> 00:00:02,000\nHi\n");
         assert!(!dir.join("film.substudio.json.tmp").exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn persists_audio_track_ordinal() {
+        let dir = temp_dir("audio-track");
+        let srt = dir.join("film.srt");
+        fs::write(&srt, "1\n00:00:01,000 --> 00:00:02,000\nHi\n").unwrap();
+        let project = Project {
+            audio_track: Some(1),
+            ..Project::default()
+        };
+        write(&srt, &project).unwrap();
+        assert_eq!(read(&srt).unwrap().audio_track, Some(1));
         let _ = fs::remove_dir_all(&dir);
     }
 
