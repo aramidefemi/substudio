@@ -76,26 +76,11 @@ let seq = 0;
 const newId = () => `c${++seq}`;
 const withIds = (cues: CueData[]): Cue[] => cues.map((c) => ({ ...c, id: newId() }));
 
-const SAMPLE: CueData[] = [
-  { start: 0.32, end: 1.76, text: "My child, why are you crying?" },
-  { start: 2.28, end: 3.1, text: "I'm sorry, Mama." },
-  { start: 3.6, end: 4.88, text: "In Jesus' name." },
-  { start: 6.4, end: 8.4, text: "God will make a way." },
-  { start: 8.72, end: 10.64, text: "Have you eaten?" },
-  { start: 11.04, end: 12.08, text: "Not yet." },
-  { start: 13.0, end: 15.2, text: "I don't know what to do anymore." },
-  { start: 15.8, end: 17.4, text: "Amen." },
-];
-
-const sampleCues = withIds(SAMPLE);
-
-const firstId = sampleCues[0]?.id ?? null;
-
 export const useSubtitles = create<SubtitleState>()(() => ({
-  cues: sampleCues,
-  selectedId: firstId,
-  selectedIds: firstId ? [firstId] : [],
-  selectionAnchor: firstId,
+  cues: [],
+  selectedId: null,
+  selectedIds: [],
+  selectionAnchor: null,
   filePath: null,
   videoPath: null,
   dirty: false,
