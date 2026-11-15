@@ -42,12 +42,16 @@ She repeats the same tasks on a film she has already subtitled, in both apps.
 | Close and reopen | No lost edits or broken media links |
 | Export and reimport | Text, timestamps and supported formatting preserved |
 
-## Open question that decides two milestones
+## Product decisions from SCR-00 (investigated)
 
-❓ **What is in her Google Doc?** A Yoruba script, an English script, or her own notes?
+She keeps **Google Docs for both English and Yoruba**. She translates both ways — some films are English→Yoruba, some Yoruba→English. The Doc is dialogue in **film sequence** (the words said, then the next line), but it does **not** match timed subtitles one-to-one: we cannot assume every Doc line = exactly one final cue, or that the whole Doc matches the film perfectly. She may split/merge after import.
 
-- **It's a script:** SCR-01 (script import + line-by-line timing) is M1, and AI-03 (per-line suggestions) can be the first AI milestone *without* speech-to-text.
-- **It's her notes, or there's no script:** AI suggestions need Yoruba text, so speech-to-text (AI-02) has to come first.
+**Current SE workflow:** manual import, then fill translation line by line; also **paste a large block** from Google — SE inserts each text where a **line break = new dialogue/cue**, then she **expands/adjusts timeframes** to fit spoken duration.
+
+**Unlocked:**
+- **SCR-01 is M1** — paste/import plain text → split on line breaks → untimed cues; then timing pass (SCR-02 / TIM tools).
+- **FIL-07** (original/script column) is more relevant for the bilingual workflow; keep as a strong M1/M2 candidate once SCR-01 exists.
+- **AI order:** source language is **per film**, not fixed EN→YO. With script text available, AI-03 (per-line suggestions) can still lead without speech-to-text; direction and source lang follow the film.
 
 ---
 
@@ -160,15 +164,15 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | FIL-04 | Encoding detection for legacy files (Windows-1252, etc.) + manual encoding pick | Import with encoding | S | ✅ Every open auto-detects: BOM → valid UTF-8 → `chardetng` guess (cargo-tested on a Windows-1252 SRT); the open toast names the detected encoding and that saving writes UTF-8. Manual Import with encoding kept. |
 | FIL-05 | Reload when changed outside the app | Reload when changed | S | ✅ Mtime poll; ask to reload. |
 | FIL-06 | Drag and drop video/subtitle onto the window | — | S | ✅ Tauri webview drag-drop; routes .srt/.vtt and .mp4/.mov/.m4v/.webm to the open logic (subtitle keeps the current video); overlay says what will open. |
-| FIL-07 | ❓ **Script / "original" column**: show a source document (her Google Doc script) beside each cue | Translation mode ("Open original subtitle") | L | SE's translation mode may be exactly what her Google Docs workflow needs. Confirm with her. |
+| FIL-07 | **Script / "original" column**: show source text (EN or YO, per film) beside each cue while she edits the translation | Translation mode ("Open original subtitle") | L | Stronger after SCR-00: bilingual Docs + both translation directions. Pairing is approximate (Doc ≠ 1:1 final cues); column should survive split/merge. Confirm UX once SCR-01 lands. |
 
-### Script workflow (M1 candidate; investigate first)
+### Script workflow (M1 — SCR-00 investigated ✅)
 
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
-| SCR-00 | ❓ **Ask her:** what's in the Google Doc, who makes it, does it match the film line by line? | — | — | Decides SCR-01 and the AI order. |
-| SCR-01 | **Import a script** (.docx / .txt / pasted Google Doc text): split into lines (one per sentence or paragraph, editable rules), create untimed cues | Import plain text | M | Untimed cues are clearly marked. Nothing is lost on import. |
-| SCR-02 | **Line-by-line timing pass** over imported lines: play, then hold-to-time (TIM-01) or set start/end + auto-advance (TIM-02) | — | S | A 5-minute scene can be timed in roughly real time. Builds on TIM-01/02. |
+| SCR-00 | **Investigate** Google Doc contents, line↔subtitle match, and SE paste/timing workflow | — | — | ✅ Done. Bilingual EN+YO Docs; both translation directions; Doc is film-sequence dialogue, **not** guaranteed 1:1 with timed cues; SE paste = line break → cue, then expand/adjust times. Unlocks SCR-01. See “Product decisions from SCR-00” above. |
+| SCR-01 | **Import / paste plain text** (Google Doc copy, .txt; .docx later if needed): split on **line breaks** → one **untimed** cue per non-empty line. Source may be EN or YO depending on the film. | Import plain text | M | **MVP unlocked.** Paste or import → non-empty lines become untimed cues (clearly marked). Nothing lost on import. Do **not** assume Doc line = final subtitle forever — she may split/merge later (EDT tools). Prefer line-break split over sentence/paragraph heuristics to match her SE paste habit. |
+| SCR-02 | **Timing pass** over imported untimed lines: expand/adjust start/end to speech via hold-to-time (TIM-01), set start/end + auto-advance (TIM-02), and waveform retiming | — | S | A 5-minute scene can be timed in roughly real time after SCR-01 import. Builds on TIM-01/02 + WAV drag. |
 
 ### Quality rules
 
@@ -216,7 +220,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 
 ## M4: AI (after the manual workflow is solid, per our decision)
 
-**Order:** controlled per-line suggestions (AI-03) come first, because she stays in charge of every line. Suggestions need Yoruba **text**, though. If she has a Yoruba script (SCR-00), AI-03 needs no speech-to-text. If not, AI-02's transcription has to come first.
+**Order (updated after SCR-00):** controlled per-line suggestions (AI-03) come first, because she stays in charge of every line. She has script text in Google Docs for **both** EN and YO; translation direction is **per film** (EN→YO or YO→EN), not fixed. With imported/pasted source lines (SCR-01), AI-03 can run without speech-to-text — suggestions translate **from that film’s source language** into the target. AI-02 (audio→draft) remains useful when there is no script or for spotting, but it is not a prerequisite for AI-03.
 
 | ID | Feature | SE reference | Size |
 |---|---|---|---|
