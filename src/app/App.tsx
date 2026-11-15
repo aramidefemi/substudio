@@ -30,6 +30,7 @@ import { SpellCheckDialog } from "./SpellCheckDialog";
 import { StatisticsDialog } from "./StatisticsDialog";
 import { ToolsDialog } from "./ToolsDialog";
 import { Toolbar } from "./Toolbar";
+import { VisualSyncDialog } from "./VisualSyncDialog";
 import { useAppEvents } from "./useAppEvents";
 import { useFileSafety } from "./useFileSafety";
 import { useLiveSpellCheck } from "./useLiveSpellCheck";
@@ -93,6 +94,7 @@ export default function App() {
       <BookmarksDialog />
       <BookmarkNoteDialog />
       <GoToLineDialog />
+      <VisualSyncDialog />
       <RuleProfilesDialog />
       <CommandPalette />
       <RecentDialog />

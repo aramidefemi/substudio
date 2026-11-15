@@ -308,6 +308,10 @@ export const MENU: MenuGroup[] = [
     ],
   },
   {
+    submenu: "Sync",
+    items: ["sync.visualSync"],
+  },
+  {
     submenu: "Waveform",
     items: [
       "waveform.createFromRegion",

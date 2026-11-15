@@ -198,7 +198,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | QLT-07 | Statistics dashboard (CPS histogram, totals) | Statistics | S | ✅ |
 | QLT-08 | Compare two subtitle files | Compare | M | ✅ |
 | SYN-01 | Adjust all times (offset selected or all) | Adjust all times | S |
-| SYN-02 | Visual sync / point sync | Visual sync | L |
+| SYN-02 | Visual sync / point sync | Visual sync | L | ✅ |
 | SYN-03 | Change frame rate; change speed | Sync menu | S |
 | SYN-04 | Shot-change detection (ffmpeg) + snapping | Shot changes | L |
 

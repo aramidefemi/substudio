@@ -22,6 +22,7 @@ import * as a from "../actions";
 import * as fr from "../findReplace";
 import { openGoToLine } from "../goToLine";
 import { openRuleProfiles } from "../ruleProfiles";
+import { openVisualSync } from "../syncUi";
 import { defineCommands, type Command } from "./registry";
 
 type Dir = 1 | -1;
@@ -306,6 +307,15 @@ export const COMMANDS: Command[] = [
   { id: "timing.extendPreviousEnd", label: "Extend previous end to selected", group: "Timing", run: a.timingExtendPreviousEnd },
   { id: "timing.extendNextStart", label: "Extend next start to selected", group: "Timing", run: a.timingExtendNextStart },
   { id: "timing.snapAllToFrames", label: "Snap all times to frames", group: "Timing", run: a.timingSnapAllToFrames },
+
+  /* ---------- Sync ---------- */
+  {
+    id: "sync.visualSync",
+    label: "Visual sync…",
+    group: "Sync",
+    keys: ["$mod+Alt+KeyV"],
+    run: openVisualSync,
+  },
 
   /* ---------- Waveform ---------- */
   ...WAVEFORM_COMMANDS,
