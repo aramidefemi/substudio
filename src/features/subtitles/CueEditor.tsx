@@ -11,6 +11,7 @@ import { CUE_TEXT_ID } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 import { cueStats, DEFAULT_RULES } from "./rules";
 import { isUntimed, selectRelative, selectSelectedCue, selectTimeFormat, updateCue, useSubtitles } from "./store";
+import { timesForUntimed } from "./timing";
 import { formatDuration, formatTime, nudgeStep, parseDuration, parseTime } from "./timecode";
 
 interface TimeFieldProps {
@@ -82,7 +83,11 @@ export function CueEditor() {
           step={step}
           disabled={disabled}
           // Moving the start keeps the duration, like Subtitle Edit.
-          onCommit={(t) => cue && updateCue(cue.id, { start: t, end: t + Math.max(cue.end - cue.start, 2) })}
+          onCommit={(t) => {
+            if (!cue) return;
+            if (untimed) updateCue(cue.id, timesForUntimed(t, "start"));
+            else updateCue(cue.id, { start: t, end: t + Math.max(cue.end - cue.start, 2) });
+          }}
         />
         <TimeField
           id="cue-end"
@@ -94,7 +99,7 @@ export function CueEditor() {
           disabled={disabled}
           onCommit={(t) => {
             if (!cue) return;
-            if (untimed) updateCue(cue.id, { start: Math.max(0, t - 2), end: Math.max(t, 0.05) });
+            if (untimed) updateCue(cue.id, timesForUntimed(t, "end"));
             else if (t > cue.start) updateCue(cue.id, { end: t });
           }}
         />

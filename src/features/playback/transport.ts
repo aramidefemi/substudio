@@ -1,4 +1,14 @@
-import { beginHeldCue, endHeldCue, select, selectedCues, selectSelectedCue, selectSelectedIndex, useSubtitles } from "@/features/subtitles/store";
+import {
+  beginHeldCue,
+  endHeldCue,
+  isUntimed,
+  nextCueIdAfterPrimary,
+  select,
+  selectedCues,
+  selectSelectedCue,
+  selectSelectedIndex,
+  useSubtitles,
+} from "@/features/subtitles/store";
 import { stepFrames } from "@/features/subtitles/timing";
 import { focusCueText } from "@/lib/dom";
 import { clock } from "./clock";
@@ -28,18 +38,24 @@ export const resetSpeed = () => clock.setRate(1);
 
 /** Cue being timed by a held key (TIM-01), if any. */
 let heldId: string | null = null;
+/** After releasing a held untimed script line, select this next cue (SCR-02). */
+let heldAdvanceTo: string | null = null;
 
-/** Hold-to-time key down: new cue at the playhead, open-ended until release. */
+/** Hold-to-time key down: time selected untimed line, or add a blank at the playhead. */
 export function holdToTimeStart() {
+  const cue = selectSelectedCue(useSubtitles.getState());
+  heldAdvanceTo = cue && isUntimed(cue) ? nextCueIdAfterPrimary() : null;
   // A run from the menu or palette never gets a release; its cue keeps the provisional end.
   heldId = beginHeldCue(clock.time);
 }
 
-/** Hold-to-time key up: the cue ends at the playhead. */
+/** Hold-to-time key up: the cue ends at the playhead; advance after an untimed line. */
 export function holdToTimeEnd() {
   if (!heldId) return;
   endHeldCue(heldId, clock.time);
+  if (heldAdvanceTo) select(heldAdvanceTo);
   heldId = null;
+  heldAdvanceTo = null;
 }
 
 /** Seconds of lead-in for "play from just before the line". */

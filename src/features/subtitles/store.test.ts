@@ -28,8 +28,11 @@ import {
   select,
   selectAll,
   selectRangeTo,
+  setCueTimes,
   setEndAddNewAndGoToNew,
+  setEndAndGoToNext,
   setSelectedStartAt,
+  setStartAndGoToNext,
   setVideo,
   snapAllTimesToFrames,
   splitSelectedAtCursor,
@@ -40,7 +43,7 @@ import {
   updateCue,
   useSubtitles,
 } from "./store";
-import { MIN_GAP } from "./timing";
+import { DEFAULT_DURATION, MIN_GAP } from "./timing";
 
 const texts = () => useSubtitles.getState().cues.map((c) => c.text);
 
@@ -361,5 +364,64 @@ describe("plain text import (SCR-01)", () => {
     expect(isUntimed(c)).toBe(false);
     expect(c.start).toBe(3);
     expect(c.end).toBe(5);
+  });
+});
+
+describe("script timing pass (SCR-02)", () => {
+  it("set end and go next keeps script order after the timed line sorts away", () => {
+    replaceWithPlainText("One\nTwo\nThree");
+    const [a, b] = useSubtitles.getState().cues;
+    select(a!.id);
+    setEndAndGoToNext(4);
+    const s = useSubtitles.getState();
+    expect(s.selectedId).toBe(b!.id);
+    expect(isUntimed(s.cues.find((c) => c.id === a!.id)!)).toBe(false);
+    expect(s.cues.find((c) => c.id === a!.id)!.end).toBe(4);
+    expect(isUntimed(s.cues.find((c) => c.id === b!.id)!)).toBe(true);
+  });
+
+  it("set start and go next advances to the next untimed line", () => {
+    replaceWithPlainText("One\nTwo");
+    const [a, b] = useSubtitles.getState().cues;
+    select(a!.id);
+    setStartAndGoToNext(10);
+    expect(useSubtitles.getState().selectedId).toBe(b!.id);
+    const timed = useSubtitles.getState().cues.find((c) => c.id === a!.id)!;
+    expect(timed.start).toBe(10);
+    expect(timed.end).toBe(10 + DEFAULT_DURATION);
+  });
+
+  it("setCueTimes clears untimed and applies defaults for a single edge", () => {
+    replaceWithPlainText("Line");
+    const id = useSubtitles.getState().cues[0]!.id;
+    setCueTimes([{ id, start: 2 }]);
+    const c = useSubtitles.getState().cues[0]!;
+    expect(isUntimed(c)).toBe(false);
+    expect(c.start).toBe(2);
+    expect(c.end).toBe(2 + DEFAULT_DURATION);
+  });
+
+  it("hold-to-time on an untimed cue keeps its text", () => {
+    replaceWithPlainText("Hello\nWorld");
+    const [a, b] = useSubtitles.getState().cues;
+    select(a!.id);
+    const id = beginHeldCue(3);
+    expect(id).toBe(a!.id);
+    endHeldCue(id, 4.5);
+    const timed = useSubtitles.getState().cues.find((c) => c.id === id)!;
+    expect(timed.text).toBe("Hello");
+    expect(isUntimed(timed)).toBe(false);
+    expect(timed.start).toBe(3);
+    expect(timed.end).toBe(4.5);
+    expect(useSubtitles.getState().cues.some((c) => c.id === b!.id && isUntimed(c))).toBe(true);
+  });
+
+  it("set end add-new on untimed goes to next without inserting a blank", () => {
+    replaceWithPlainText("One\nTwo");
+    const [a, b] = useSubtitles.getState().cues;
+    select(a!.id);
+    expect(setEndAddNewAndGoToNew(3)).toBeNull();
+    expect(useSubtitles.getState().cues).toHaveLength(2);
+    expect(useSubtitles.getState().selectedId).toBe(b!.id);
   });
 });

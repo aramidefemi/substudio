@@ -22,10 +22,26 @@ import {
   snapAllToFrames,
   snapToFrame,
   stepFrames,
+  timesForUntimed,
+  DEFAULT_DURATION,
 } from "./timing";
 import type { CueData } from "./types";
 
 const cue = (start: number, end: number, text = ""): CueData => ({ start, end, text });
+
+describe("timesForUntimed", () => {
+  it("places a default duration from the start edge", () => {
+    expect(timesForUntimed(3, "start")).toEqual({ start: 3, end: 3 + DEFAULT_DURATION });
+  });
+
+  it("places a default duration ending at the end edge", () => {
+    expect(timesForUntimed(5, "end")).toEqual({ start: 5 - DEFAULT_DURATION, end: 5 });
+  });
+
+  it("clamps start to 0 when the end is near zero", () => {
+    expect(timesForUntimed(0.5, "end")).toEqual({ start: 0, end: 0.5 });
+  });
+});
 
 describe("snapToFrame", () => {
   it("rounds to nearest frame at project fps", () => {

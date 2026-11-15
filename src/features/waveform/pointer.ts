@@ -1,6 +1,7 @@
 import { clock } from "@/features/playback/clock";
 import { isMac } from "@/app/commands/keys";
 import {
+  isUntimed,
   select,
   selectSelectedCue,
   selectSelectedIndex,
@@ -8,6 +9,7 @@ import {
   useSubtitles,
   type TimeChange,
 } from "@/features/subtitles/store";
+import { timesForUntimed } from "@/features/subtitles/timing";
 import { cursorFor, dragCue, hitTest, MIN_CUE_LEN, setEdgeAt, type DragMode, type Span } from "./drag";
 import { clearRegion, gapAround, regionContains, regionFromDrag, setRegion, useRegion } from "./region";
 import { useWaveView } from "./view";
@@ -102,7 +104,10 @@ export function attachPointer(canvas: HTMLCanvasElement): () => void {
     if (e.shiftKey === mod) return false; // neither, or both
     const cue = selectSelectedCue(useSubtitles.getState());
     if (!cue) return true;
-    const t = setEdgeAt(cue, e.shiftKey ? "start" : "end", timeAt(x));
+    const edge = e.shiftKey ? "start" : "end";
+    const at = timeAt(x);
+    // Untimed script lines get a default duration (SCR-02), not min-length clamps.
+    const t = isUntimed(cue) ? timesForUntimed(at, edge) : setEdgeAt(cue, edge, at);
     setCueTimes([{ id: cue.id, ...t }]);
     return true;
   };

@@ -12,6 +12,7 @@ import {
 } from "./lineOps";
 import {
   CUSTOM_STEP,
+  DEFAULT_DURATION,
   MS_STEP,
   MIN_GAP,
   extendNextStartToSelected,
@@ -29,6 +30,7 @@ import {
   shiftAll,
   shiftIndices,
   snapAllToFrames,
+  timesForUntimed,
   type Edge,
   type NudgeMode,
   type SetStartOpts,
@@ -338,7 +340,6 @@ export function selectedCues(): Cue[] {
 /* ---------- cue edits ---------- */
 
 const byStart = (a: CueData, b: CueData) => a.start - b.start;
-const DEFAULT_DURATION = 2;
 
 export function updateCue(id: string, patch: Partial<CueData>, key?: string) {
   edit((doc) => {
@@ -373,6 +374,7 @@ export interface TimeChange {
 /**
  * Retime several cues in one undo step (waveform drags). Pass the same `key`
  * for every update of one gesture so the whole drag undoes at once.
+ * Clears `untimed` when an imported script line gets real times (SCR-02).
  */
 export function setCueTimes(changes: readonly TimeChange[], key?: string) {
   edit((doc) => {
@@ -380,11 +382,26 @@ export function setCueTimes(changes: readonly TimeChange[], key?: string) {
     for (const ch of changes) {
       const cue = doc.cues.find((c) => c.id === ch.id);
       if (!cue) continue;
+      const hadTimes = ch.start !== undefined || ch.end !== undefined;
+      if (isUntimed(cue) && hadTimes) {
+        if (ch.start !== undefined && ch.end !== undefined) {
+          cue.start = Math.max(0, ch.start);
+          cue.end = Math.max(cue.start + MIN_GAP, ch.end);
+        } else if (ch.start !== undefined) {
+          Object.assign(cue, timesForUntimed(ch.start, "start"));
+        } else {
+          Object.assign(cue, timesForUntimed(ch.end!, "end"));
+        }
+        delete cue.untimed;
+        moved = true;
+        continue;
+      }
       if (ch.start !== undefined && cue.start !== ch.start) {
         cue.start = ch.start;
         moved = true;
       }
       if (ch.end !== undefined && cue.end !== ch.end) cue.end = ch.end;
+      if (hadTimes) delete cue.untimed;
     }
     if (moved) doc.cues.sort(byStart);
   }, key);
@@ -442,10 +459,30 @@ export function insertCue(t: number, duration = 2): string {
 }
 
 /**
- * Hold-to-time, key down (TIM-01): add a cue at `t` with an open end and select
- * it. Pair with `endHeldCue`; both share one undo step.
+ * Hold-to-time, key down (TIM-01 / SCR-02): if the selected cue is untimed,
+ * assign it times at `t` (keeps its text). Otherwise insert a blank cue.
+ * Pair with `endHeldCue`; both share one undo step.
  */
 export function beginHeldCue(t: number): string {
+  const i = primaryIndex();
+  const selected = i >= 0 ? get().cues[i]! : null;
+  if (selected && isUntimed(selected)) {
+    const id = selected.id;
+    edit((doc) => {
+      const idx = doc.cues.findIndex((c) => c.id === id);
+      if (idx < 0) return;
+      const [cue] = doc.cues.splice(idx, 1);
+      if (!cue) return;
+      const at = placeHeldCue(doc.cues, t);
+      cue.start = at.start;
+      cue.end = at.end;
+      delete cue.untimed;
+      doc.cues.splice(at.index, 0, cue);
+    }, `hold:${id}`);
+    set({ selectedId: id, selectedIds: [id], selectionAnchor: id });
+    return id;
+  }
+
   const id = newId();
   edit((doc) => {
     const at = placeHeldCue(doc.cues, t);
@@ -463,6 +500,13 @@ export function endHeldCue(id: string, t: number) {
     if (i >= 0) doc.cues[i]!.end = heldCueEnd(doc.cues, i, t);
   }, `hold:${id}`);
   if (get().cues.some((c) => c.id === id)) select(id);
+}
+
+/** Id of the cue after the primary selection (script/list order), if any. */
+export function nextCueIdAfterPrimary(): string | null {
+  const i = primaryIndex();
+  if (i < 0) return null;
+  return get().cues[i + 1]?.id ?? null;
 }
 
 export type TimingStep = "frame" | "ms" | "custom";
@@ -509,14 +553,8 @@ export function moveAllBy(kind: TimingStep, dir: 1 | -1) {
   edit((doc) => shiftAll(doc.cues, delta));
 }
 
-function timeUntimedCue(c: Cue, t: number, edge: "start" | "end") {
-  if (edge === "start") {
-    c.start = Math.max(0, t);
-    c.end = c.start + DEFAULT_DURATION;
-  } else {
-    c.end = Math.max(MIN_GAP, t);
-    c.start = Math.max(0, c.end - DEFAULT_DURATION);
-  }
+function applyUntimedTimes(c: Cue, t: number, edge: "start" | "end") {
+  Object.assign(c, timesForUntimed(t, edge));
   delete c.untimed;
 }
 
@@ -526,7 +564,7 @@ export function setSelectedStartAt(t: number, opts?: SetStartOpts) {
   edit((doc) => {
     const c = doc.cues[i]!;
     if (isUntimed(c)) {
-      timeUntimedCue(c, t, "start");
+      applyUntimedTimes(c, t, "start");
       doc.cues.sort(byStart);
       return;
     }
@@ -540,7 +578,7 @@ export function setSelectedEndAt(t: number) {
   edit((doc) => {
     const c = doc.cues[i]!;
     if (isUntimed(c)) {
-      timeUntimedCue(c, t, "end");
+      applyUntimedTimes(c, t, "end");
       doc.cues.sort(byStart);
       return;
     }
@@ -548,52 +586,64 @@ export function setSelectedEndAt(t: number) {
   });
 }
 
-/** Set end at `t`, select next (if any). */
+/**
+ * Set end at `t`, then select the next cue in list order (id captured before
+ * sort — required for the SCR-02 timing pass over untimed lines).
+ */
 export function setEndAndGoToNext(t: number) {
   const i = primaryIndex();
   if (i < 0) return;
+  const nextId = get().cues[i + 1]?.id ?? null;
   edit((doc) => {
     const c = doc.cues[i]!;
     if (isUntimed(c)) {
-      timeUntimedCue(c, t, "end");
+      applyUntimedTimes(c, t, "end");
       doc.cues.sort(byStart);
       return;
     }
     setEndAt(doc.cues, i, t);
   });
-  selectRelative(1);
+  if (nextId) select(nextId);
 }
 
-/** Set start at `t`, select next (if any). */
+/**
+ * Set start at `t`, then select the next cue in list order (id before sort).
+ */
 export function setStartAndGoToNext(t: number, opts?: SetStartOpts) {
   const i = primaryIndex();
   if (i < 0) return;
+  const nextId = get().cues[i + 1]?.id ?? null;
   edit((doc) => {
     const c = doc.cues[i]!;
     if (isUntimed(c)) {
-      timeUntimedCue(c, t, "start");
+      applyUntimedTimes(c, t, "start");
       doc.cues.sort(byStart);
       return;
     }
     setStartAt(doc.cues, i, t, opts);
   });
-  selectRelative(1);
+  if (nextId) select(nextId);
 }
 
 /**
  * Set end at `t`, insert a new cue after the minimum gap, select it.
- * Returns the new cue id, or null if nothing was selected.
+ * On an untimed script line (SCR-02): set end and go to next — no blank insert.
+ * Returns the new cue id, or null if nothing was selected / no insert.
  */
 export function setEndAddNewAndGoToNew(t: number): string | null {
   const i = primaryIndex();
   if (i < 0) return null;
+  if (isUntimed(get().cues[i]!)) {
+    setEndAndGoToNext(t);
+    return null;
+  }
   let newIdOut: string | null = null;
   edit((doc) => {
     setEndAt(doc.cues, i, t);
     const cur = doc.cues[i]!;
     const start = cur.end + MIN_GAP;
     const next = doc.cues[i + 1];
-    let end = start + 2;
+    let end = start + DEFAULT_DURATION;
     if (next && end > next.start - MIN_GAP) end = Math.max(start + 0.3, next.start - MIN_GAP);
     const id = newId();
     newIdOut = id;

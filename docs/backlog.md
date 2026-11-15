@@ -120,7 +120,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 
 | ID | Feature | SE reference | Size | Acceptance |
 |---|---|---|---|---|
-| EDT-01 | **Set start / Set end at playhead** shortcuts (+ "set end and go to next") | Set start/end (F9–F12) | S | This is core to how SE users time on the fly. |
+| EDT-01 | **Set start / Set end at playhead** shortcuts (+ "set end and go to next") | Set start/end (F9–F12) | S | ✅ F11/F12 set start/end at playhead; F10 set end and go to next; F9 set start and offset the rest; Timing menu + set-start-go-next. Folded into SCR-02 for untimed script lines. |
 | EDT-02 | Insert before/after, delete, merge with next/previous, split at cursor/playhead | Grid context menu, split/join | M | ✅ Insert before/after/end; delete; duplicate; split at cursor/video; merge prev/next/selected (keep breaks / unbreak / dialog). Context menu later (WAV-06). |
 | EDT-03 | Multi-select in the list (Shift/⌘-click) for bulk delete, shift times, merge | Grid selection | M | ✅ Multi-select, select all, invert; bulk delete via cut. Shift/merge later (EDT-02). |
 | EDT-04 | Find & replace (whole word, case, regex), find next/prev | Find / Replace | M | ✅ ⌥⌘F non-modal dialog; ⌘G / ⇧⌘G find next/previous (wraps); match case, Unicode-aware whole word (tone marks stay in the word), regex with `$1` replacements and inline error; replace-all is one undo step. ⌘F palette unchanged. |
@@ -172,7 +172,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 |---|---|---|---|---|
 | SCR-00 | **Investigate** Google Doc contents, line↔subtitle match, and SE paste/timing workflow | — | — | ✅ Done. Bilingual EN+YO Docs; both translation directions; Doc is film-sequence dialogue, **not** guaranteed 1:1 with timed cues; SE paste = line break → cue, then expand/adjust times. Unlocks SCR-01. See “Product decisions from SCR-00” above. |
 | SCR-01 | **Import / paste plain text** (Google Doc copy, .txt; .docx later if needed): split on **line breaks** → one **untimed** cue per non-empty line. Source may be EN or YO depending on the film. | Import plain text | M | ✅ File › Import plain text… + Edit › Paste plain text (⇧⌘V). Line break → untimed cue (`untimed` flag; list shows — / Untimed). Blank lines skipped. Timing via existing set start/end / hold-to-time clears the flag. |
-| SCR-02 | **Timing pass** over imported untimed lines: expand/adjust start/end to speech via hold-to-time (TIM-01), set start/end + auto-advance (TIM-02), and waveform retiming | — | S | A 5-minute scene can be timed in roughly real time after SCR-01 import. Builds on TIM-01/02 + WAV drag. |
+| SCR-02 | **Timing pass** over imported untimed lines: expand/adjust start/end to speech via hold-to-time (TIM-01), set start/end + auto-advance (TIM-02), and waveform retiming | — | S | ✅ After SCR-01 paste: F11/F12 / waveform ⇧/⌘-click / editor fields clear `untimed` with a 2 s default; F10 / set-start-go-next advance by list id (survives sort); hold-H times the selected untimed line (keeps text) then advances; Shift+F10 on untimed = set end + next (no blank). Builds on TIM-01/02 + WAV + EDT-01. |
 
 ### Quality rules
 

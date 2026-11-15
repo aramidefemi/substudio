@@ -3,11 +3,31 @@ import type { CueData } from "./types";
 /** Minimum gap between cues (matches insertCue). */
 export const MIN_GAP = 0.04;
 
+/** Default length when first timing an untimed script line (SCR-02). */
+export const DEFAULT_DURATION = 2;
+
 /** Default ±ms nudge (Subtitle Edit's 100 ms). */
 export const MS_STEP = 0.1;
 
 /** Default custom step (Subtitle Edit's configurable X ms; 25 ms). */
 export const CUSTOM_STEP = 0.025;
+
+/**
+ * First real start/end for an untimed cue when one edge is set at `t`
+ * (playhead or waveform click). Pure — call sites clear `untimed` and sort.
+ */
+export function timesForUntimed(
+  t: number,
+  edge: "start" | "end",
+  duration = DEFAULT_DURATION,
+): { start: number; end: number } {
+  if (edge === "start") {
+    const start = Math.max(0, t);
+    return { start, end: start + duration };
+  }
+  const end = Math.max(MIN_GAP, t);
+  return { start: Math.max(0, end - duration), end };
+}
 
 export type Edge = "start" | "end";
 /** plain = free move; keepGap = move neighbour edge with us; push = shove neighbours out of overlaps. */
