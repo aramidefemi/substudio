@@ -15,6 +15,7 @@ import { ChangeSpeedDialog } from "./ChangeSpeedDialog";
 import { GoToLineDialog } from "./GoToLineDialog";
 import { BookmarksDialog } from "./BookmarksDialog";
 import { CompareDialog } from "./CompareDialog";
+import { BatchConvertDialog } from "./BatchConvertDialog";
 import { CustomTextExportDialog } from "./CustomTextExportDialog";
 import { DropOverlay } from "./DropOverlay";
 import { EncodingDialog } from "./EncodingDialog";
@@ -110,6 +111,7 @@ export default function App() {
       <StatisticsDialog />
       <CompareDialog />
       <CustomTextExportDialog />
+      <BatchConvertDialog />
       <MediaInfoDialog />
       <HistoryDialog />
       <FixCommonDialog />

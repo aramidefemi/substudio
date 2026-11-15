@@ -66,6 +66,7 @@ export const MENU: MenuGroup[] = [
       "file.saveAsTtml",
       "file.saveAsDfxp",
       "file.customTextExport",
+      "file.batchConvert",
       "file.saveSelected",
       "file.burnIn",
       "file.embedSubtitles",

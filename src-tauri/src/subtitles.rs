@@ -32,6 +32,24 @@ pub enum SubtitleFormat {
     Dfxp,
 }
 
+impl SubtitleFormat {
+    /// File extension without the dot; matches the serde name.
+    pub fn extension(self) -> &'static str {
+        match self {
+            Self::Srt => "srt",
+            Self::Vtt => "vtt",
+            Self::Ass => "ass",
+            Self::Ssa => "ssa",
+            Self::Sbv => "sbv",
+            Self::Ttml => "ttml",
+            Self::Dfxp => "dfxp",
+        }
+    }
+}
+
+/// Extensions the app opens as subtitle files.
+pub const EXTENSIONS: &[&str] = &["srt", "vtt", "ass", "ssa", "sbv", "ttml", "dfxp"];
+
 /// Parsed subtitle file: cues always; styles only for ASS/SSA.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

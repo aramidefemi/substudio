@@ -143,6 +143,7 @@ export const COMMANDS: Command[] = [
   { id: "file.saveAsTtml", label: "Export as TTML…", group: "File", run: () => a.saveAs("ttml") },
   { id: "file.saveAsDfxp", label: "Export as DFXP…", group: "File", run: () => a.saveAs("dfxp") },
   { id: "file.customTextExport", label: "Export custom text…", group: "File", run: a.openCustomTextExport },
+  { id: "file.batchConvert", label: "Batch convert…", group: "File", run: a.openBatchConvert },
   { id: "file.burnIn", label: "Burn subtitles into video…", group: "File", run: a.burnIntoVideo },
   { id: "file.embedSubtitles", label: "Embed subtitles into video…", group: "File", run: a.embedSubtitles },
   { id: "file.saveSelected", label: "Save selected lines as…", group: "File", run: () => a.saveSelectedAs("srt") },

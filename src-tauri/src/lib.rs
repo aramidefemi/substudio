@@ -1,3 +1,4 @@
+mod batch;
 mod burn;
 mod ffmpeg_bin;
 mod ffmpeg_job;
@@ -89,6 +90,30 @@ async fn read_text_file(path: String) -> Result<String, String> {
 #[tauri::command]
 async fn write_text_file(path: String, contents: String) -> Result<(), String> {
     std::fs::write(&path, contents).map_err(|e| e.to_string())
+}
+
+/// Subtitle files directly inside a folder, sorted (DLV-03).
+#[tauri::command]
+async fn list_subtitle_files(dir: String) -> Result<Vec<String>, String> {
+    batch::list_subtitle_files(std::path::Path::new(&dir))
+}
+
+/// Converts many subtitle files into `out_dir` as `format`; failures are reported, not fatal (DLV-03).
+#[tauri::command]
+async fn batch_convert(
+    paths: Vec<String>,
+    format: SubtitleFormat,
+    out_dir: String,
+    offset_ms: Option<i64>,
+    on_progress: tauri::ipc::Channel<batch::BatchProgress>,
+) -> Result<batch::BatchOutcome, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        batch::convert_files(&paths, format, std::path::Path::new(&out_dir), offset_ms.unwrap_or(0), |p| {
+            let _ = on_progress.send(p);
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 /// Project sidecar next to the subtitle; `None` when missing or unreadable (FIL-03).
@@ -436,6 +461,8 @@ pub fn run() {
             write_subtitles,
             read_text_file,
             write_text_file,
+            list_subtitle_files,
+            batch_convert,
             read_project,
             write_project,
             file_mtime,

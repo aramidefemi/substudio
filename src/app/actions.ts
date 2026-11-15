@@ -132,6 +132,7 @@ export const useUi = create<{
   toolsOpen: boolean;
   removeHiOpen: boolean;
   customTextExportOpen: boolean;
+  batchConvertOpen: boolean;
 }>()(() => ({
   findOpen: false,
   recentOpen: false,
@@ -153,6 +154,7 @@ export const useUi = create<{
   toolsOpen: false,
   removeHiOpen: false,
   customTextExportOpen: false,
+  batchConvertOpen: false,
 }));
 
 const SUBTITLE_FILTER = { name: "Subtitles", extensions: SUBTITLE_EXTENSIONS };
@@ -561,6 +563,7 @@ export const openMultipleReplace = () => useUi.setState({ multipleReplaceOpen: t
 export const openTextTools = () => useUi.setState({ toolsOpen: true });
 export const openRemoveHi = () => useUi.setState({ removeHiOpen: true });
 export const openCustomTextExport = () => useUi.setState({ customTextExportOpen: true });
+export const openBatchConvert = () => useUi.setState({ batchConvertOpen: true });
 export const openMediaInfo = () => {
   if (!useSubtitles.getState().videoPath) {
     toast("No video open", { description: "Open a video to see media information." });

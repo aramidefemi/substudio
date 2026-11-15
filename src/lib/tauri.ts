@@ -1,4 +1,5 @@
 import { Channel, invoke, isTauri } from "@tauri-apps/api/core";
+import type { BatchOutcome, BatchProgress } from "@/features/export/batch";
 import type { SpellCheckResult, SpellListKind, SpellSuggestResult } from "@/features/spellcheck/types";
 import type { AssKind, AssStyle, CueData, SubtitleFormat } from "@/features/subtitles/types";
 
@@ -107,6 +108,16 @@ export const commands = {
   readTextFile: (path: string) => invoke<string>("read_text_file", { path }),
   writeTextFile: (path: string, contents: string) =>
     invoke<void>("write_text_file", { path, contents }),
+  /** Subtitle files directly inside a folder, sorted (DLV-03). */
+  listSubtitleFiles: (dir: string) => invoke<string[]>("list_subtitle_files", { dir }),
+  /** Converts files into `outDir` as `format`; per-file failures come back in the outcome (DLV-03). */
+  batchConvert: (
+    paths: string[],
+    format: SubtitleFormat,
+    outDir: string,
+    offsetMs: number,
+    onProgress: Channel<BatchProgress>,
+  ) => invoke<BatchOutcome>("batch_convert", { paths, format, outDir, offsetMs, onProgress }),
   readProject: (subtitlePath: string) => invoke<ProjectFile | null>("read_project", { subtitlePath }),
   writeProject: (subtitlePath: string, project: ProjectFile) =>
     invoke<void>("write_project", { subtitlePath, project }),
