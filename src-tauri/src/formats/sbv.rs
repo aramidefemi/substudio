@@ -52,7 +52,6 @@ pub fn parse(input: &str) -> Vec<Cue> {
             start,
             end,
             text: body.join("\n"),
-        ,
             style: None,
         });
     }
@@ -165,7 +164,6 @@ mod tests {
             start: 1.0,
             end: 2.0,
             text: "Ok".into(),
-        ,
             style: None,
         }]);
     }
@@ -191,7 +189,6 @@ mod tests {
             start: 3661.5,
             end: 3662.0,
             text: "Hi".into(),
-        ,
             style: None,
         }]);
         assert_eq!(out, "1:01:01.500,1:01:02.000\nHi\n\n");
