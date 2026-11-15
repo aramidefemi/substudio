@@ -1,6 +1,6 @@
 import { Channel, invoke, isTauri } from "@tauri-apps/api/core";
 import type { SpellCheckResult, SpellListKind, SpellSuggestResult } from "@/features/spellcheck/types";
-import type { CueData, SubtitleFormat } from "@/features/subtitles/types";
+import type { AssKind, AssStyle, CueData, SubtitleFormat } from "@/features/subtitles/types";
 
 /** False when the frontend runs in a plain browser via `pnpm dev`. */
 export const inTauri = isTauri();
@@ -79,13 +79,19 @@ export interface PlaybackDecision {
 /** Typed wrappers for the Rust commands in `src-tauri/src/lib.rs`. */
 export const commands = {
   readSubtitles: (path: string) => invoke<CueData[]>("read_subtitles", { path }),
-  /** Detects the encoding when the file isn't UTF-8 (FIL-04). */
+  /** Detects encoding (FIL-04) and ASS/SSA styles when present (FMT-01). */
   readSubtitlesDetect: (path: string) =>
-    invoke<{ cues: CueData[]; encoding: string }>("read_subtitles_detect", { path }),
+    invoke<{ cues: CueData[]; encoding: string; styles?: AssStyle[] | null; assKind?: AssKind | null }>(
+      "read_subtitles_detect",
+      { path },
+    ),
   readSubtitlesEncoded: (path: string, encoding: string) =>
-    invoke<CueData[]>("read_subtitles_encoded", { path, encoding }),
-  writeSubtitles: (path: string, cues: CueData[], format: SubtitleFormat) =>
-    invoke<void>("write_subtitles", { path, cues, format }),
+    invoke<{ cues: CueData[]; encoding: string; styles?: AssStyle[] | null; assKind?: AssKind | null }>(
+      "read_subtitles_encoded",
+      { path, encoding },
+    ),
+  writeSubtitles: (path: string, cues: CueData[], format: SubtitleFormat, styles?: AssStyle[] | null) =>
+    invoke<void>("write_subtitles", { path, cues, format, styles: styles ?? null }),
   /** Plain UTF-8 text (SCR-01 script import). */
   readTextFile: (path: string) => invoke<string>("read_text_file", { path }),
   readProject: (subtitlePath: string) => invoke<ProjectFile | null>("read_project", { subtitlePath }),

@@ -6,7 +6,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 
-use crate::formats::{sbv, ttml};
+use crate::formats::ass::{AssKind, AssStyle};
 use crate::subtitles::{self, Cue, SubtitleFormat};
 
 const BACKUP_DIR: &str = "auto-backup";
@@ -75,15 +75,33 @@ pub struct DetectedSubtitles {
     pub cues: Vec<Cue>,
     /// Encoding the file was read as.
     pub encoding: String,
+    /// ASS/SSA styles when the file was that format (FMT-01).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub styles: Option<Vec<AssStyle>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ass_kind: Option<AssKind>,
 }
 
 pub fn parse_auto(bytes: &[u8]) -> DetectedSubtitles {
     let (text, encoding) = decode_auto(bytes);
-    DetectedSubtitles { cues: subtitles::parse(&text), encoding }
+    let parsed = subtitles::parse_document(&text);
+    DetectedSubtitles {
+        cues: parsed.cues,
+        encoding,
+        styles: parsed.styles,
+        ass_kind: parsed.ass_kind,
+    }
 }
 
-pub fn parse_with_encoding(bytes: &[u8], encoding_label: &str) -> Result<Vec<Cue>, String> {
-    Ok(subtitles::parse(&decode_bytes(bytes, encoding_label)?))
+pub fn parse_with_encoding(bytes: &[u8], encoding_label: &str) -> Result<DetectedSubtitles, String> {
+    let text = decode_bytes(bytes, encoding_label)?;
+    let parsed = subtitles::parse_document(&text);
+    Ok(DetectedSubtitles {
+        cues: parsed.cues,
+        encoding: encoding_label.to_ascii_lowercase(),
+        styles: parsed.styles,
+        ass_kind: parsed.ass_kind,
+    })
 }
 
 pub fn mtime_ms(path: &str) -> Result<u64, String> {
@@ -195,6 +213,8 @@ pub fn write_auto_backup(
     let ext = match format {
         SubtitleFormat::Srt => "srt",
         SubtitleFormat::Vtt => "vtt",
+        SubtitleFormat::Ass => "ass",
+        SubtitleFormat::Ssa => "ssa",
         SubtitleFormat::Sbv => "sbv",
         SubtitleFormat::Ttml => "ttml",
         SubtitleFormat::Dfxp => "dfxp",
@@ -339,7 +359,7 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("substudio-backup-test-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
-        let cues = vec![Cue { start: 0.0, end: 1.0, text: "Hi".into() }];
+        let cues = vec![Cue { start: 0.0, end: 1.0, text: "Hi".into(), style: None }];
         for i in 0..5 {
             // stagger names via label so files differ; prune keep=2
             std::thread::sleep(Duration::from_millis(5));

@@ -39,7 +39,7 @@ import {
 } from "./timing";
 import { hasOriginal, pairOriginalsByIndex, splitOriginalByWeight } from "./original";
 import { plainTextLines } from "./plainText";
-import type { Cue, CueData } from "./types";
+import type { AssKind, AssStyle, Cue, CueData } from "./types";
 
 export type { MergeMode };
 export { hasOriginal };
@@ -76,6 +76,13 @@ export interface SubtitleState extends Doc {
   fps: number;
   /** Active rule profile for this project (RUL-01); saved in the sidecar. */
   ruleProfileId: string;
+  /**
+   * ASS/SSA styles for the open document (FMT-01). Session state — not undoable
+   * with cue edits. Null for SRT/VTT. Written back when saving as ASS/SSA.
+   */
+  assStyles: AssStyle[] | null;
+  /** Whether the open ASS-family file was SSA (v4) vs ASS (v4+). */
+  assKind: AssKind | null;
   past: HistoryEntry[];
   future: HistoryEntry[];
 }
@@ -98,6 +105,8 @@ export const useSubtitles = create<SubtitleState>()(() => ({
   timecode: "frames",
   fps: 25,
   ruleProfileId: "default",
+  assStyles: null,
+  assKind: null,
   past: [],
   future: [],
 }));
@@ -231,7 +240,12 @@ export function restoreHistoryTo(index: number): boolean {
 
 /* ---------- document ---------- */
 
-export function loadDocument(cues: CueData[], filePath: string | null, keepVideo = false) {
+export function loadDocument(
+  cues: CueData[],
+  filePath: string | null,
+  keepVideo = false,
+  ass?: { styles: AssStyle[] | null; kind: AssKind | null },
+) {
   const withId = withIds(cues);
   const id = withId[0]?.id ?? null;
   set({
@@ -244,6 +258,8 @@ export function loadDocument(cues: CueData[], filePath: string | null, keepVideo
     dirty: false,
     past: [],
     future: [],
+    assStyles: ass?.styles ?? null,
+    assKind: ass?.kind ?? null,
     ...(keepVideo ? {} : { videoPath: null }),
   });
 }
@@ -260,6 +276,8 @@ export function newDocument(keepVideo = false) {
     dirty: false,
     past: [],
     future: [],
+    assStyles: null,
+    assKind: null,
     ...(keepVideo ? {} : { videoPath: null }),
   });
 }

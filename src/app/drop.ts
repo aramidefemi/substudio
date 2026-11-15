@@ -1,5 +1,5 @@
 /** File types the app opens, by extension (lowercase, no dot). */
-export const SUBTITLE_EXTENSIONS = ["srt", "vtt", "sbv", "ttml", "dfxp"];
+export const SUBTITLE_EXTENSIONS = ["srt", "vtt", "ass", "ssa", "sbv", "ttml", "dfxp"];
 export const VIDEO_EXTENSIONS = ["mp4", "mov", "m4v", "webm"];
 
 export const extensionOf = (path: string) => {
@@ -34,5 +34,5 @@ export function describeDrop(plan: DropPlan): string {
   if (plan.subtitle && plan.video) return "Drop to open the subtitles and the video";
   if (plan.subtitle) return "Drop to open the subtitles";
   if (plan.video) return "Drop to open the video";
-  return "Only .srt, .vtt, .sbv, .ttml, .dfxp and .mp4, .mov, .m4v, .webm files can be opened";
+  return "Only .srt, .vtt, .ass, .ssa, .sbv, .ttml, .dfxp and .mp4, .mov, .m4v, .webm files can be opened";
 }

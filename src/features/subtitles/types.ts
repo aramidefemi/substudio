@@ -3,6 +3,8 @@ export interface CueData {
   start: number;
   end: number;
   text: string;
+  /** ASS/SSA style name when present (FMT-01). Ignored for SRT/VTT. */
+  style?: string;
 }
 
 export interface Cue extends CueData {
@@ -22,4 +24,23 @@ export interface Cue extends CueData {
   original?: string;
 }
 
-export type SubtitleFormat = "srt" | "vtt" | "sbv" | "ttml" | "dfxp";
+export type SubtitleFormat = "srt" | "vtt" | "ass" | "ssa" | "sbv" | "ttml" | "dfxp";
+
+/** Mirrors `formats::ass::AssKind`. */
+export type AssKind = "ass" | "ssa";
+
+/**
+ * Basic ASS/SSA style fields (FMT-01). Kept as session state beside the cue list
+ * (not per-cue undo): loaded on open, passed back on save. SRT/VTT leave this null.
+ */
+export interface AssStyle {
+  name: string;
+  fontname: string;
+  fontsize: number;
+  /** ASS `&HAABBGGRR` (or SSA decimal string). */
+  primaryColour: string;
+  bold: boolean;
+  italic: boolean;
+  /** Numpad alignment 1–9. */
+  alignment: number;
+}

@@ -69,6 +69,8 @@ pub fn parse(input: &str) -> Vec<Cue> {
             start,
             end,
             text: cue_text,
+        ,
+            style: None,
         });
     }
 
@@ -571,7 +573,9 @@ mod tests {
                 start: 1.0,
                 end: 2.0,
                 text: "Ok".into()
-            }]
+            ,
+            style: None,
+        }]
         );
     }
 
@@ -591,6 +595,8 @@ mod tests {
             start: 3661.5,
             end: 3662.0,
             text: "A & B <C>".into(),
+        ,
+            style: None,
         }]);
         assert!(out.contains("begin=\"01:01:01.500\" end=\"01:01:02.000\""));
         assert!(out.contains("A &amp; B &lt;C&gt;"));

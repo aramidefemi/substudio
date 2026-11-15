@@ -236,7 +236,7 @@ The **Plan** column maps each feature to our backlog (`docs/backlog.md`):
 | Feature | Plan |
 |---|---|
 | SubRip, WebVTT | ✅ |
-| ASS/SSA (styles, properties, attachments) | M3 |
+| ASS/SSA (styles, properties, attachments) | ✅ FMT-01 basic styles · attachments P |
 | TTML/DFXP, IMSC, EBU-TT, SBV, YouTube srv3, Final Cut Pro XML, Premiere/DaVinci markers, CSV/JSON/Excel | M3 |
 | EBU STL, PAC, Cavena 890, DVB teletext, Cheetah, CapMaker, D-Cinema | P |
 | Image exports: Blu-ray SUP, BDN XML, VobSub, DVD sup, D-Cinema PNG/MXF, images with timecode, WebVTT thumbnails | P |

@@ -137,6 +137,8 @@ export const COMMANDS: Command[] = [
   { id: "file.save", label: "Save", group: "File", keys: ["$mod+KeyS"], run: a.save },
   { id: "file.saveAs", label: "Save as…", group: "File", keys: ["$mod+Shift+KeyS"], run: () => a.saveAs("srt") },
   { id: "file.saveAsVtt", label: "Export as WebVTT…", group: "File", run: () => a.saveAs("vtt") },
+  { id: "file.saveAsAss", label: "Export as ASS…", group: "File", run: () => a.saveAs("ass") },
+  { id: "file.saveAsSsa", label: "Export as SSA…", group: "File", run: () => a.saveAs("ssa") },
   { id: "file.saveAsSbv", label: "Export as YouTube SBV…", group: "File", run: () => a.saveAs("sbv") },
   { id: "file.saveAsTtml", label: "Export as TTML…", group: "File", run: () => a.saveAs("ttml") },
   { id: "file.saveAsDfxp", label: "Export as DFXP…", group: "File", run: () => a.saveAs("dfxp") },

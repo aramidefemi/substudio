@@ -60,6 +60,8 @@ export const MENU: MenuGroup[] = [
       "file.save",
       "file.saveAs",
       "file.saveAsVtt",
+      "file.saveAsAss",
+      "file.saveAsSsa",
       "file.saveAsSbv",
       "file.saveAsTtml",
       "file.saveAsDfxp",

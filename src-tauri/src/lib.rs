@@ -12,6 +12,7 @@ mod subtitles;
 mod waveform;
 
 use files::BackupInfo;
+use formats::ass::AssStyle;
 use media::MediaInfo;
 use proxy::PlaybackDecision;
 use spellcheck::{CheckOptions, ListKind};
@@ -33,14 +34,14 @@ struct SpellSuggestResult {
     suggestions: Vec<String>,
 }
 
-/// Reads a subtitle file (.srt/.vtt/.sbv/.ttml/.dfxp), detecting encoding when it isn't UTF-8 (FIL-04).
+/// Reads a subtitle file (.srt/.vtt/.ass/.ssa/.sbv/.ttml/.dfxp), detecting encoding when it isn't UTF-8 (FIL-04).
 #[tauri::command]
 async fn read_subtitles(path: String) -> Result<Vec<Cue>, String> {
     let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
     Ok(files::parse_auto(&bytes).cues)
 }
 
-/// Like `read_subtitles`, but also says which encoding was used.
+/// Like `read_subtitles`, but also returns encoding and ASS/SSA styles when present (FMT-01).
 #[tauri::command]
 async fn read_subtitles_detect(path: String) -> Result<files::DetectedSubtitles, String> {
     let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
@@ -48,14 +49,20 @@ async fn read_subtitles_detect(path: String) -> Result<files::DetectedSubtitles,
 }
 
 #[tauri::command]
-async fn read_subtitles_encoded(path: String, encoding: String) -> Result<Vec<Cue>, String> {
+async fn read_subtitles_encoded(path: String, encoding: String) -> Result<files::DetectedSubtitles, String> {
     let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
     files::parse_with_encoding(&bytes, &encoding)
 }
 
 #[tauri::command]
-async fn write_subtitles(path: String, cues: Vec<Cue>, format: SubtitleFormat) -> Result<(), String> {
-    std::fs::write(&path, subtitles::serialize(&cues, format)).map_err(|e| e.to_string())
+async fn write_subtitles(
+    path: String,
+    cues: Vec<Cue>,
+    format: SubtitleFormat,
+    styles: Option<Vec<AssStyle>>,
+) -> Result<(), String> {
+    let body = subtitles::serialize_with_styles(&cues, format, styles.as_deref());
+    std::fs::write(&path, body).map_err(|e| e.to_string())
 }
 
 /// Raw UTF-8 text for script import (SCR-01). BOM is stripped.

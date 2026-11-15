@@ -99,7 +99,7 @@ import {
   unbreak,
   type TextPair,
 } from "@/features/subtitles/textOps";
-import type { CueData, SubtitleFormat } from "@/features/subtitles/types";
+import type { AssStyle, CueData, SubtitleFormat } from "@/features/subtitles/types";
 import { cueTextSelection, focusCueText, isEditable, setCueTextSelection } from "@/lib/dom";
 import { commands, fileName, inTauri, stripExtension } from "@/lib/tauri";
 import { planDrop, SUBTITLE_EXTENSIONS, VIDEO_EXTENSIONS } from "./drop";
@@ -171,6 +171,8 @@ async function confirmDiscard(): Promise<boolean> {
 function formatOf(path: string): SubtitleFormat {
   const lower = path.toLowerCase();
   if (lower.endsWith(".vtt")) return "vtt";
+  if (lower.endsWith(".ass")) return "ass";
+  if (lower.endsWith(".ssa")) return "ssa";
   if (lower.endsWith(".sbv")) return "sbv";
   if (lower.endsWith(".ttml")) return "ttml";
   if (lower.endsWith(".dfxp")) return "dfxp";
@@ -180,10 +182,18 @@ function formatOf(path: string): SubtitleFormat {
 const FORMAT_FILTER: Record<SubtitleFormat, { name: string; extensions: string[] }> = {
   srt: { name: "SubRip", extensions: ["srt"] },
   vtt: { name: "WebVTT", extensions: ["vtt"] },
+  ass: { name: "Advanced SubStation Alpha", extensions: ["ass"] },
+  ssa: { name: "SubStation Alpha", extensions: ["ssa"] },
   sbv: { name: "YouTube SBV", extensions: ["sbv"] },
   ttml: { name: "TTML", extensions: ["ttml"] },
   dfxp: { name: "DFXP", extensions: ["dfxp"] },
 };
+
+function stylesForWrite(format: SubtitleFormat): AssStyle[] | null {
+  if (format !== "ass" && format !== "ssa") return null;
+  return useSubtitles.getState().assStyles;
+}
+
 
 async function rememberMtime(path: string) {
   try {
@@ -262,22 +272,25 @@ async function writeSidecar(path: string) {
 }
 
 async function openSubtitlePath(path: string, keepVideo: boolean, encoding?: string) {
-  let cues: CueData[];
-  let detected: string | null = null;
-  if (encoding) cues = await commands.readSubtitlesEncoded(path, encoding);
-  else {
-    const read = await commands.readSubtitlesDetect(path);
-    cues = read.cues;
-    if (read.encoding !== "utf-8") detected = read.encoding;
-  }
-  loadDocument(cues, path, keepVideo);
+  const read = encoding
+    ? await commands.readSubtitlesEncoded(path, encoding)
+    : await commands.readSubtitlesDetect(path);
+  const cues = read.cues;
+  const styles = read.styles ?? null;
+  // Path extension wins when content didn't mark ASS/SSA.
+  const pathFmt = formatOf(path);
+  const assKind =
+    read.assKind ?? (pathFmt === "ass" || pathFmt === "ssa" ? pathFmt : null);
+  const detected = !encoding && read.encoding !== "utf-8" ? read.encoding : null;
+  loadDocument(cues, path, keepVideo, { styles, kind: assKind });
   await rememberMtime(path);
   await applySidecar(path);
   pushRecentSubtitle(path, useSubtitles.getState().videoPath);
+  const styleNote = styles?.length ? ` · ${styles.length} style${styles.length === 1 ? "" : "s"}` : "";
   toast.success(`Opened ${fileName(path)}`, {
     description: detected
-      ? `${cues.length} subtitles · read as ${detected}, saves as UTF-8. Wrong characters? Use Import with encoding.`
-      : `${cues.length} subtitles`,
+      ? `${cues.length} subtitles${styleNote} · read as ${detected}, saves as UTF-8. Wrong characters? Use Import with encoding.`
+      : `${cues.length} subtitles${styleNote}`,
   });
 }
 
@@ -346,7 +359,7 @@ export async function openDroppedFiles(paths: readonly string[]) {
   const plan = planDrop(paths);
   if (!plan.subtitle && !plan.video) {
     toast.error("Can't open this file", {
-      description: "Drop a .srt, .vtt, .sbv, .ttml or .dfxp subtitle, or an .mp4, .mov, .m4v or .webm video.",
+      description: "Drop a .srt, .vtt, .ass, .ssa, .sbv, .ttml or .dfxp subtitle, or an .mp4, .mov, .m4v or .webm video.",
     });
     return;
   }
@@ -374,7 +387,8 @@ export async function openDroppedFiles(paths: readonly string[]) {
 
 async function writeTo(path: string, format: SubtitleFormat) {
   try {
-    await commands.writeSubtitles(path, useSubtitles.getState().cues, format);
+    const { cues } = useSubtitles.getState();
+    await commands.writeSubtitles(path, cues, format, stylesForWrite(format));
     markSaved(path);
     await rememberMtime(path);
     await writeSidecar(path);
@@ -500,7 +514,8 @@ export async function runAutoBackup() {
   try {
     await commands.writeAutoBackup(label, cues, format, autoBackupKeep);
     if (filePath) {
-      await commands.writeSubtitles(filePath, cues, formatOf(filePath));
+      const fmt = formatOf(filePath);
+      await commands.writeSubtitles(filePath, cues, fmt, stylesForWrite(fmt));
       markSaved(filePath);
       await rememberMtime(filePath);
       await writeSidecar(filePath);
@@ -611,7 +626,7 @@ export async function saveSelectedAs(format: SubtitleFormat = "srt") {
   });
   if (!path) return;
   try {
-    await commands.writeSubtitles(path, cues, format);
+    await commands.writeSubtitles(path, cues, format, stylesForWrite(format));
     toast.success(`Saved ${cues.length} line${cues.length === 1 ? "" : "s"}`, {
       description: fileName(path),
     });
