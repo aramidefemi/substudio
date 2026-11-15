@@ -1,5 +1,6 @@
 mod ffmpeg_bin;
 mod files;
+mod formats;
 mod media;
 mod menu;
 mod project;
