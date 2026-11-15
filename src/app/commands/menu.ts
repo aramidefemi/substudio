@@ -326,7 +326,13 @@ export const MENU: MenuGroup[] = [
   },
   {
     submenu: "Sync",
-    items: ["sync.visualSync"],
+    items: [
+      "sync.adjustTimes",
+      "sync.visualSync",
+      "-",
+      "sync.changeFrameRate",
+      "sync.changeSpeed",
+    ],
   },
   {
     submenu: "Waveform",

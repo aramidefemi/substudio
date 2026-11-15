@@ -197,9 +197,9 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | QLT-06 | Remove text for hearing impaired | Remove HI | M | ✅ |
 | QLT-07 | Statistics dashboard (CPS histogram, totals) | Statistics | S | ✅ |
 | QLT-08 | Compare two subtitle files | Compare | M | ✅ |
-| SYN-01 | Adjust all times (offset selected or all) | Adjust all times | S |
+| SYN-01 | Adjust all times (offset selected or all) | Adjust all times | S | ✅ Offset dialog (all / selected / selected+following); Sync › Adjust times (⌘⇧A); clamps like move; one undo step. |
 | SYN-02 | Visual sync / point sync | Visual sync | L | ✅ |
-| SYN-03 | Change frame rate; change speed | Sync menu | S |
+| SYN-03 | Change frame rate; change speed | Sync menu | S | ✅ Rescale times from→to fps (updates project fps when all); multiply by speed factor; Sync menu; undoable. |
 | SYN-04 | Shot-change detection (ffmpeg) + snapping | Shot changes | L |
 
 ---

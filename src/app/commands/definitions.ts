@@ -23,6 +23,7 @@ import * as a from "../actions";
 import * as fr from "../findReplace";
 import { openGoToLine } from "../goToLine";
 import { openRuleProfiles } from "../ruleProfiles";
+import { openAdjustTimes, openChangeFrameRate, openChangeSpeed } from "../retimeUi";
 import { openVisualSync } from "../syncUi";
 import { defineCommands, type Command } from "./registry";
 
@@ -312,11 +313,30 @@ export const COMMANDS: Command[] = [
 
   /* ---------- Sync ---------- */
   {
+    id: "sync.adjustTimes",
+    label: "Adjust times by offset…",
+    group: "Sync",
+    keys: ["$mod+Shift+KeyA"],
+    run: openAdjustTimes,
+  },
+  {
     id: "sync.visualSync",
     label: "Visual sync…",
     group: "Sync",
     keys: ["$mod+Alt+KeyV"],
     run: openVisualSync,
+  },
+  {
+    id: "sync.changeFrameRate",
+    label: "Change frame rate…",
+    group: "Sync",
+    run: openChangeFrameRate,
+  },
+  {
+    id: "sync.changeSpeed",
+    label: "Change speed…",
+    group: "Sync",
+    run: openChangeSpeed,
   },
 
   /* ---------- Waveform ---------- */
