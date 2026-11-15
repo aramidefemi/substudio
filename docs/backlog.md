@@ -88,8 +88,8 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 |---|---|---|---|
 | MED-01 | **Probe media in Rust** (bundled LGPL ffprobe): container, codecs, audio tracks, start-time offset, frame rate, **variable frame rate detection with real frame timestamps** | M | ✅ Bundled LGPL ffprobe/ffmpeg sidecars (`scripts/fetch-ffmpeg.sh`, `externalBin`); probe returns start offset, fps, VFR flag, frame count; frame timestamps cached as SSFT binary; open video adopts fps (TIM-07); ←/→ steps on real timestamps when available. |
 | MED-02 | **Playback path decision**: play the source directly when WebKit can; otherwise make a background **editing proxy** (H.264 via VideoToolbox) that keeps source timestamps. The original file is never modified. | L | Proxy is cached and reused. Subtitle times always refer to the source timeline. |
-| MED-03 | **Frame-accurate stepping and snapping on the source's real frame timestamps** (not `1/fps`), so VFR footage is exact | M | ±1 frame lands on true frames in a VFR test clip. |
-| MED-04 | **Media test corpus**: her actual previews (H.264 .mov/.mp4), an MKV, multi-audio, VFR phone footage, long 80-min file | S | Run before every media change. |
+| MED-03 | **Frame-accurate stepping and snapping on the source's real frame timestamps** (not `1/fps`), so VFR footage is exact | M | ✅ ←/→ via `stepAlongFrames` (MED-01); TIM-07 snap-all / beautify prefer `frameTimes` (`snapToNearestFrame`) with CFR fallback; synthetic VFR fixture in `test-media/fixtures/vfr-short.mp4`. |
+| MED-04 | **Media test corpus**: her actual previews (H.264 .mov/.mp4), an MKV, multi-audio, VFR phone footage, long 80-min file | S | ✅ Layout + `test-media/README.md` + `./scripts/check-media-corpus.sh` + `generate-vfr-fixture.sh`; tiny VFR fixture committed. Private/long clips stay local (gitignored) — fill categories before media changes. |
 
 ### Waveform & timing
 
@@ -139,7 +139,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | TIM-04 | Shift selected lines / all lines by a frame, X ms, or custom steps | MoveSelectedLines*, MoveAllLines* | S | ✅ Incl. “+ following” variant. |
 | TIM-05 | Extend selected to previous/next cue; extend previous end or next start to selected | Extend* | S | ✅ Cue-to-cue; shot-change extend deferred (no shot detection). |
 | TIM-06 | Set end and start of next after minimum gap; set start and end of previous minus gap | WaveformSetEndAndStartOfNextAfterGap | S | ✅ |
-| TIM-07 | Snap all times to frames; get frame rate from the video | SnapAllTimesToFrames, GetFrameRateFromVideoFile | S | ✅ Snap done (project fps). Opening a video adopts probed avg fps (MED-01). VFR snap-to-source-frames is MED-03. |
+| TIM-07 | Snap all times to frames; get frame rate from the video | SnapAllTimesToFrames, GetFrameRateFromVideoFile | S | ✅ Snap prefers source `frameTimes` when probed (MED-03); else project fps. Opening a video adopts probed avg fps (MED-01). |
 
 ### Text moves & navigation
 

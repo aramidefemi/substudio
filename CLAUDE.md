@@ -42,6 +42,7 @@ src-tauri/src/
   menu.rs         builds the native menu bar from the spec the frontend sends (`set_menu`)
   subtitles.rs    SRT/VTT parse + serialize (with tests)
 docs/             style-guide.md, backlog.md (roadmap with IDs), subtitle-edit-features.md (SE5 feature reference), mockups/
+test-media/      MED-04 corpus: README checklist; private clips gitignored; ./scripts/check-media-corpus.sh
 ```
 
 ## Architecture rules

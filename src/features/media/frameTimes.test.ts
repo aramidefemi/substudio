@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { frameIndexAt, parseFrameTimes, stepAlongFrames } from "./frameTimes";
+import {
+  frameIndexAt,
+  parseFrameTimes,
+  snapAllToSourceFrames,
+  snapToNearestFrame,
+  stepAlongFrames,
+} from "./frameTimes";
 
 function encode(times: number[]): ArrayBuffer {
   const buf = new ArrayBuffer(9 + times.length * 8);
@@ -48,5 +54,45 @@ describe("frameIndexAt", () => {
     expect(frameIndexAt(times, 0.04)).toBe(1);
     expect(frameIndexAt(times, 0.05)).toBe(1);
     expect(frameIndexAt(times, 1)).toBe(2);
+  });
+});
+
+describe("snapToNearestFrame", () => {
+  const vfr = [0, 0.04, 0.1, 0.12, 0.2]; // irregular — not a 25fps grid
+
+  it("snaps off-grid times to nearest source frame", () => {
+    expect(snapToNearestFrame(0.03, vfr, 25)).toBeCloseTo(0.04);
+    expect(snapToNearestFrame(0.11, vfr, 25)).toBeCloseTo(0.1);
+    expect(snapToNearestFrame(0.19, vfr, 25)).toBeCloseTo(0.2);
+  });
+
+  it("on a midway tie prefers the earlier frame", () => {
+    // midway between 0.04 and 0.1 → 0.07; equal distance → earlier
+    expect(snapToNearestFrame(0.07, vfr, 25)).toBeCloseTo(0.04);
+  });
+
+  it("falls back to fps when times are null or empty", () => {
+    expect(snapToNearestFrame(0.03, null, 25)).toBeCloseTo(0.04);
+    expect(snapToNearestFrame(1.02, [], 25)).toBeCloseTo(1.04);
+    expect(snapToNearestFrame(1.5, undefined, 0)).toBe(1.5);
+  });
+});
+
+describe("snapAllToSourceFrames", () => {
+  const vfr = [0, 0.04, 0.1, 0.12, 0.2];
+
+  it("keeps end > start on VFR when both snap to the same frame", () => {
+    const cues = [{ start: 0.09, end: 0.105, text: "" }];
+    snapAllToSourceFrames(cues, vfr, 25);
+    expect(cues[0]!.start).toBeCloseTo(0.1);
+    expect(cues[0]!.end).toBeCloseTo(0.12);
+    expect(cues[0]!.end).toBeGreaterThan(cues[0]!.start);
+  });
+
+  it("falls back to CFR when times missing", () => {
+    const cues = [{ start: 0.03, end: 1.07, text: "" }];
+    snapAllToSourceFrames(cues, null, 25);
+    expect(cues[0]!.start).toBeCloseTo(0.04);
+    expect(cues[0]!.end).toBeCloseTo(1.08);
   });
 });

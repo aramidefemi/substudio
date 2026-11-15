@@ -1,5 +1,7 @@
 import { applyPatches, enablePatches, produceWithPatches, type Draft, type Patch } from "immer";
 import { create } from "zustand";
+import { snapAllToSourceFrames } from "@/features/media/frameTimes";
+import { useMedia } from "@/features/media/store";
 import type { TimecodeMode, TimeFormat } from "./timecode";
 import {
   fitCueInGap,
@@ -29,7 +31,6 @@ import {
   setStartAt,
   shiftAll,
   shiftIndices,
-  snapAllToFrames,
   timesForUntimed,
   type Edge,
   type NudgeMode,
@@ -707,7 +708,8 @@ export function extendNextStartToCurrent() {
 export function snapAllTimesToFrames() {
   const { cues, fps } = get();
   if (!cues.length) return;
-  edit((doc) => snapAllToFrames(doc.cues, fps));
+  const times = useMedia.getState().frameTimes;
+  edit((doc) => snapAllToSourceFrames(doc.cues, times, fps));
 }
 
 export function removeCue(id: string) {

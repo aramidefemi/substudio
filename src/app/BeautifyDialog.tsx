@@ -10,6 +10,7 @@ import {
   DEFAULT_BEAUTIFY,
   type BeautifyOptions,
 } from "@/features/subtitles/beautify";
+import { useMedia } from "@/features/media/store";
 import { applyCueData } from "@/features/subtitles/qualityApply";
 import { useSubtitles } from "@/features/subtitles/store";
 import { useUi } from "./actions";
@@ -35,9 +36,13 @@ export function BeautifyDialog() {
   const open = useUi((s) => s.beautifyOpen);
   const cues = useSubtitles((s) => s.cues);
   const fps = useSubtitles((s) => s.fps);
+  const frameTimes = useMedia((s) => s.frameTimes);
   const [opts, setOpts] = useState<BeautifyOptions>(() => ({ ...DEFAULT_BEAUTIFY, fps }));
 
-  const next = useMemo(() => beautifyCues(cues, { ...opts, fps: opts.fps || fps }), [cues, opts, fps]);
+  const next = useMemo(
+    () => beautifyCues(cues, { ...opts, fps: opts.fps || fps, frameTimes }),
+    [cues, opts, fps, frameTimes],
+  );
   const changes = useMemo(() => countBeautifyChanges(cues, next), [cues, next]);
 
   const patch = (p: Partial<BeautifyOptions>) => setOpts((o) => ({ ...o, ...p }));

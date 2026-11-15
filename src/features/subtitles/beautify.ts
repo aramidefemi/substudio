@@ -1,10 +1,13 @@
+import { snapAllToSourceFrames } from "@/features/media/frameTimes";
 import { DEFAULT_RULES } from "./rules";
-import { MIN_GAP, snapToFrame, frameStep } from "./timing";
+import { MIN_GAP } from "./timing";
 import type { CueData } from "./types";
 
 export interface BeautifyOptions {
   snapToFrames: boolean;
   fps: number;
+  /** Source frame timestamps when available (MED-03); CFR fps used otherwise. */
+  frameTimes?: ArrayLike<number> | null;
   applyMinGap: boolean;
   minGap: number;
   /** Bridge gaps shorter than this (seconds). `0` / null = off. */
@@ -66,21 +69,13 @@ function clampDurations(cues: CueData[], minD: number, maxD: number, minGap: num
   }
 }
 
-function snap(cues: CueData[], fps: number): void {
-  const step = frameStep(fps);
-  for (const c of cues) {
-    c.start = snapToFrame(c.start, fps);
-    c.end = snapToFrame(c.end, fps);
-    if (c.end <= c.start) c.end = c.start + step;
-  }
-}
-
 /** Beautify / bridge / duration polish (QLT-02). Pure. */
 export function beautifyCues(cues: readonly CueData[], opts: BeautifyOptions): CueData[] {
   const out = clone(cues);
   if (!out.length) return out;
 
-  if (opts.snapToFrames && opts.fps > 0) snap(out, opts.fps);
+  const doSnap = opts.snapToFrames && (opts.fps > 0 || (opts.frameTimes && opts.frameTimes.length > 0));
+  if (doSnap) snapAllToSourceFrames(out, opts.frameTimes, opts.fps);
   if (opts.bridgeGapsUnder && opts.bridgeGapsUnder > 0) {
     bridgeGaps(out, opts.bridgeGapsUnder, opts.minGap);
   }
@@ -89,7 +84,7 @@ export function beautifyCues(cues: readonly CueData[], opts: BeautifyOptions): C
     clampDurations(out, opts.minDuration, opts.maxDuration, opts.minGap);
     if (opts.applyMinGap) enforceMinGap(out, opts.minGap);
   }
-  if (opts.snapToFrames && opts.fps > 0) snap(out, opts.fps);
+  if (doSnap) snapAllToSourceFrames(out, opts.frameTimes, opts.fps);
   return out;
 }
 

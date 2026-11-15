@@ -28,3 +28,11 @@ dist-ssr
 
 # Agent scratch (ffmpeg source builds, temp clips)
 scratchpad/
+
+# MED-04 media corpus: private/local clips stay on disk; keep docs + tiny fixtures
+test-media/**
+!test-media/README.md
+!test-media/**/
+!test-media/**/README.md
+!test-media/fixtures/
+!test-media/fixtures/**

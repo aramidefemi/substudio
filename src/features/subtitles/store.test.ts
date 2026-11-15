@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { useMedia } from "@/features/media/store";
 import {
   applyOriginals,
   beginHeldCue,
@@ -51,6 +52,7 @@ import { DEFAULT_DURATION, MIN_GAP } from "./timing";
 const texts = () => useSubtitles.getState().cues.map((c) => c.text);
 
 beforeEach(() => {
+  useMedia.setState({ frameTimes: null });
   loadDocument(
     [
       { start: 0, end: 1, text: "A" },
@@ -191,6 +193,16 @@ describe("timing by keyboard", () => {
     const c = useSubtitles.getState().cues[0]!;
     expect(c.start * 25).toBeCloseTo(Math.round(c.start * 25));
     expect(c.end * 25).toBeCloseTo(Math.round(c.end * 25));
+  });
+
+  it("snaps all times to source frames when available", () => {
+    useMedia.setState({ frameTimes: Float64Array.from([0, 0.04, 0.1, 0.12, 0.2]) });
+    const a = useSubtitles.getState().cues[0]!;
+    updateCue(a.id, { start: 0.03, end: 0.105 });
+    snapAllTimesToFrames();
+    const c = useSubtitles.getState().cues[0]!;
+    expect(c.start).toBeCloseTo(0.04);
+    expect(c.end).toBeCloseTo(0.1);
   });
 });
 
