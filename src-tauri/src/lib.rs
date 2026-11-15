@@ -1,9 +1,11 @@
 mod burn;
 mod ffmpeg_bin;
+mod ffmpeg_job;
 mod files;
 mod formats;
 mod media;
 mod menu;
+mod mux;
 mod project;
 mod proxy;
 mod shot_changes;
@@ -23,9 +25,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-/// Flags for the single running burn-in job (DLV-01).
+/// Flags for the single running video export (burn-in DLV-01, mux DLV-02).
 #[derive(Clone, Default)]
-struct BurnJob {
+struct ExportJob {
     running: Arc<AtomicBool>,
     cancel: Arc<AtomicBool>,
 }
@@ -210,23 +212,19 @@ async fn ensure_playback(
     .map_err(|e| e.to_string())?
 }
 
-/// Burn the cues into a new `.mp4` (DLV-01). One job at a time; progress 0–1 over `on_progress`.
-#[tauri::command]
-async fn burn_subtitles(
-    job: tauri::State<'_, BurnJob>,
-    source_path: String,
-    dest_path: String,
-    cues: Vec<Cue>,
-    styles: Option<Vec<AssStyle>>,
+/// Run one video-writing ffmpeg job at a time (burn-in, mux); progress 0–1 over `on_progress`.
+async fn run_export<T: Send + 'static>(
+    job: &ExportJob,
     on_progress: tauri::ipc::Channel<f32>,
-) -> Result<burn::BurnOutcome, String> {
+    work: impl FnOnce(&AtomicBool, &mut dyn FnMut(f32)) -> Result<T, String> + Send + 'static,
+) -> Result<T, String> {
     if job.running.swap(true, Ordering::SeqCst) {
-        return Err("A burn-in is already running".into());
+        return Err("A video export is already running".into());
     }
     job.cancel.store(false, Ordering::SeqCst);
     let cancel = job.cancel.clone();
     let result = tauri::async_runtime::spawn_blocking(move || {
-        burn::burn(&source_path, &dest_path, &cues, styles.as_deref(), &cancel, |p| {
+        work(&cancel, &mut |p| {
             let _ = on_progress.send(p);
         })
     })
@@ -237,8 +235,40 @@ async fn burn_subtitles(
     result
 }
 
+/// Burn the cues into a new `.mp4` (DLV-01).
 #[tauri::command]
-fn cancel_burn(job: tauri::State<'_, BurnJob>) {
+async fn burn_subtitles(
+    job: tauri::State<'_, ExportJob>,
+    source_path: String,
+    dest_path: String,
+    cues: Vec<Cue>,
+    styles: Option<Vec<AssStyle>>,
+    on_progress: tauri::ipc::Channel<f32>,
+) -> Result<burn::BurnOutcome, String> {
+    run_export(&job, on_progress, move |cancel, progress| {
+        burn::burn(&source_path, &dest_path, &cues, styles.as_deref(), cancel, progress)
+    })
+    .await
+}
+
+/// Embed the cues as a soft subtitle track in a new `.mp4`/`.mov`/`.mkv` (DLV-02).
+#[tauri::command]
+async fn embed_subtitles(
+    job: tauri::State<'_, ExportJob>,
+    source_path: String,
+    dest_path: String,
+    cues: Vec<Cue>,
+    styles: Option<Vec<AssStyle>>,
+    on_progress: tauri::ipc::Channel<f32>,
+) -> Result<mux::MuxOutcome, String> {
+    run_export(&job, on_progress, move |cancel, progress| {
+        mux::mux(&source_path, &dest_path, &cues, styles.as_deref(), cancel, progress)
+    })
+    .await
+}
+
+#[tauri::command]
+fn cancel_export(job: tauri::State<'_, ExportJob>) {
     job.cancel.store(true, Ordering::SeqCst);
 }
 
@@ -389,7 +419,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_window_state::Builder::new().build())
-        .manage(BurnJob::default())
+        .manage(ExportJob::default())
         .setup(|app| {
             menu::install_base(app.handle())?;
             Ok(())
@@ -421,7 +451,8 @@ pub fn run() {
             detect_shot_changes,
             ensure_playback,
             burn_subtitles,
-            cancel_burn,
+            embed_subtitles,
+            cancel_export,
             spell_check_texts,
             spell_suggest,
             spell_list_words,

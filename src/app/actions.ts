@@ -2,7 +2,8 @@ import { Channel } from "@tauri-apps/api/core";
 import { ask, open, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { toast } from "sonner";
 import { create } from "zustand";
-import { BURN_CANCELLED, burnedName, percent, withMp4 } from "@/features/export/burn";
+import { burnedName, EXPORT_CANCELLED, percent, withMp4 } from "@/features/export/burn";
+import { codecLabel, EMBED_EXTENSIONS, embeddedName, withEmbedExt } from "@/features/export/embed";
 import { nextShot, previousShot } from "@/features/media/shotChanges";
 import {
   generateShotChanges,
@@ -640,52 +641,93 @@ export async function saveSelectedAs(format: SubtitleFormat = "srt") {
   }
 }
 
-/** Burn the cues into a new MP4 next to the video (DLV-01). The source is never modified. */
-export async function burnIntoVideo() {
+interface VideoExport {
+  id: string;
+  title: string;
+  extensions: string[];
+  defaultName: (videoPath: string) => string;
+  withExt: (picked: string, videoPath: string) => string;
+  busy: (dest: string) => string;
+  failed: string;
+  cancelled: string;
+  run: (dest: string, onProgress: Channel<number>) => Promise<{ path: string; detail: string }>;
+}
+
+/** Save dialog → progress toast with Cancel → result toast. The source is never modified. */
+async function exportVideo(o: VideoExport) {
   if (!inTauri) return desktopOnly();
   const { videoPath, cues } = useSubtitles.getState();
   if (!videoPath || !cues.length) {
-    toast("Nothing to burn in", { description: "Open a video and add subtitles first." });
+    toast(`Nothing to ${o.id}`, { description: "Open a video and add subtitles first." });
     return;
   }
   const picked = await saveDialog({
-    title: "Burn subtitles into video",
-    defaultPath: `${parentDir(videoPath)}/${burnedName(videoPath)}`,
-    filters: [{ name: "MP4 video", extensions: ["mp4"] }],
+    title: o.title,
+    defaultPath: `${parentDir(videoPath)}/${o.defaultName(videoPath)}`,
+    filters: [{ name: "Video", extensions: o.extensions }],
   });
   if (!picked) return;
-  const dest = withMp4(picked);
-  const id = "burn-in";
+  const dest = o.withExt(picked, videoPath);
   const show = (p: number) =>
-    toast.loading(`Burning subtitles into ${fileName(dest)}…`, {
-      id,
+    toast.loading(o.busy(fileName(dest)), {
+      id: o.id,
       description: percent(p),
       duration: Infinity,
-      action: { label: "Cancel", onClick: () => void commands.cancelBurn() },
+      action: { label: "Cancel", onClick: () => void commands.cancelExport() },
     });
   show(0);
   const onProgress = new Channel<number>();
   onProgress.onmessage = show;
   try {
-    const { path, encoder } = await commands.burnSubtitles(
-      videoPath,
-      dest,
-      cues,
-      useSubtitles.getState().assStyles,
-      onProgress,
-    );
+    const { path, detail } = await o.run(dest, onProgress);
     toast.success(`Saved ${fileName(path)}`, {
-      id,
-      description: encoder === "libx264" ? "Encoded with x264" : "Hardware encoded",
+      id: o.id,
+      description: detail,
       duration: 8000,
       action: { label: "Show", onClick: () => void commands.revealPath(path) },
     });
   } catch (err) {
     const msg = String(err);
-    if (msg === BURN_CANCELLED) toast("Burn-in cancelled", { id, duration: 4000 });
-    else toast.error("Could not burn subtitles", { id, description: msg, duration: Infinity, closeButton: true });
+    if (msg === EXPORT_CANCELLED) toast(o.cancelled, { id: o.id, duration: 4000 });
+    else toast.error(o.failed, { id: o.id, description: msg, duration: Infinity, closeButton: true });
   }
 }
+
+/** Burn the cues into a new MP4 next to the video (DLV-01). */
+export const burnIntoVideo = () =>
+  exportVideo({
+    id: "burn",
+    title: "Burn subtitles into video",
+    extensions: ["mp4"],
+    defaultName: burnedName,
+    withExt: withMp4,
+    busy: (name) => `Burning subtitles into ${name}…`,
+    failed: "Could not burn subtitles",
+    cancelled: "Burn-in cancelled",
+    run: async (dest, onProgress) => {
+      const { videoPath, cues, assStyles } = useSubtitles.getState();
+      const { path, encoder } = await commands.burnSubtitles(videoPath!, dest, cues, assStyles, onProgress);
+      return { path, detail: encoder === "libx264" ? "Encoded with x264" : "Hardware encoded" };
+    },
+  });
+
+/** Embed the cues as a soft subtitle track in a new MP4/MOV/MKV; video and audio are copied (DLV-02). */
+export const embedSubtitles = () =>
+  exportVideo({
+    id: "embed",
+    title: "Embed subtitles into video",
+    extensions: [...EMBED_EXTENSIONS],
+    defaultName: embeddedName,
+    withExt: withEmbedExt,
+    busy: (name) => `Embedding subtitles into ${name}…`,
+    failed: "Could not embed subtitles",
+    cancelled: "Embed cancelled",
+    run: async (dest, onProgress) => {
+      const { videoPath, cues, assStyles } = useSubtitles.getState();
+      const { path, codec } = await commands.embedSubtitles(videoPath!, dest, cues, assStyles, onProgress);
+      return { path, detail: `Added a ${codecLabel(codec)}` };
+    },
+  });
 
 export async function compareWithFile() {
   if (!inTauri) return desktopOnly();

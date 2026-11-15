@@ -81,6 +81,12 @@ export interface BurnOutcome {
   encoder: string;
 }
 
+export interface MuxOutcome {
+  path: string;
+  /** `mov_text`, `srt` or `ass`. */
+  codec: string;
+}
+
 /** Typed wrappers for the Rust commands in `src-tauri/src/lib.rs`. */
 export const commands = {
   readSubtitles: (path: string) => invoke<CueData[]>("read_subtitles", { path }),
@@ -125,7 +131,7 @@ export const commands = {
    */
   ensurePlayback: (path: string, onProgress: Channel<number>) =>
     invoke<PlaybackDecision>("ensure_playback", { path, onProgress }),
-  /** Burn cues into a new `.mp4` (DLV-01). Rejects with "Cancelled" after `cancelBurn`. */
+  /** Burn cues into a new `.mp4` (DLV-01). Rejects with "Cancelled" after `cancelExport`. */
   burnSubtitles: (
     sourcePath: string,
     destPath: string,
@@ -133,7 +139,16 @@ export const commands = {
     styles: AssStyle[] | null,
     onProgress: Channel<number>,
   ) => invoke<BurnOutcome>("burn_subtitles", { sourcePath, destPath, cues, styles, onProgress }),
-  cancelBurn: () => invoke<void>("cancel_burn"),
+  /** Embed cues as a soft subtitle track in a new `.mp4`/`.mov`/`.mkv` (DLV-02). Same cancel as burn-in. */
+  embedSubtitles: (
+    sourcePath: string,
+    destPath: string,
+    cues: CueData[],
+    styles: AssStyle[] | null,
+    onProgress: Channel<number>,
+  ) => invoke<MuxOutcome>("embed_subtitles", { sourcePath, destPath, cues, styles, onProgress }),
+  /** Cancels the running burn-in or embed. */
+  cancelExport: () => invoke<void>("cancel_export"),
   spellCheckTexts: (texts: string[], language: string, checkToneMarked?: boolean) =>
     invoke<SpellCheckResult>("spell_check_texts", { texts, language, checkToneMarked }),
   spellSuggest: (word: string, language: string) =>

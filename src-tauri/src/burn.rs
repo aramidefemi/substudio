@@ -7,17 +7,15 @@
 //! line up with the frames they were authored against.
 
 use crate::ffmpeg_bin;
+use crate::ffmpeg_job::{self, check_dest, partial_path, scratch_path, Scratch};
 use crate::formats::ass::{self, AssDocument, AssKind, AssStyle};
 use crate::media::{self, MediaInfo};
 use crate::subtitles::Cue;
 use std::ffi::OsString;
 use std::fs;
-use std::io::{BufRead, BufReader, Read};
-use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
-
-pub const CANCELLED: &str = "Cancelled";
+use std::path::Path;
+use std::process::Command;
+use std::sync::atomic::AtomicBool;
 
 /// Audio codecs the MP4 muxer takes as-is.
 const MP4_AUDIO: [&str; 5] = ["aac", "mp3", "ac3", "eac3", "alac"];
@@ -58,7 +56,7 @@ fn target_bitrate(info: &MediaInfo) -> u64 {
 }
 
 /// Stream-copy audio only when every track fits MP4; otherwise re-encode all to AAC.
-fn audio_copyable(info: &MediaInfo) -> bool {
+pub(crate) fn audio_copyable(info: &MediaInfo) -> bool {
     let codecs: Vec<_> = info.tracks.iter().filter(|t| t.kind == "audio").collect();
     !codecs.is_empty()
         && codecs
@@ -100,38 +98,6 @@ fn build_args(input: &Path, ass_path: &Path, out: &Path, p: &Plan) -> Vec<OsStri
     a
 }
 
-/// Fraction done from an `out_time_us=` progress line (`-copyts` keeps the source start offset).
-fn progress_fraction(line: &str, start: f64, duration: f64) -> Option<f32> {
-    let us: f64 = line.strip_prefix("out_time_us=")?.trim().parse().ok()?;
-    (duration > 0.05).then(|| (((us / 1e6 - start) / duration).clamp(0.0, 0.99)) as f32)
-}
-
-fn same_file(a: &Path, b: &Path) -> bool {
-    let canon = |p: &Path| {
-        let parent = p.parent().filter(|d| !d.as_os_str().is_empty()).unwrap_or(Path::new("."));
-        fs::canonicalize(parent).ok().zip(p.file_name()).map(|(d, n)| d.join(n))
-    };
-    match (canon(a), canon(b)) {
-        (Some(x), Some(y)) => x == y,
-        _ => a == b,
-    }
-}
-
-/// Output must be a different `.mp4` in an existing folder, so the source can never be touched.
-fn check_dest(source: &Path, dest: &Path) -> Result<(), String> {
-    let is_mp4 = dest.extension().is_some_and(|e| e.eq_ignore_ascii_case("mp4"));
-    if !is_mp4 {
-        return Err("Output must be an .mp4 file".into());
-    }
-    if same_file(source, dest) {
-        return Err("Output must differ from the source video".into());
-    }
-    match dest.parent().filter(|d| !d.as_os_str().is_empty()) {
-        Some(dir) if !dir.is_dir() => Err("Output folder does not exist".into()),
-        _ => Ok(()),
-    }
-}
-
 fn ass_text(cues: &[Cue], styles: Option<&[AssStyle]>) -> String {
     ass::serialize(&AssDocument {
         kind: AssKind::Ass,
@@ -148,20 +114,6 @@ fn ffmpeg_listing(ffmpeg: &Path, flag: &str) -> String {
         .unwrap_or_default()
 }
 
-/// Temp file removed on drop (success, error or cancel).
-struct Scratch(PathBuf);
-impl Drop for Scratch {
-    fn drop(&mut self) {
-        let _ = fs::remove_file(&self.0);
-    }
-}
-
-fn tail(s: &str, max: usize) -> &str {
-    let start = s.len().saturating_sub(max);
-    let start = (start..=s.len()).find(|i| s.is_char_boundary(*i)).unwrap_or(s.len());
-    s[start..].trim()
-}
-
 /// Burn `cues` into `source`, writing `dest`. Progress is 0–1; `cancel` aborts and cleans up.
 pub fn burn(
     source: &str,
@@ -169,7 +121,7 @@ pub fn burn(
     cues: &[Cue],
     styles: Option<&[AssStyle]>,
     cancel: &AtomicBool,
-    mut progress: impl FnMut(f32),
+    progress: impl FnMut(f32),
 ) -> Result<BurnOutcome, String> {
     let (src, out) = (Path::new(source), Path::new(dest));
     if !src.is_file() {
@@ -178,7 +130,7 @@ pub fn burn(
     if cues.is_empty() {
         return Err("No subtitles to burn in".into());
     }
-    check_dest(src, out)?;
+    check_dest(src, out, &["mp4"])?;
 
     let ffmpeg = ffmpeg_bin::find_ffmpeg().ok_or("ffmpeg not found")?;
     if !has_filter(&ffmpeg_listing(&ffmpeg, "-filters"), "subtitles") {
@@ -188,54 +140,11 @@ pub fn burn(
     let info = media::probe(source)?;
     let plan = plan(&info, encoder);
 
-    let nanos = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |d| d.as_nanos());
-    let ass_file = Scratch(std::env::temp_dir().join(format!("substudio-burn-{}-{nanos}.ass", std::process::id())));
+    let ass_file = Scratch(scratch_path("burn", "ass"));
     fs::write(&ass_file.0, ass_text(cues, styles)).map_err(|e| e.to_string())?;
-    let partial = Scratch(out.with_extension("mp4.partial"));
-
-    let mut child = Command::new(&ffmpeg)
-        .args(build_args(src, &ass_file.0, &partial.0, &plan))
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("could not start ffmpeg: {e}"))?;
-
-    // Drain stderr on a thread so a full pipe can never stall ffmpeg.
-    let mut stderr = child.stderr.take().ok_or("ffmpeg stderr missing")?;
-    let log = std::thread::spawn(move || {
-        let mut s = String::new();
-        let _ = stderr.read_to_string(&mut s);
-        s
-    });
-
-    let stdout = child.stdout.take().ok_or("ffmpeg stdout missing")?;
-    let start = info.start_time_secs.unwrap_or(0.0);
-    let duration = info.duration_secs.unwrap_or(0.0);
-    let mut last = 0.0_f32;
-    progress(0.0);
-    for line in BufReader::new(stdout).lines().map_while(Result::ok) {
-        if cancel.load(Ordering::Relaxed) {
-            let _ = child.kill();
-            let _ = child.wait();
-            return Err(CANCELLED.into());
-        }
-        if let Some(p) = progress_fraction(&line, start, duration).filter(|p| p - last >= 0.01) {
-            last = p;
-            progress(p);
-        }
-    }
-    let status = child.wait().map_err(|e| e.to_string())?;
-    let log = log.join().unwrap_or_default();
-    if cancel.load(Ordering::Relaxed) {
-        return Err(CANCELLED.into());
-    }
-    if !status.success() || !partial.0.is_file() {
-        return Err(format!("ffmpeg burn-in failed ({status}): {}", tail(&log, 600)));
-    }
-    fs::rename(&partial.0, out).map_err(|e| e.to_string())?;
-    progress(1.0);
+    let partial = Scratch(partial_path(out));
+    let args = build_args(src, &ass_file.0, &partial.0, &plan);
+    ffmpeg_job::run(&ffmpeg, args, &partial, out, &info, "burn-in", cancel, progress)?;
     Ok(BurnOutcome { path: dest.to_string(), encoder })
 }
 
@@ -334,40 +243,10 @@ mod tests {
     }
 
     #[test]
-    fn progress_subtracts_start_offset() {
-        let p = progress_fraction("out_time_us=15000000", 10.0, 10.0).unwrap();
-        assert!((p - 0.5).abs() < 1e-6);
-        assert_eq!(progress_fraction("out_time_us=N/A", 0.0, 10.0), None);
-        assert_eq!(progress_fraction("frame=3", 0.0, 10.0), None);
-        assert_eq!(progress_fraction("out_time_us=1", 0.0, 0.0), None);
-        assert_eq!(progress_fraction("out_time_us=99000000", 0.0, 10.0), Some(0.99));
-    }
-
-    #[test]
-    fn dest_guards() {
-        let dir = std::env::temp_dir().join(format!("substudio-burn-guard-{}", std::process::id()));
-        fs::create_dir_all(&dir).unwrap();
-        let src = dir.join("film.mp4");
-        fs::write(&src, b"x").unwrap();
-        assert!(check_dest(&src, &src).unwrap_err().contains("differ"));
-        assert!(check_dest(&src, &dir.join("./film.mp4")).unwrap_err().contains("differ"));
-        assert!(check_dest(&src, &dir.join("film.mkv")).unwrap_err().contains(".mp4"));
-        assert!(check_dest(&src, &dir.join("nope/out.mp4")).unwrap_err().contains("folder"));
-        assert!(check_dest(&src, &dir.join("film.burned.MP4")).is_ok());
-        let _ = fs::remove_dir_all(&dir);
-    }
-
-    #[test]
     fn ass_uses_default_style_when_none_given() {
         let cues = [Cue { start: 1.0, end: 2.0, text: "Ẹ ṣé".into(), style: None }];
         let t = ass_text(&cues, None);
         assert!(t.contains("Style: Default") && t.contains("Ẹ ṣé") && t.contains("0:00:01.00"));
-    }
-
-    #[test]
-    fn tail_keeps_char_boundaries() {
-        assert_eq!(tail("héllo wörld", 4), "rld");
-        assert_eq!(tail("short", 100), "short");
     }
 
     #[test]
@@ -399,7 +278,7 @@ mod tests {
         assert!(out.is_file() && res.path == out.to_string_lossy());
         assert_eq!(last, 1.0);
         assert_eq!(fs::read(&src).unwrap(), before, "source untouched");
-        assert!(!out.with_extension("mp4.partial").exists());
+        assert!(!partial_path(&out).exists());
         let _ = fs::remove_dir_all(&dir);
     }
 }

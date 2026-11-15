@@ -68,6 +68,7 @@ export const MENU: MenuGroup[] = [
       "file.customTextExport",
       "file.saveSelected",
       "file.burnIn",
+      "file.embedSubtitles",
       "-",
       "file.openContainingFolder",
       "file.openDataFolder",
