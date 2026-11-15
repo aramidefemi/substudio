@@ -30,6 +30,12 @@ export interface MediaInfo {
   width: number | null;
   height: number | null;
   frameRate: string | null;
+  /** Average fps when parseable (TIM-07 / project fps). */
+  fps: number | null;
+  /** Container/stream start offset in seconds. */
+  startTimeSecs: number | null;
+  variableFrameRate: boolean | null;
+  frameCount: number | null;
   tracks: MediaTrack[];
   source: string;
   note: string | null;
@@ -75,6 +81,8 @@ export const commands = {
   listAutoBackups: () => invoke<BackupInfo[]>("list_auto_backups"),
   ensureDataFolder: () => invoke<string>("ensure_data_folder"),
   probeMedia: (path: string) => invoke<MediaInfo>("probe_media", { path }),
+  /** Source frame timestamps as SSFT `ArrayBuffer` (MED-01). */
+  mediaFrameTimes: (path: string) => invoke<ArrayBuffer>("media_frame_times", { path }),
 };
 
 export const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path;

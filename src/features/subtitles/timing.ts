@@ -81,8 +81,8 @@ const FRAME_EPS = 1e-3;
  * Playhead time `frames` frames away from `t`, landing on a frame boundary at
  * the project fps. Off-grid times step to the next/previous boundary first, so
  * one step back from mid-frame lands on the start of the current frame.
- * Project fps for now; switch to the source's real frame timestamps with the
- * media layer (MED) for variable frame rate.
+ * CFR / project-fps grid. Prefer `stepAlongFrames` in `features/media/frameTimes`
+ * when source timestamps from MED-01 are loaded (VFR-safe).
  */
 export function stepFrames(t: number, fps: number, frames: number): number {
   if (!frames || fps <= 0) return t;

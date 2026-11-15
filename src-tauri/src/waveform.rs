@@ -212,28 +212,7 @@ fn compute_symphonia(path: &Path, progress: &mut dyn FnMut(f32)) -> Result<Peaks
 }
 
 fn find_ffmpeg() -> Option<PathBuf> {
-    let home = std::env::var_os("HOME").map(PathBuf::from);
-    let mut candidates = vec![
-        PathBuf::from("ffmpeg"),
-        PathBuf::from("/opt/homebrew/bin/ffmpeg"),
-        PathBuf::from("/usr/local/bin/ffmpeg"),
-    ];
-    if let Some(home) = home {
-        candidates.push(home.join(".homebrew/bin/ffmpeg"));
-    }
-    for bin in candidates {
-        let ok = Command::new(&bin)
-            .arg("-version")
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
-            .map(|s| s.success())
-            .unwrap_or(false);
-        if ok {
-            return Some(bin);
-        }
-    }
-    None
+    crate::ffmpeg_bin::find_ffmpeg()
 }
 
 /// Decode via ffmpeg to mono f32 PCM and build the same peak format.

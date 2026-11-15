@@ -1,6 +1,7 @@
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect } from "react";
+import { loadMedia } from "@/features/media/store";
 import { clock } from "@/features/playback/clock";
 import { useSettings } from "@/features/settings/store";
 import { cueIndexAt, select, useSubtitles } from "@/features/subtitles/store";
@@ -61,5 +62,26 @@ export function useAppEvents() {
     const sync = () => clock.setFallbackDuration((useSubtitles.getState().cues.at(-1)?.end ?? 0) + 10);
     sync();
     return useSubtitles.subscribe(sync);
+  }, []);
+
+  // MED-01: probe + frame timestamps whenever the open video changes; adopt fps (TIM-07).
+  useEffect(() => {
+    let gen = 0;
+    let lastPath = useSubtitles.getState().videoPath;
+    const run = async (path: string | null) => {
+      const my = ++gen;
+      const info = await loadMedia(path);
+      if (my !== gen || !info?.fps || !(info.fps > 0) || !Number.isFinite(info.fps)) return;
+      const rounded = Math.round(info.fps * 1000) / 1000;
+      if (Math.abs(useSubtitles.getState().fps - rounded) > 1e-6) {
+        useSubtitles.setState({ fps: rounded });
+      }
+    };
+    void run(lastPath);
+    return useSubtitles.subscribe((s) => {
+      if (s.videoPath === lastPath) return;
+      lastPath = s.videoPath;
+      void run(s.videoPath);
+    });
   }, []);
 }

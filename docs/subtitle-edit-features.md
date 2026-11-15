@@ -37,7 +37,7 @@ The **Plan** column maps each feature to our backlog (`docs/backlog.md`):
 | Format properties (per format) | ASS, EBU STL, PAC, D-Cinema, TTML settings | M3 |
 | Compare two files | Side-by-side diff | ✅ |
 | Statistics (file and selected lines; dashboard with CPS histogram) | Totals, KPIs | ✅ |
-| Media information | Container, codec and track info for the video | ✅ (ffprobe/mdls; full MED-01 later) |
+| Media information | Container, codec and track info for the video | ✅ (bundled LGPL ffprobe; start offset, VFR, frame count) |
 | Format limit warning | Warns when the target format can't hold features in use | M3 |
 
 ## 2. Subtitle list (grid)
