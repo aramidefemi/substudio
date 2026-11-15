@@ -36,3 +36,7 @@ test-media/**
 !test-media/**/README.md
 !test-media/fixtures/
 !test-media/fixtures/**
+
+# Local Apple signing / notary secrets (DLV-04)
+scratchpad/release.env
+**/*release*.env

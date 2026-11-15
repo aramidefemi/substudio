@@ -9,3 +9,7 @@ pnpm check    # typecheck, lint, frontend + Rust tests
 ```
 
 See `CLAUDE.md` for architecture and conventions, and `docs/style-guide.md` for the design system.
+
+## Releases (macOS)
+
+Signed/notarised builds: see [`docs/macos-release.md`](docs/macos-release.md) and `pnpm release:macos`.

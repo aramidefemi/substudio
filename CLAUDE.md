@@ -19,7 +19,8 @@ pnpm dev          # frontend only in a browser at :1420 (no file dialogs)
 pnpm check        # typecheck + eslint + vitest + cargo test, run before calling work done
 pnpm test         # vitest (src/**/*.test.ts)
 pnpm test:rust    # cargo tests in src-tauri
-pnpm tauri build  # release .app/.dmg
+pnpm tauri build  # release .app/.dmg (unsigned/local)
+pnpm release:macos  # signed+notarised (needs Apple env — docs/macos-release.md)
 ```
 
 ## Layout
