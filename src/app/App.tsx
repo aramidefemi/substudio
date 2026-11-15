@@ -28,7 +28,14 @@ import { useFileSafety } from "./useFileSafety";
 
 /** Gaps between panels are the resize handles. */
 const Gap = ({ vertical }: { vertical?: boolean }) => (
-  <ResizableHandle className={vertical ? "h-2 bg-transparent" : "w-2 bg-transparent"} />
+  <ResizableHandle
+    className={
+      // Beat ResizableHandle's aria-[orientation=horizontal]:h-px (more specific than h-*).
+      vertical
+        ? "h-3 bg-transparent aria-[orientation=horizontal]:h-3"
+        : "w-3 bg-transparent"
+    }
+  />
 );
 
 export default function App() {

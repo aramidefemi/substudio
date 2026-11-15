@@ -69,7 +69,7 @@ export function CueEditor() {
   const step = nudgeStep(fmt);
 
   return (
-    <div className="grid h-full grid-cols-[150px_minmax(0,1fr)] gap-4 overflow-auto rounded-xl border bg-card p-3">
+    <div className="grid h-full grid-cols-[150px_minmax(0,1fr)] gap-4 overflow-auto rounded-xl bg-card p-3">
       <div className="flex flex-col gap-2">
         <TimeField
           id="cue-start"

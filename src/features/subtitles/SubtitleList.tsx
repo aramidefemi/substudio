@@ -95,7 +95,7 @@ export function SubtitleList() {
   }, [selectedIndex, virtualizer]);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-card">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl bg-card">
       <div
         role="row"
         style={{ gridTemplateColumns }}

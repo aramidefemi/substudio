@@ -5,6 +5,10 @@ import { peakBetween, type Peaks } from "./peaks";
 import type { CanvasTokens } from "./tokens";
 
 export const RULER_H = 20;
+/** Horizontal inset per side so adjacent cue cards show a visual gap. */
+const CUE_INSET_X = 2;
+/** Vertical inset so cards don't kiss the timeline edges. */
+const CUE_INSET_Y = 1;
 
 interface Scene {
   width: number;
@@ -39,8 +43,10 @@ export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
   ctx.fillRect(0, 0, w, h);
 
   for (const c of visible) {
+    const x0 = x(c.start) + CUE_INSET_X;
+    const cw = Math.max(0, x(c.end) - x(c.start) - CUE_INSET_X * 2);
     ctx.fillStyle = s.selectedIds.has(c.id) ? k["cue-region-selected"] : k["cue-region"];
-    ctx.fillRect(x(c.start), 0, x(c.end) - x(c.start), waveH);
+    ctx.fillRect(x0, CUE_INSET_Y, cw, Math.max(0, waveH - CUE_INSET_Y * 2));
   }
 
   // Waveform: one 2px column per peak range, coloured by whether it falls in a cue.
@@ -62,29 +68,25 @@ export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
   ctx.strokeStyle = k["waveform-selected"];
   ctx.stroke(paths.sel);
 
-  // Cue edges and labels.
+  // Cue labels (no border strokes — selection is fill + waveform colour).
   ctx.textBaseline = "alphabetic";
   for (const c of visible) {
     const i = s.cues.indexOf(c);
-    const x0 = x(c.start);
-    const x1 = x(c.end);
-    const selected = s.selectedIds.has(c.id);
+    const x0 = x(c.start) + CUE_INSET_X;
+    const cw = Math.max(0, x(c.end) - x(c.start) - CUE_INSET_X * 2);
     const issues = checkCue(c, s.cues[i - 1]);
-    ctx.strokeStyle = selected ? k["cue-edge-selected"] : k["cue-edge"];
-    ctx.lineWidth = selected ? 2 : 1;
-    ctx.strokeRect(x0 + 0.5, 0.5, x1 - x0 - 1, waveH - 1);
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x0 + 2, 0, Math.max(0, x1 - x0 - 4), waveH);
+    ctx.rect(x0, CUE_INSET_Y, cw, Math.max(0, waveH - CUE_INSET_Y * 2));
     ctx.clip();
     ctx.fillStyle = k["timeline-fg"];
     ctx.font = "500 12px 'Inter Variable', sans-serif";
     const label = s.hideText ? "••••" : (c.text.split("\n")[0] ?? "");
-    ctx.fillText(label, x0 + 8, 18);
+    ctx.fillText(label, x0 + 6, 18);
     ctx.font = "11px 'Inter Variable', sans-serif";
     ctx.fillStyle = issues.duration || issues.text ? k["cue-error"] : k["timeline-muted"];
-    ctx.fillText(String(i + 1), x0 + 8, waveH - 8);
+    ctx.fillText(String(i + 1), x0 + 6, waveH - 8);
     ctx.restore();
   }
 

@@ -81,7 +81,7 @@ export function VideoPanel() {
           <button
             type="button"
             onClick={() => void openVideo()}
-            className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/60 transition-colors hover:text-white/80"
+            className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-3 text-white/60 transition-colors hover:text-white/80"
           >
             <span className="flex size-20 items-center justify-center rounded-full border-2 border-current">
               <Play className="ml-1 size-8" />

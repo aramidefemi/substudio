@@ -19,13 +19,16 @@ interface IconButtonProps {
   children: React.ReactNode;
 }
 
+const iconBtnClass = "size-7 [&_svg:not([class*='size-'])]:size-3.5";
+
 function IconButton({ label, onClick, pressed, children }: IconButtonProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          size="icon"
+          size="icon-sm"
           variant={pressed ? "secondary" : "outline"}
+          className={iconBtnClass}
           aria-label={label}
           aria-pressed={pressed}
           onClick={onClick}
@@ -56,14 +59,19 @@ export function TransportBar() {
   };
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-2 border-t bg-background px-3 py-2">
+    <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-t bg-background px-3 py-1.5">
       <IconButton label="Go to start" onClick={() => clock.seek(0)}>
         <SkipBack />
       </IconButton>
       <IconButton label="Previous subtitle (↑)" onClick={() => seekToCue(-1)}>
         <StepBack />
       </IconButton>
-      <Button size="icon" aria-label={playing ? "Pause (Space)" : "Play (Space)"} onClick={() => clock.toggle()} className="w-12">
+      <Button
+        size="icon-sm"
+        aria-label={playing ? "Pause (Space)" : "Play (Space)"}
+        onClick={() => clock.toggle()}
+        className={`${iconBtnClass} w-9`}
+      >
         {playing ? <Pause /> : <Play />}
       </Button>
       <IconButton label="Next subtitle (↓)" onClick={() => seekToCue(1)}>
@@ -79,14 +87,14 @@ export function TransportBar() {
         <Plus />
       </IconButton>
 
-      <Separator orientation="vertical" className="mx-2 h-6" />
+      <Separator orientation="vertical" className="mx-1 h-4" />
 
       <IconButton label="Zoom out" onClick={() => setZoom(pps / 1.25)}>
         <Minus />
       </IconButton>
       <Slider
         aria-label="Zoom"
-        className="w-32"
+        className="w-28"
         min={Math.log(MIN_PPS)}
         max={Math.log(MAX_PPS)}
         step={0.01}
@@ -96,12 +104,12 @@ export function TransportBar() {
       <IconButton label="Zoom in" onClick={() => setZoom(pps * 1.25)}>
         <Plus />
       </IconButton>
-      <span className="w-12 text-xs tabular-nums text-muted-foreground">{Math.round((pps / DEFAULT_PPS) * 100)}%</span>
+      <span className="w-10 text-xs tabular-nums text-muted-foreground">{Math.round((pps / DEFAULT_PPS) * 100)}%</span>
 
-      <Separator orientation="vertical" className="mx-2 h-6" />
+      <Separator orientation="vertical" className="mx-1 h-4" />
 
       <Select value={String(rate)} onValueChange={(v) => clock.setRate(Number(v))}>
-        <SelectTrigger aria-label="Playback speed" size="sm" className="w-28">
+        <SelectTrigger aria-label="Playback speed" size="sm" className="h-7 w-28 text-xs">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -115,10 +123,10 @@ export function TransportBar() {
 
       <div className="flex-1" />
 
-      <Button variant="ghost" size="sm" onClick={toggleTimecode} className="text-xs text-muted-foreground tabular-nums">
+      <Button variant="ghost" size="sm" onClick={toggleTimecode} className="h-7 text-xs text-muted-foreground tabular-nums">
         {timecode === "frames" ? `hh:mm:ss:ff · ${fps} fps` : "hh:mm:ss,mmm"}
       </Button>
-      <span className="rounded-md border bg-card px-3 py-1.5 text-sm font-medium tabular-nums">
+      <span className="flex h-7 items-center rounded-md border bg-card px-2 text-xs font-medium tabular-nums">
         {count ? index + 1 : 0} / {count}
       </span>
     </div>
