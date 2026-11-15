@@ -5,16 +5,21 @@ import type { MediaInfo, PlaybackDecision } from "@/lib/tauri";
 import { commands, inTauri } from "@/lib/tauri";
 import { listAudioTracks, resolveAudioTrack } from "./audioTracks";
 import { parseFrameTimes } from "./frameTimes";
+import { normalizeShotList, parseShotChanges } from "./shotChanges";
 
 export interface MediaState {
   info: MediaInfo | null;
   /** Source display-frame timestamps in seconds; null until loaded or unavailable. */
   frameTimes: Float64Array | null;
+  /** Shot-change timestamps (SYN-04); null until generated or restored from sidecar. */
+  shotChanges: Float64Array | null;
   /** Path for `<video src>` — source or editing proxy. Null until resolved. */
   playbackPath: string | null;
   usingProxy: boolean;
   /** 0–1 while encoding a proxy; null when idle. */
   proxyProgress: number | null;
+  /** 0–1 while detecting shot changes; null when idle. */
+  shotProgress: number | null;
   /** 0-based ordinal among audio streams (PLY-05). */
   audioTrack: number;
   loading: boolean;
@@ -24,9 +29,11 @@ export interface MediaState {
 export const useMedia = create<MediaState>(() => ({
   info: null,
   frameTimes: null,
+  shotChanges: null,
   playbackPath: null,
   usingProxy: false,
   proxyProgress: null,
+  shotProgress: null,
   audioTrack: 0,
   loading: false,
   error: null,
@@ -42,13 +49,52 @@ export function clearMedia() {
   set({
     info: null,
     frameTimes: null,
+    shotChanges: null,
     playbackPath: null,
     usingProxy: false,
     proxyProgress: null,
+    shotProgress: null,
     audioTrack: 0,
     loading: false,
     error: null,
   });
+}
+
+/** Restore shot list from the project sidecar (session + sidecar persistence). */
+export function restoreShotChanges(raw: unknown) {
+  set({ shotChanges: normalizeShotList(raw) });
+}
+
+/** Replace the in-session shot list (e.g. after detect). */
+export function setShotChanges(times: Float64Array | null) {
+  set({ shotChanges: times && times.length ? times : null });
+}
+
+/**
+ * Detect shot changes for the open video via ffmpeg (SYN-04).
+ * Uses disk cache; returns the count.
+ */
+export async function generateShotChanges(path: string | null): Promise<number> {
+  if (!path || !inTauri) {
+    toast.error("Open a video first");
+    return 0;
+  }
+  set({ shotProgress: 0 });
+  toast.loading("Detecting shot changes…", { id: "shot-changes" });
+  try {
+    const buf = await commands.detectShotChanges(path);
+    const times = parseShotChanges(buf);
+    set({ shotChanges: times.length ? times : null, shotProgress: null });
+    toast.success(
+      times.length ? `Found ${times.length} shot change${times.length === 1 ? "" : "s"}` : "No shot changes found",
+      { id: "shot-changes" },
+    );
+    return times.length;
+  } catch (err) {
+    set({ shotProgress: null });
+    toast.error("Shot detection failed", { id: "shot-changes", description: String(err) });
+    return 0;
+  }
 }
 
 /**
@@ -88,11 +134,14 @@ export async function loadMedia(path: string | null): Promise<MediaInfo | null> 
     return null;
   }
   const preferred = sessionAudioTrack.get(path) ?? 0;
+  const keepShots = useMedia.getState().shotChanges;
   set({
     loading: true,
     error: null,
     info: null,
     frameTimes: null,
+    // Keep sidecar-restored shots across probe; clear only when path changes elsewhere.
+    shotChanges: keepShots,
     playbackPath: null,
     usingProxy: false,
     proxyProgress: null,

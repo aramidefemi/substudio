@@ -137,7 +137,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | TIM-02 | **Set end, add new and go to new** / set start and go to next / set end and go to next | WaveformSetEndAddNewAndGoToNew etc. | S | ✅ Timing menu + F10 / Shift+F10 / set-start-go-next. |
 | TIM-03 | Move start/end ±1 frame or ±X ms, with keep-gap and push-neighbour variants | MoveStart*/MoveEnd* | S | ✅ Global keys + Timing menu (plain / keepGap / push). |
 | TIM-04 | Shift selected lines / all lines by a frame, X ms, or custom steps | MoveSelectedLines*, MoveAllLines* | S | ✅ Incl. “+ following” variant. |
-| TIM-05 | Extend selected to previous/next cue; extend previous end or next start to selected | Extend* | S | ✅ Cue-to-cue; shot-change extend deferred (no shot detection). |
+| TIM-05 | Extend selected to previous/next cue; extend previous end or next start to selected | Extend* | S | ✅ Cue-to-cue; extend to previous/next also prefers a shot change in the gap when SYN-04 shots exist. |
 | TIM-06 | Set end and start of next after minimum gap; set start and end of previous minus gap | WaveformSetEndAndStartOfNextAfterGap | S | ✅ |
 | TIM-07 | Snap all times to frames; get frame rate from the video | SnapAllTimesToFrames, GetFrameRateFromVideoFile | S | ✅ Snap prefers source `frameTimes` when probed (MED-03); else project fps. Opening a video adopts probed avg fps (MED-01). |
 
@@ -200,7 +200,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | SYN-01 | Adjust all times (offset selected or all) | Adjust all times | S | ✅ Offset dialog (all / selected / selected+following); Sync › Adjust times (⌘⇧A); clamps like move; one undo step. |
 | SYN-02 | Visual sync / point sync | Visual sync | L | ✅ |
 | SYN-03 | Change frame rate; change speed | Sync menu | S | ✅ Rescale times from→to fps (updates project fps when all); multiply by speed factor; Sync menu; undoable. |
-| SYN-04 | Shot-change detection (ffmpeg) + snapping | Shot changes | L |
+| SYN-04 | Shot-change detection (ffmpeg) + snapping | Shot changes | L | ✅ ffmpeg scene detect (SSSC bytes + disk cache); persist on `.substudio.json` sidecar + session; waveform green-zone markers; Sync › Generate / next / prev / snap selected (undoable); TIM-05 extend uses shots in the gap. |
 
 ---
 

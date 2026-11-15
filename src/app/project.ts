@@ -44,6 +44,8 @@ export interface ProjectSource {
   ruleProfile?: RuleProfile;
   /** 0-based audio stream ordinal (PLY-05); omitted when unknown. */
   audioTrack?: number | null;
+  /** Shot-change timestamps (SYN-04); omitted when none. */
+  shotChanges?: ArrayLike<number> | null;
 }
 
 /** What goes in the sidecar for the current document. */
@@ -59,6 +61,8 @@ export function buildProject(s: ProjectSource): ProjectFile {
     typeof s.audioTrack === "number" && Number.isFinite(s.audioTrack) && s.audioTrack >= 0
       ? Math.trunc(s.audioTrack)
       : null;
+  const shotChanges =
+    s.shotChanges && s.shotChanges.length > 0 ? Array.from(s.shotChanges) : undefined;
   return {
     videoPath: s.videoPath,
     fps: s.fps,
@@ -69,6 +73,7 @@ export function buildProject(s: ProjectSource): ProjectFile {
     originals,
     ...(s.ruleProfile ? { ruleProfile: snapshotOf(s.ruleProfile) } : {}),
     audioTrack,
+    ...(shotChanges ? { shotChanges } : {}),
   };
 }
 
@@ -83,6 +88,8 @@ export interface RestoredProject {
   /** Raw rule profile snapshot; resolve it with `resolveSnapshot`. */
   ruleProfile: unknown;
   audioTrack: number | null;
+  /** Shot-change timestamps from the sidecar (SYN-04). */
+  shotChanges: number[] | null;
 }
 
 /** Turns a sidecar back into document state, matching cue refs against the loaded cues. */
@@ -110,5 +117,8 @@ export function restoreProject(cues: readonly CueData[], p: ProjectFile): Restor
       typeof p.audioTrack === "number" && Number.isFinite(p.audioTrack) && p.audioTrack >= 0
         ? Math.trunc(p.audioTrack)
         : null,
+    shotChanges: Array.isArray(p.shotChanges)
+      ? p.shotChanges.filter((t): t is number => typeof t === "number" && Number.isFinite(t) && t >= 0)
+      : null,
   };
 }

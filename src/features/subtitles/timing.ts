@@ -222,21 +222,57 @@ export function setStartAndEndOfPrevious(cues: CueData[], index: number, t: numb
   return true;
 }
 
-/** Extend selected start to previous end + gap (or 0). Shot-change extend is not implemented. */
-export function extendToPrevious(cues: CueData[], index: number, minGap = MIN_GAP): void {
+/**
+ * Extend selected start to previous cue end + gap (or 0), or to a shot change
+ * in that gap when `shots` is provided (TIM-05 / SYN-04).
+ */
+export function extendToPrevious(
+  cues: CueData[],
+  index: number,
+  minGap = MIN_GAP,
+  shots?: ArrayLike<number> | null,
+): void {
   const c = cues[index];
   if (!c) return;
   const prev = cues[index - 1];
-  c.start = prev ? prev.end + minGap : 0;
+  const floor = prev ? prev.end + minGap : 0;
+  let target = floor;
+  if (shots && shots.length) {
+    for (let i = 0; i < shots.length; i++) {
+      const s = shots[i]!;
+      if (s >= c.start - 1e-6) break;
+      if (s >= floor) target = s;
+    }
+  }
+  c.start = target;
   if (c.end < c.start + MIN_GAP) c.end = c.start + MIN_GAP;
 }
 
-export function extendToNext(cues: CueData[], index: number, minGap = MIN_GAP): void {
+/** Extend selected end to next cue start − gap, or to a shot change in that gap. */
+export function extendToNext(
+  cues: CueData[],
+  index: number,
+  minGap = MIN_GAP,
+  shots?: ArrayLike<number> | null,
+): void {
   const c = cues[index];
   if (!c) return;
   const next = cues[index + 1];
   if (!next) return;
-  c.end = Math.max(c.start + MIN_GAP, next.start - minGap);
+  const ceiling = next.start - minGap;
+  let target = ceiling;
+  if (shots && shots.length) {
+    for (let i = 0; i < shots.length; i++) {
+      const s = shots[i]!;
+      if (s <= c.end + 1e-6) continue;
+      if (s <= ceiling) {
+        target = s;
+        break;
+      }
+      break;
+    }
+  }
+  c.end = Math.max(c.start + MIN_GAP, target);
 }
 
 export function extendPreviousEndToSelected(cues: CueData[], index: number, minGap = MIN_GAP): void {

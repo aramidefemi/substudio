@@ -5,6 +5,7 @@ mod media;
 mod menu;
 mod project;
 mod proxy;
+mod shot_changes;
 mod spell_engine;
 mod spellcheck;
 mod subtitles;
@@ -146,6 +147,23 @@ async fn media_frame_times(
     let cache_dir = app.path().app_cache_dir().map_err(|e| e.to_string())?;
     let bytes = tauri::async_runtime::spawn_blocking(move || {
         media::load_or_extract_frame_times(&path, &cache_dir)
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
+/// Shot-change timestamps as SSSC bytes (SYN-04). Cached by path+size+mtime+threshold.
+#[tauri::command]
+async fn detect_shot_changes(
+    app: tauri::AppHandle,
+    path: String,
+    threshold: Option<f64>,
+) -> Result<tauri::ipc::Response, String> {
+    let cache_dir = app.path().app_cache_dir().map_err(|e| e.to_string())?;
+    let t = threshold.unwrap_or(shot_changes::DEFAULT_THRESHOLD);
+    let bytes = tauri::async_runtime::spawn_blocking(move || {
+        shot_changes::load_or_detect(&path, &cache_dir, t)
     })
     .await
     .map_err(|e| e.to_string())??;
@@ -343,6 +361,7 @@ pub fn run() {
             ensure_data_folder,
             probe_media,
             media_frame_times,
+            detect_shot_changes,
             ensure_playback,
             spell_check_texts,
             spell_suggest,

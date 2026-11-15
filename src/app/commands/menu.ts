@@ -335,6 +335,11 @@ export const MENU: MenuGroup[] = [
       "-",
       "sync.changeFrameRate",
       "sync.changeSpeed",
+      "-",
+      "sync.shotChanges.generate",
+      "sync.shotChanges.previous",
+      "sync.shotChanges.next",
+      "sync.shotChanges.snap",
     ],
   },
   {

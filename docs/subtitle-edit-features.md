@@ -109,7 +109,7 @@ The **Plan** column maps each feature to our backlog (`docs/backlog.md`):
 | Set end, add new and go to new | Continuous timing flow | ✅ |
 | Set end and start of next after the minimum gap | Chain cues tightly | ✅ |
 | Set start and set end of previous minus gap | Chain cues tightly | ✅ |
-| Extend selected to previous/next cue or shot change; extend previous end / next start to selected | Close gaps | ✅ (cue edges; shot change stubbed — no shot detection yet) |
+| Extend selected to previous/next cue or shot change; extend previous end / next start to selected | Close gaps | ✅ (cue edges; prefers shot change in the gap when detected) |
 | Snap all times to frames | Frame-align everything | ✅ |
 | Copy ms relative to current line | Utility | P |
 
@@ -127,7 +127,7 @@ The **Plan** column maps each feature to our backlog (`docs/backlog.md`):
 | Context menu: insert, delete, split here, merge, copy, extract audio | Region actions | M1 |
 | Seek silence back/forward; guess start, end or both | Snap to speech | M1 |
 | Speech-only waveform (separates music/SFX with a model) | Clearer dialogue view | M4 |
-| Shot changes: generate/import, list, toggle at position, next/previous, snap and "green zones" | Broadcast-style timing | M2 |
+| Shot changes: generate/import, list, toggle at position, next/previous, snap and "green zones" | Broadcast-style timing | ✅ MVP: generate (ffmpeg), next/prev, snap selected, waveform green zones; import/toggle later |
 | Chapters toggle at position, next/previous chapter | Markers | P |
 | Timeline tracks layout (thumbnails, layers) | Editor-style timeline | P |
 | Waveform toolbar (configurable items) | On-waveform controls | M1 (basic) |

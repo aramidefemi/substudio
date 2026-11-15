@@ -109,6 +109,21 @@ describe("sidecar round trip", () => {
       originalPath: null,
       ruleProfile: null,
       audioTrack: null,
+      shotChanges: null,
     });
+  });
+
+  it("round-trips shot changes", () => {
+    const project = buildProject({
+      cues,
+      selectedId: null,
+      videoPath: null,
+      originalPath: null,
+      fps: 25,
+      timecode: "frames",
+      shotChanges: Float64Array.from([1.5, 9]),
+    });
+    expect(project.shotChanges).toEqual([1.5, 9]);
+    expect(restoreProject(cues, project).shotChanges).toEqual([1.5, 9]);
   });
 });

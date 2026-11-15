@@ -1,3 +1,4 @@
+import { GREEN_ZONE } from "@/features/media/shotChanges";
 import { checkCue, type Rules } from "@/features/subtitles/rules";
 import { cueIndexAt } from "@/features/subtitles/store";
 import type { Cue } from "@/features/subtitles/types";
@@ -25,6 +26,8 @@ interface Scene {
   region?: { start: number; end: number } | null;
   /** Real audio peaks; null draws a flat line. */
   peaks: Peaks | null;
+  /** Shot-change timestamps (SYN-04); drawn as markers + green zones. */
+  shotChanges?: ArrayLike<number> | null;
   /** Centred status text (no video, loading, error). */
   message: string | null;
   tokens: CanvasTokens;
@@ -43,6 +46,26 @@ export function drawWaveform(ctx: CanvasRenderingContext2D, s: Scene) {
 
   ctx.fillStyle = k["timeline-bg"];
   ctx.fillRect(0, 0, w, h);
+
+  // Shot-change green zones + ticks (under cues so regions stay readable).
+  const shots = s.shotChanges;
+  if (shots && shots.length) {
+    const zone = GREEN_ZONE;
+    for (let i = 0; i < shots.length; i++) {
+      const t = shots[i]!;
+      if (t + zone < start || t - zone > end) continue;
+      const x0 = x(t - zone);
+      const x1 = x(t + zone);
+      ctx.fillStyle = k["shot-change-zone"];
+      ctx.fillRect(x0, 0, Math.max(1, x1 - x0), waveH);
+    }
+    ctx.fillStyle = k["shot-change"];
+    for (let i = 0; i < shots.length; i++) {
+      const t = shots[i]!;
+      if (t < start || t > end) continue;
+      ctx.fillRect(Math.round(x(t)), 0, 1, waveH);
+    }
+  }
 
   for (const c of visible) {
     const x0 = x(c.start) + CUE_INSET_X;
