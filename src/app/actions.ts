@@ -1,7 +1,13 @@
 import { ask, open, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { toast } from "sonner";
 import { create } from "zustand";
-import { preferAudioTrack } from "@/features/media/store";
+import { nextShot, previousShot } from "@/features/media/shotChanges";
+import {
+  generateShotChanges,
+  preferAudioTrack,
+  restoreShotChanges,
+  useMedia,
+} from "@/features/media/store";
 import { clock } from "@/features/playback/clock";
 import { playNeighbour } from "@/features/playback/transport";
 import {
@@ -69,6 +75,7 @@ import {
   setStartAndGoToNext,
   setVideo,
   snapAllTimesToFrames,
+  snapSelectedToShotChanges,
   splitSelectedAtCursor,
   splitSelectedAtTime,
   toggleBookmark,
@@ -235,6 +242,8 @@ async function applySidecar(path: string) {
   } else if (p.audioTrack != null) {
     preferAudioTrack(s.videoPath ?? p.videoPath, p.audioTrack);
   }
+  // After setVideo (which clears shots); session+sidecar persistence for SYN-04.
+  restoreShotChanges(p.shotChanges);
   const cue = useSubtitles.getState().cues[p.selectedIndex];
   if (cue) {
     select(cue.id);
@@ -871,6 +880,50 @@ export const timingSnapAllToFrames = () => {
   snapAllTimesToFrames();
   toast.success("Snapped all times to frames");
 };
+
+/* ---------- shot changes (SYN-04) ---------- */
+
+export async function syncGenerateShotChanges() {
+  const path = useSubtitles.getState().videoPath;
+  const n = await generateShotChanges(path);
+  if (n >= 0 && useSubtitles.getState().filePath) {
+    // Persist to sidecar so reopen keeps markers (session + sidecar).
+    try {
+      await commands.writeProject(useSubtitles.getState().filePath!, currentProject());
+    } catch (err) {
+      console.warn("Could not write shot changes to sidecar", err);
+    }
+  }
+}
+
+export function syncShotChangeNext() {
+  const shots = useMedia.getState().shotChanges;
+  const t = nextShot(shots, clock.time);
+  if (t == null) {
+    toast(shots?.length ? "No shot change ahead" : "Generate shot changes first");
+    return;
+  }
+  clock.seek(t);
+}
+
+export function syncShotChangePrevious() {
+  const shots = useMedia.getState().shotChanges;
+  const t = previousShot(shots, clock.time);
+  if (t == null) {
+    toast(shots?.length ? "No shot change before the playhead" : "Generate shot changes first");
+    return;
+  }
+  clock.seek(t);
+}
+
+export function syncSnapToShotChanges() {
+  if (!useMedia.getState().shotChanges?.length) {
+    toast("Generate shot changes first");
+    return;
+  }
+  const n = snapSelectedToShotChanges();
+  toast(n ? `Snapped ${n} line${n === 1 ? "" : "s"} to shot changes` : "Nothing to snap");
+}
 
 /* ---------- text box ---------- */
 

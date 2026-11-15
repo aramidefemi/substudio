@@ -1,9 +1,12 @@
 //! Project sidecar (FIL-03): `<name>.substudio.json` next to `<name>.srt`.
 //!
 //! Holds what the SRT can't: the video, fps, timecode mode, bookmarks, the
-//! original/script column (FIL-07), and the last selected cue. The subtitle
-//! file itself is never touched. A missing or unreadable sidecar is treated as
-//! "no project info", never as an error.
+//! original/script column (FIL-07), the last selected cue, and shot-change
+//! times (SYN-04). The subtitle file itself is never touched. A missing or
+//! unreadable sidecar is treated as "no project info", never as an error.
+//!
+//! Shot changes: persisted on the sidecar so reopen restores markers without
+//! re-running ffmpeg; the app cache still speeds up re-detect.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -63,6 +66,9 @@ pub struct Project {
     pub rule_profile: Option<serde_json::Value>,
     /// Selected audio stream ordinal among audio tracks (PLY-05).
     pub audio_track: Option<u32>,
+    /// Shot-change timestamps in seconds (SYN-04). Empty when never generated.
+    #[serde(default)]
+    pub shot_changes: Vec<f64>,
 }
 
 impl Default for Project {
@@ -79,6 +85,7 @@ impl Default for Project {
             originals: Vec::new(),
             rule_profile: None,
             audio_track: None,
+            shot_changes: Vec::new(),
         }
     }
 }
@@ -102,6 +109,9 @@ pub fn read(subtitle: &Path) -> Option<Project> {
     project.fps = project.fps.filter(|f| f.is_finite() && *f > 0.0 && *f <= 1000.0);
     project.bookmarks.retain(|b| b.start.is_finite());
     project.originals.retain(|o| o.start.is_finite());
+    project.shot_changes.retain(|t| t.is_finite() && *t >= 0.0);
+    project.shot_changes.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    project.shot_changes.dedup_by(|a, b| (*a - *b).abs() < 1e-4);
     project.video_path = resolve_video(&path, project.video_path.take(), project.video_relative.as_deref());
     Some(project)
 }
@@ -204,8 +214,23 @@ mod tests {
         assert_eq!(back.originals, project.originals);
         assert_eq!(back.rule_profile, project.rule_profile);
         assert_eq!(back.audio_track, None);
+        assert!(back.shot_changes.is_empty());
         assert_eq!(fs::read_to_string(&srt).unwrap(), "1\n00:00:01,000 --> 00:00:02,000\nHi\n");
         assert!(!dir.join("film.substudio.json.tmp").exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn persists_shot_changes() {
+        let dir = temp_dir("shots");
+        let srt = dir.join("film.srt");
+        fs::write(&srt, "1\n00:00:01,000 --> 00:00:02,000\nHi\n").unwrap();
+        let project = Project {
+            shot_changes: vec![1.0, 5.5, 12.0],
+            ..Project::default()
+        };
+        write(&srt, &project).unwrap();
+        assert_eq!(read(&srt).unwrap().shot_changes, vec![1.0, 5.5, 12.0]);
         let _ = fs::remove_dir_all(&dir);
     }
 

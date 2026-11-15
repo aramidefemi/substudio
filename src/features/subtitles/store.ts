@@ -1,6 +1,7 @@
 import { applyPatches, enablePatches, produceWithPatches, type Draft, type Patch } from "immer";
 import { create } from "zustand";
 import { snapAllToSourceFrames } from "@/features/media/frameTimes";
+import { snapCueToShots } from "@/features/media/shotChanges";
 import { useMedia } from "@/features/media/store";
 import type { TimecodeMode, TimeFormat } from "./timecode";
 import {
@@ -268,7 +269,10 @@ export function markSaved(filePath: string) {
 }
 
 export function setVideo(videoPath: string | null) {
+  const prev = get().videoPath;
   set({ videoPath });
+  // Shot list is per open video; clear when the path changes (sidecar restore may refill).
+  if (prev !== videoPath) useMedia.setState({ shotChanges: null });
 }
 
 /** Known on-disk mtime (ms) for the open subtitle; used to detect external edits. */
@@ -684,13 +688,15 @@ export function setStartAndEndOfPreviousMinusGap(t: number) {
 export function extendSelectedToPrevious() {
   const i = primaryIndex();
   if (i < 0) return;
-  edit((doc) => extendToPrevious(doc.cues, i));
+  const shots = useMedia.getState().shotChanges;
+  edit((doc) => extendToPrevious(doc.cues, i, undefined, shots));
 }
 
 export function extendSelectedToNext() {
   const i = primaryIndex();
   if (i < 0) return;
-  edit((doc) => extendToNext(doc.cues, i));
+  const shots = useMedia.getState().shotChanges;
+  edit((doc) => extendToNext(doc.cues, i, undefined, shots));
 }
 
 export function extendPreviousEndToCurrent() {
@@ -710,6 +716,25 @@ export function snapAllTimesToFrames() {
   if (!cues.length) return;
   const times = useMedia.getState().frameTimes;
   edit((doc) => snapAllToSourceFrames(doc.cues, times, fps));
+}
+
+/** Snap selected cue edges to nearest shot changes (SYN-04). One undo step. */
+export function snapSelectedToShotChanges(maxDist = 0.5): number {
+  const shots = useMedia.getState().shotChanges;
+  if (!shots?.length) return 0;
+  const { selectedIds } = get();
+  if (!selectedIds.length) return 0;
+  const ids = new Set(selectedIds);
+  let n = 0;
+  edit((doc) => {
+    for (const c of doc.cues) {
+      if (!ids.has(c.id) || c.untimed) continue;
+      const before = { start: c.start, end: c.end };
+      snapCueToShots(c, shots, maxDist);
+      if (c.start !== before.start || c.end !== before.end) n++;
+    }
+  });
+  return n;
 }
 
 export function removeCue(id: string) {

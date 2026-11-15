@@ -65,6 +65,7 @@ export function Waveform() {
         selectedIds: new Set(selectedIds),
         hideText,
         peaks,
+        shotChanges: useMedia.getState().shotChanges,
         region: useRegion.getState().region,
         message: waveformMessage(status, progress, error, useSubtitles.getState().videoPath),
         tokens: canvasTokens(),
@@ -97,6 +98,7 @@ export function Waveform() {
       useSettings.subscribe(schedule),
       useWaveView.subscribe(schedule),
       usePeaks.subscribe(schedule),
+      useMedia.subscribe(schedule),
       useRegion.subscribe(schedule),
       onThemeChange(() => {
         invalidateCanvasTokens();

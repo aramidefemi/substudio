@@ -341,6 +341,34 @@ export const COMMANDS: Command[] = [
     group: "Sync",
     run: openChangeSpeed,
   },
+  {
+    id: "sync.shotChanges.generate",
+    label: "Generate shot changes",
+    group: "Sync",
+    run: a.syncGenerateShotChanges,
+  },
+  {
+    id: "sync.shotChanges.previous",
+    label: "Go to previous shot change",
+    group: "Sync",
+    keys: ["$mod+Alt+BracketLeft"],
+    scope: "outsideText",
+    run: a.syncShotChangePrevious,
+  },
+  {
+    id: "sync.shotChanges.next",
+    label: "Go to next shot change",
+    group: "Sync",
+    keys: ["$mod+Alt+BracketRight"],
+    scope: "outsideText",
+    run: a.syncShotChangeNext,
+  },
+  {
+    id: "sync.shotChanges.snap",
+    label: "Snap selected to shot changes",
+    group: "Sync",
+    run: a.syncSnapToShotChanges,
+  },
 
   /* ---------- Waveform ---------- */
   ...WAVEFORM_COMMANDS,

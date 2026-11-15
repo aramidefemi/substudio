@@ -189,6 +189,15 @@ describe("extend", () => {
     extendNextStartToSelected(b, 0);
     expect(b[1]!.start).toBeCloseTo(b[0]!.end + MIN_GAP);
   });
+
+  it("prefers a shot change in the gap when extending", () => {
+    const cues = [cue(0, 1), cue(3, 4), cue(6, 7)];
+    const shots = [1.5, 5.0];
+    extendToPrevious(cues, 1, MIN_GAP, shots);
+    expect(cues[1]!.start).toBe(1.5);
+    extendToNext(cues, 1, MIN_GAP, shots);
+    expect(cues[1]!.end).toBe(5.0);
+  });
 });
 
 describe("snapAllToFrames", () => {

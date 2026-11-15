@@ -59,6 +59,12 @@ export interface ProjectFile {
   ruleProfile?: unknown;
   /** Selected audio stream ordinal among audio tracks (PLY-05). */
   audioTrack?: number | null;
+  /**
+   * Shot-change timestamps in seconds (SYN-04).
+   * Persisted on the sidecar so reopen restores waveform markers without re-detect;
+   * ffmpeg disk cache still speeds up Generate.
+   */
+  shotChanges?: number[];
 }
 
 /** MED-02: source vs cached/encoded editing proxy for `<video>`. */
@@ -97,6 +103,9 @@ export const commands = {
   probeMedia: (path: string) => invoke<MediaInfo>("probe_media", { path }),
   /** Source frame timestamps as SSFT `ArrayBuffer` (MED-01). */
   mediaFrameTimes: (path: string) => invoke<ArrayBuffer>("media_frame_times", { path }),
+  /** Shot-change timestamps as SSSC `ArrayBuffer` (SYN-04). */
+  detectShotChanges: (path: string, threshold?: number) =>
+    invoke<ArrayBuffer>("detect_shot_changes", { path, threshold }),
   /**
    * Resolve playback path (MED-02). Plays source when WebKit-safe; otherwise
    * builds/reuses an H.264 editing proxy. Progress is 0–1 while encoding.

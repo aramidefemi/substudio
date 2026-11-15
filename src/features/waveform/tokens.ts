@@ -14,6 +14,8 @@ const NAMES = [
   "wave-region",
   "wave-region-edge",
   "playhead",
+  "shot-change",
+  "shot-change-zone",
 ] as const;
 
 export type CanvasTokens = Record<(typeof NAMES)[number], string>;

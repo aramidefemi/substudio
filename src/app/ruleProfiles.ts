@@ -13,12 +13,13 @@ export const useRuleProfilesDialog = create<{ open: boolean }>()(() => ({ open: 
 export const openRuleProfiles = () => useRuleProfilesDialog.setState({ open: true });
 export const closeRuleProfiles = () => useRuleProfilesDialog.setState({ open: false });
 
-/** The sidecar for the current document, including profile snapshot + audio track. */
+/** The sidecar for the current document, including profile snapshot + audio track + shots. */
 export const currentProject = () =>
   buildProject({
     ...useSubtitles.getState(),
     ruleProfile: getActiveProfile(),
     audioTrack: useMedia.getState().audioTrack,
+    shotChanges: useMedia.getState().shotChanges,
   });
 
 /**

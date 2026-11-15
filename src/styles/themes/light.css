@@ -46,4 +46,6 @@
   --wave-region: rgb(147 197 253 / 0.22);
   --wave-region-edge: #93c5fd;
   --playhead: #22d3ee;
+  --shot-change: #4ade80;
+  --shot-change-zone: rgb(74 222 128 / 0.18);
 }
