@@ -4,13 +4,15 @@ import { toast } from "sonner";
 import { create } from "zustand";
 import { burnedName, EXPORT_CANCELLED, percent, withMp4 } from "@/features/export/burn";
 import { codecLabel, EMBED_EXTENSIONS, embeddedName, withEmbedExt } from "@/features/export/embed";
-import { nextShot, previousShot } from "@/features/media/shotChanges";
+import { nextShot, previousShot, toggleShotAt } from "@/features/media/shotChanges";
 import {
   generateShotChanges,
   preferAudioTrack,
   restoreShotChanges,
+  setShotChanges,
   useMedia,
 } from "@/features/media/store";
+import { actionTime } from "@/features/waveform/context";
 import { clock } from "@/features/playback/clock";
 import { playNeighbour } from "@/features/playback/transport";
 import {
@@ -1038,6 +1040,22 @@ export function syncSnapToShotChanges() {
   }
   const n = snapSelectedToShotChanges();
   toast(n ? `Snapped ${n} line${n === 1 ? "" : "s"} to shot changes` : "Nothing to snap");
+}
+
+/** Add/remove a shot marker at the waveform right-click (or playhead). Persists to sidecar; not document-undoable (same as generate). */
+export async function syncToggleShotAt() {
+  const t = actionTime();
+  const { next, added } = toggleShotAt(useMedia.getState().shotChanges, t);
+  setShotChanges(next);
+  toast(added ? "Shot change added" : "Shot change removed");
+  const path = useSubtitles.getState().filePath;
+  if (path) {
+    try {
+      await commands.writeProject(path, currentProject());
+    } catch (err) {
+      console.warn("Could not write shot changes to sidecar", err);
+    }
+  }
 }
 
 /* ---------- text box ---------- */

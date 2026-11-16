@@ -101,3 +101,26 @@ export function normalizeShotList(raw: unknown): Float64Array | null {
   }
   return Float64Array.from(out);
 }
+
+/**
+ * Toggle a shot at `t`: remove the nearest marker within `eps`, otherwise insert
+ * `t` (sorted). Returns the next list (null when empty) and whether a marker was added.
+ */
+export function toggleShotAt(
+  shots: ArrayLike<number> | null | undefined,
+  t: number,
+  eps = GREEN_ZONE,
+): { next: Float64Array | null; added: boolean } {
+  const time = Math.round(Math.max(0, t) * 1000) / 1000;
+  const hit = nearestShot(shots, time, eps);
+  if (hit != null) {
+    const kept: number[] = [];
+    for (let i = 0; i < (shots?.length ?? 0); i++) {
+      const s = shots![i]!;
+      if (Math.abs(s - hit) > 1e-6) kept.push(s);
+    }
+    return { next: kept.length ? Float64Array.from(kept) : null, added: false };
+  }
+  const merged = [...(shots ? Array.from(shots as ArrayLike<number>) : []), time];
+  return { next: normalizeShotList(merged), added: true };
+}

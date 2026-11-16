@@ -376,6 +376,12 @@ export const COMMANDS: Command[] = [
     group: "Sync",
     run: a.syncSnapToShotChanges,
   },
+  {
+    id: "sync.shotChanges.toggleAt",
+    label: "Toggle shot change at position",
+    group: "Sync",
+    run: a.syncToggleShotAt,
+  },
 
   /* ---------- Waveform ---------- */
   ...WAVEFORM_COMMANDS,

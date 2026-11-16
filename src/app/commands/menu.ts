@@ -346,6 +346,7 @@ export const MENU: MenuGroup[] = [
       "sync.shotChanges.previous",
       "sync.shotChanges.next",
       "sync.shotChanges.snap",
+      "sync.shotChanges.toggleAt",
     ],
   },
   {
@@ -354,6 +355,7 @@ export const MENU: MenuGroup[] = [
       "waveform.toggleSpectrogram",
       "-",
       "waveform.createFromRegion",
+      "waveform.pasteIntoRegion",
       "waveform.clearRegion",
       "-",
       "waveform.seekSilenceBack",

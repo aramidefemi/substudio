@@ -40,14 +40,33 @@ export function regionFromDrag(anchor: number, t: number, gap: { lo: number; hi:
   return { start: ms(Math.min(a, b)), end: ms(Math.max(a, b)) };
 }
 
-/** Turn the marked region into an empty cue, select it and focus its text. False when there is no region. */
-export function createCueFromRegion(): boolean {
+/** Plain cue text from the clipboard (BOM/CRLF stripped; outer whitespace trimmed). */
+export function clipboardAsCueText(raw: string): string {
+  return raw
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .trim();
+}
+
+/** Turn the marked region into a cue (optional text), select it and focus its text. False when there is no region. */
+export function createCueFromRegion(text = ""): boolean {
   const { region } = useRegion.getState();
   if (!region) return false;
-  addCue(region.start, region.end);
+  addCue(region.start, region.end, text);
   setRegion(null);
   requestAnimationFrame(() => focusCueText());
   return true;
+}
+
+/**
+ * Paste clipboard plain text into the marked region as one timed cue (undoable).
+ * No region → false (menu disables; SE "Paste into marked region" needs a mark).
+ */
+export async function pasteClipboardIntoRegion(): Promise<boolean> {
+  if (!useRegion.getState().region) return false;
+  const text = clipboardAsCueText(await navigator.clipboard.readText());
+  return createCueFromRegion(text);
 }
 
 // A region belongs to one document: drop it when another file loads.

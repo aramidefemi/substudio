@@ -1,6 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { loadDocument, useSubtitles } from "@/features/subtitles/store";
-import { clearRegion, createCueFromRegion, gapAround, regionContains, regionFromDrag, setRegion, useRegion } from "./region";
+import {
+  clearRegion,
+  clipboardAsCueText,
+  createCueFromRegion,
+  gapAround,
+  pasteClipboardIntoRegion,
+  regionContains,
+  regionFromDrag,
+  setRegion,
+  useRegion,
+} from "./region";
 
 const cues = [
   { start: 1, end: 2 },
@@ -72,6 +82,42 @@ describe("createCueFromRegion", () => {
     ]);
     expect(s.selectedId).toBe(s.cues[1]!.id);
     expect(s.past).toHaveLength(1);
+    expect(useRegion.getState().region).toBeNull();
+  });
+
+  it("accepts optional text", () => {
+    setRegion({ start: 2.5, end: 3 });
+    expect(createCueFromRegion("Hello")).toBe(true);
+    expect(useSubtitles.getState().cues[1]!.text).toBe("Hello");
+  });
+});
+
+describe("clipboardAsCueText", () => {
+  it("strips BOM, CRLF, and outer whitespace", () => {
+    expect(clipboardAsCueText("\uFEFFhi\r\nthere\r\n")).toBe("hi\nthere");
+  });
+});
+
+describe("pasteClipboardIntoRegion", () => {
+  beforeEach(() => {
+    vi.stubGlobal("requestAnimationFrame", () => 0);
+    loadDocument([{ start: 1, end: 2, text: "a" }], null);
+    clearRegion();
+  });
+
+  it("is a no-op without a region", async () => {
+    expect(await pasteClipboardIntoRegion()).toBe(false);
+  });
+
+  it("creates a timed cue from clipboard plain text", async () => {
+    setRegion({ start: 3, end: 4 });
+    vi.stubGlobal("navigator", {
+      clipboard: { readText: async () => "  Line one\r\nLine two  " },
+    });
+    expect(await pasteClipboardIntoRegion()).toBe(true);
+    const cue = useSubtitles.getState().cues[1]!;
+    expect(cue).toMatchObject({ start: 3, end: 4, text: "Line one\nLine two" });
+    expect(useSubtitles.getState().past).toHaveLength(1);
     expect(useRegion.getState().region).toBeNull();
   });
 });

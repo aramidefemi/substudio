@@ -1,16 +1,31 @@
 import type { Command } from "@/app/commands/registry";
+import { toast } from "sonner";
 import { focusCueText } from "@/lib/dom";
 import { insertHere, splitHere } from "./context";
-import { clearRegion, createCueFromRegion } from "./region";
+import { clearRegion, createCueFromRegion, pasteClipboardIntoRegion } from "./region";
 import { guessTimesAction, seekSilenceAction } from "./speech";
 import { toggleWaveDisplay } from "./view";
 
 /** Enter outside text: a marked region becomes a cue; otherwise edit the selected cue's text. */
 export const enterOutsideText = () => createCueFromRegion() || focusCueText();
 
+async function pasteIntoRegionAction() {
+  try {
+    if (!(await pasteClipboardIntoRegion())) toast("Mark a region on the waveform first");
+  } catch (err) {
+    toast.error("Could not paste into region", { description: String(err) });
+  }
+}
+
 /** Waveform commands; spread into `COMMANDS` in `app/commands/definitions.ts`. */
 export const WAVEFORM_COMMANDS: Command[] = [
   { id: "waveform.createFromRegion", label: "Create subtitle from marked region", group: "Waveform", run: createCueFromRegion },
+  {
+    id: "waveform.pasteIntoRegion",
+    label: "Paste clipboard into marked region",
+    group: "Waveform",
+    run: pasteIntoRegionAction,
+  },
   // Position-aware: act where the waveform was right-clicked (the playhead from elsewhere).
   { id: "waveform.insertHere", label: "Insert subtitle at waveform position", group: "Waveform", hidden: true, run: insertHere },
   { id: "waveform.splitHere", label: "Split at waveform position", group: "Waveform", hidden: true, run: splitHere },

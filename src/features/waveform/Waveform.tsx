@@ -192,7 +192,7 @@ export function Waveform() {
               setPointerTime(t);
               setMenu({ target, hasRegion: !!useRegion.getState().region });
             }}
-            aria-label="Waveform timeline. Click to seek; ⇧-click sets the selected subtitle's start, ⌘-click its end. Drag a subtitle's edges to retime it, its middle to move it (⌥-drag an edge moves the neighbour too). Drag on empty space to mark a region; Enter or double-click inside it creates a subtitle, Escape clears it. Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom. Right-click for insert, split, merge and delete. Toggle spectrogram from the transport bar or Waveform menu."
+            aria-label="Waveform timeline. Click to seek; ⇧-click sets the selected subtitle's start, ⌘-click its end. Drag a subtitle's edges to retime it, its middle to move it (⌥-drag an edge moves the neighbour too). Drag on empty space to mark a region; Enter or double-click inside it creates a subtitle, Escape clears it. Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom. Right-click for paste into region, insert, split, guess times, seek silence, toggle shot change, merge and delete. Toggle spectrogram from the transport bar or Waveform menu."
             className="block size-full cursor-text touch-none outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset"
             onDoubleClick={(e) => {
               const w = e.currentTarget.clientWidth;

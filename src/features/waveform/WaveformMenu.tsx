@@ -38,15 +38,22 @@ export function WaveformMenu({ target, hasRegion }: { target: MenuTarget | null;
   return (
     // Keep focus where the command put it (e.g. the text box after inserting).
     <ContextMenuContent className="min-w-56" onCloseAutoFocus={(e) => e.preventDefault()}>
-      {hasRegion && (
-        <>
-          <Item id="waveform.createFromRegion" label="Create subtitle from marked region" />
-          <ContextMenuSeparator />
-        </>
-      )}
+      {hasRegion && <Item id="waveform.createFromRegion" label="Create subtitle from marked region" />}
+      <Item
+        id="waveform.pasteIntoRegion"
+        label="Paste clipboard into marked region"
+        disabled={!hasRegion}
+      />
+      <ContextMenuSeparator />
       <Item id="waveform.insertHere" label="Insert subtitle here" disabled={!target?.canInsert} />
       <Item id="waveform.splitHere" label="Split at this position" disabled={!target?.canSplit} />
+      <Item id="waveform.guessStart" label="Guess start from waveform" disabled={!onCue} />
+      <Item id="waveform.guessEnd" label="Guess end from waveform" disabled={!onCue} />
       <Item id="waveform.guessTimes" label="Guess start and end from waveform" disabled={!onCue} />
+      <ContextMenuSeparator />
+      <Item id="waveform.seekSilenceBack" label="Seek silence back" />
+      <Item id="waveform.seekSilenceForward" label="Seek silence forward" />
+      <Item id="sync.shotChanges.toggleAt" label="Toggle shot change here" />
       <ContextMenuSeparator />
       <Item id="edit.mergePrevious" label="Merge with previous" disabled={!target?.canMergePrevious} />
       <Item id="edit.mergeNext" label="Merge with next" disabled={!target?.canMergeNext} />

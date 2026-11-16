@@ -37,7 +37,8 @@ let pointerTime: number | null = null;
 export const setPointerTime = (t: number | null) => {
   pointerTime = t;
 };
-const actionTime = () => pointerTime ?? clock.time;
+/** Right-click time when a waveform menu command runs; otherwise the playhead. */
+export const actionTime = () => pointerTime ?? clock.time;
 
 /** Insert an empty cue at the waveform position (fitted before the next cue) and edit its text. */
 export function insertHere() {

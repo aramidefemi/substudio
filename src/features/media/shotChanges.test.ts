@@ -6,6 +6,7 @@ import {
   parseShotChanges,
   previousShot,
   snapCueToShots,
+  toggleShotAt,
 } from "./shotChanges";
 
 function encode(times: number[]): ArrayBuffer {
@@ -58,5 +59,23 @@ describe("normalizeShotList", () => {
   it("filters and sorts", () => {
     expect([...normalizeShotList([10, 1, NaN, -1, 1.00005])!]).toEqual([1, 10]);
     expect(normalizeShotList([])).toBeNull();
+  });
+});
+
+describe("toggleShotAt", () => {
+  it("inserts when nothing is nearby", () => {
+    const { next, added } = toggleShotAt([1, 10], 5, 0.08);
+    expect(added).toBe(true);
+    expect([...next!]).toEqual([1, 5, 10]);
+  });
+
+  it("removes the nearest shot within eps", () => {
+    const { next, added } = toggleShotAt([1, 5, 10], 5.04, 0.08);
+    expect(added).toBe(false);
+    expect([...next!]).toEqual([1, 10]);
+  });
+
+  it("clears to null when removing the last shot", () => {
+    expect(toggleShotAt([2], 2, 0.08)).toEqual({ next: null, added: false });
   });
 });
