@@ -62,3 +62,18 @@ cp ~/Movies/phone-vfr.mp4 test-media/vfr-phone/
 ```
 
 Do **not** `git add` large private files; `.gitignore` blocks media binaries under `test-media/**` while keeping READMEs, scripts, and `fixtures/`.
+
+## Corpus status (local)
+
+Critical folders are expected to hold private/local samples (gitignored). As of the last agent fill:
+
+| Folder | Status |
+|--------|--------|
+| `h264-mov/` | Local H.264 `.mov` |
+| `h264-mp4/` | Local H.264 `.mp4` (remux of a preview) |
+| `mkv/` | Local Matroska remux |
+| `multi-audio/` | Local dual-AAC sample |
+| `vfr-phone/` | Local VFR H.264 `.mov` (real irregular frame intervals) |
+| `long-80min/` | Still empty (soft; no ~80‑min clip on this machine) |
+
+Re-run `./scripts/check-media-corpus.sh` after adding or replacing clips. Prefer real Nollywood previews / phone VFR when available; remuxes are fine for container/track smoke.
