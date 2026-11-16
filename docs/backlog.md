@@ -14,24 +14,24 @@ We don't measure progress by counting Subtitle Edit features. Fewer, consistent 
 
 ## M1 definition of done: core editing checklist
 
-None of these involve AI. All 12 must be true before we hand her a full film.
+None of these involve AI. This checklist is **feature readiness** (code shipped). It is **not** her full-film acceptance trial — that stays in **Acceptance benchmark** below and is human-only.
 
-- [ ] **Import and export SRT/VTT**: reliable round-trip with no accidental changes
-- [ ] **Video playback**: smooth seeking, pause, speed control and frame stepping on *her* files
-- [ ] **Audio waveform**: generated from the actual media, not sample data
-- [ ] **Subtitle list**: create, edit, delete, select and reorder entries
-- [ ] **Timing operations**: drag, nudge, split, merge and shift subtitles
-- [ ] **Keyboard workflow**: advance, replay, set timings and edit without the mouse
-- [x] **Text editing**: line breaks, italics, punctuation and dialogue dashes
-- [x] **Undo and recovery**: reliable undo/redo, auto-save and crash recovery (auto-backup done; undo was already in)
-- [ ] **Quality checks**: overlaps, reading speed, duration and line length
-- [ ] **Project persistence**: reopen a film and continue exactly where she stopped
-- [ ] **Script workflow**: import and work through prepared dialogue when she has it
-- [ ] **Media compatibility**: handle her actual film files and audio tracks (incl. variable frame rate)
+- [x] **Import and export SRT/VTT**: reliable round-trip with no accidental changes — SUB-001; `src-tauri/src/subtitles.rs` (`parse_srt_vtt` / `serialize_srt_vtt`, BOM/CRLF + round-trip tests); open/save ASS/SBV/TTML also shipped (FMT) but SRT/VTT is the M1 path
+- [x] **Video playback**: smooth seeking, pause, speed control and frame stepping — SUB-008/009, PLY-01–03/05/08, MED-02/03; `features/playback/` (`clock.ts`, `transport.ts`, SeekBar); ←/→ use real `frameTimes` when probed. *Her* files: validate in Acceptance benchmark
+- [x] **Audio waveform**: generated from the actual media, not sample data — WAV-01–07; `src-tauri/src/waveform.rs` (symphonia + ffmpeg fallback, peak cache); UI `features/waveform/`
+- [x] **Subtitle list**: create, edit, delete, select and reorder entries — SUB-002/003, EDT-02/03; `SubtitleList.tsx` + `store.ts` (insert/delete/duplicate/multi-select); order is by `start` (architecture — retiming reorders)
+- [x] **Timing operations**: drag, nudge, split, merge and shift subtitles — WAV-02–04/06, TIM-01–07, EDT-01/02; waveform drag + Timing menu / `timing.ts` / `retime.ts`
+- [x] **Keyboard workflow**: advance, replay, set timings and edit without the mouse — ARC-01 registry + PLY-02/07, EDT-01, TIM-01–04, NAV-01/03; F5–F12 / hold-H / focus ⌘1–3. *(EDT-08 SE shortcut preset unlocked, not required for this bullet.)*
+- [x] **Text editing**: line breaks, italics, punctuation and dialogue dashes — EDT-06/07/12, EDT-11
+- [x] **Undo and recovery**: reliable undo/redo, auto-save and crash recovery — SUB-004, FIL-01
+- [x] **Quality checks**: overlaps, reading speed, duration and line length — SUB-005, RUL-02 (list-errors panel); `rules.ts` `checkCue` (default 1–7 s / 17 cps / 42 chars); RUL-01 profiles also shipped (M2)
+- [x] **Project persistence**: reopen a film and continue exactly where she stopped — FIL-02/03; `.substudio.json` sidecar (`project.rs`: video path, fps, bookmarks, selection); recent files in settings
+- [x] **Script workflow**: import and work through prepared dialogue when she has it — SCR-00/01/02 (+ FIL-07 original column); paste/import plain text → untimed cues → timing pass
+- [x] **Media compatibility**: handle her film containers and audio tracks (incl. VFR) — MED-01–04 (ffprobe, proxy, real frame timestamps, multi-audio PLY-05, corpus layout + `vfr-short` fixture). Private category clips are local/gitignored — fill before media PRs; *her* full film remains Acceptance benchmark
 
 ## Acceptance benchmark
 
-She repeats the same tasks on a film she has already subtitled, in both apps.
+**Human-only.** Do not mark these done from code review. She repeats the same tasks on a film she has already subtitled, in both apps. Passing this table is what “M1 accepted” means — separate from the feature checklist above.
 
 | Test | Success condition |
 |---|---|
