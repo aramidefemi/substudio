@@ -155,10 +155,6 @@ impl WordList {
     pub fn words(&self) -> Vec<String> {
         self.words.values().cloned().collect()
     }
-
-    pub fn len(&self) -> usize {
-        self.words.len()
-    }
 }
 
 /// Her names list and user dictionary.
@@ -169,20 +165,6 @@ pub struct UserLists {
 }
 
 impl UserLists {
-    pub fn list(&self, kind: ListKind) -> &WordList {
-        match kind {
-            ListKind::Names => &self.names,
-            ListKind::Dictionary => &self.dictionary,
-        }
-    }
-
-    pub fn list_mut(&mut self, kind: ListKind) -> &mut WordList {
-        match kind {
-            ListKind::Names => &mut self.names,
-            ListKind::Dictionary => &mut self.dictionary,
-        }
-    }
-
     /// In either list, directly or as a possessive ("Amaka's").
     pub fn accepts(&self, word: &str) -> bool {
         let has = |w: &str| self.names.contains(w) || self.dictionary.contains(w);
@@ -336,7 +318,7 @@ mod tests {
         assert!(names.add("  Tunde "));
         assert_eq!(names.words(), ["Amaka", "Tunde", "Ṣọlá"]);
         assert!(names.remove("tunde"));
-        assert_eq!(names.len(), 2);
+        assert_eq!(names.words().len(), 2);
         assert!(!names.add("   "));
     }
 
@@ -352,7 +334,7 @@ mod tests {
     fn lists_round_trip_on_disk() {
         let dir = std::env::temp_dir().join(format!("substudio-spell-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        assert_eq!(read_list(&dir, ListKind::Names).len(), 0, "missing file is empty");
+        assert!(read_list(&dir, ListKind::Names).words().is_empty(), "missing file is empty");
         write_list(&dir, ListKind::Names, &WordList::from_words(["Ṣọlá", "Amaka"])).unwrap();
         write_list(&dir, ListKind::Dictionary, &WordList::from_words(["oga"])).unwrap();
         let lists = read_lists(&dir);
@@ -360,7 +342,7 @@ mod tests {
         assert!(lists.dictionary.contains("Oga"));
         // A corrupt file is set aside, not lost.
         std::fs::write(dir.join("names.json"), b"{nope").unwrap();
-        assert_eq!(read_list(&dir, ListKind::Names).len(), 0);
+        assert!(read_list(&dir, ListKind::Names).words().is_empty());
         assert!(dir.join("names.json.bad").exists());
         let _ = std::fs::remove_dir_all(&dir);
     }
