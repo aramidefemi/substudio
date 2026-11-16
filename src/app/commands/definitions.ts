@@ -158,6 +158,7 @@ export const COMMANDS: Command[] = [
 
   /* ---------- Tools ---------- */
   { id: "tools.ruleProfiles", label: "Rule profiles…", group: "Tools", run: openRuleProfiles },
+  { id: "tools.shortcuts", label: "Keyboard shortcuts…", group: "Tools", run: a.openShortcuts },
   { id: "tools.fixCommon", label: "Fix common errors…", group: "Tools", run: a.openFixCommon },
   { id: "tools.beautify", label: "Beautify time codes…", group: "Tools", run: a.openBeautify },
   { id: "tools.spellCheck", label: "Spell check…", group: "Tools", run: a.openSpellCheck },

@@ -31,6 +31,7 @@ import { RemoveHiDialog } from "./RemoveHiDialog";
 import { ReplaceDialog } from "./ReplaceDialog";
 import { RestoreBackupDialog } from "./RestoreBackupDialog";
 import { RuleProfilesDialog } from "./RuleProfilesDialog";
+import { ShortcutsDialog } from "./ShortcutsDialog";
 import { SpellCheckDialog } from "./SpellCheckDialog";
 import { StatisticsDialog } from "./StatisticsDialog";
 import { ToolsDialog } from "./ToolsDialog";
@@ -104,6 +105,7 @@ export default function App() {
       <ChangeFrameRateDialog />
       <ChangeSpeedDialog />
       <RuleProfilesDialog />
+      <ShortcutsDialog />
       <CommandPalette />
       <RecentDialog />
       <EncodingDialog />

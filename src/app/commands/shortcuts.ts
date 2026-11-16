@@ -7,6 +7,12 @@ import { allCommands, type Command } from "./registry";
 /** Focus targets that use plain keys themselves (text, buttons, sliders, open lists and menus). */
 const KEY_OWNER_ROLES = '[role="slider"],[role="listbox"],[role="option"],[role="menu"],[role="menuitem"],[role="combobox"]';
 
+/** When true, page shortcuts stay quiet (shortcut capture in settings). */
+let suppressed = false;
+export const setShortcutsSuppressed = (value: boolean) => {
+  suppressed = value;
+};
+
 function ownsKeys(target: EventTarget | null): boolean {
   if (isEditable(target) || target instanceof HTMLButtonElement) return true;
   return target instanceof Element && target.closest(KEY_OWNER_ROLES) !== null;
@@ -32,6 +38,7 @@ export function bindShortcuts(target: Window = window): () => void {
         return;
       }
       map[key] = (e: KeyboardEvent) => {
+        if (suppressed) return;
         if (scope === "outsideText" && ownsKeys(e.target)) return;
         e.preventDefault();
         if (command.release) {

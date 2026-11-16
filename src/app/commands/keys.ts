@@ -54,6 +54,21 @@ export function toAccelerator(binding: string): string {
   return out.join("+");
 }
 
+const MOD_KEYS = new Set(["Control", "Shift", "Alt", "Meta"]);
+
+/**
+ * tinykeys binding from a keydown, or null for bare modifiers.
+ * Ctrl/Meta both become `$mod` so the same override works on Mac and Windows.
+ */
+export function bindingFromEvent(e: KeyboardEvent): string | null {
+  if (MOD_KEYS.has(e.key)) return null;
+  const mods: string[] = [];
+  if (e.metaKey || e.ctrlKey) mods.push("$mod");
+  if (e.altKey) mods.push("Alt");
+  if (e.shiftKey) mods.push("Shift");
+  return [...mods, e.code].join("+");
+}
+
 /** Human label: `⇧⌘S` on macOS, `Ctrl+Shift+S` elsewhere. */
 export function formatShortcut(binding: string, mac = isMac): string {
   const { mods, key } = split(binding);

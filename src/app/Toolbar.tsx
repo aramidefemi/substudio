@@ -228,6 +228,7 @@ export function Toolbar() {
             </DropdownMenuSubContent>
           </DropdownMenuSub>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => runCommand("tools.shortcuts")}>Keyboard shortcuts…</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => runCommand("view.privacy")}>
             Screen privacy{privacy !== "off" ? ` (${privacy})` : ""}…
           </DropdownMenuItem>

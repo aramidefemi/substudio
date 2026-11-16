@@ -32,16 +32,28 @@ export interface Command {
 }
 
 const commands = new Map<string, Command>();
+/** Substudio defaults captured at registration; `keys` on the command may be overridden. */
+const defaultKeys = new Map<string, string[] | undefined>();
 
 export function defineCommands(list: Command[]) {
   for (const c of list) {
     if (commands.has(c.id)) throw new Error(`Duplicate command id: ${c.id}`);
+    defaultKeys.set(c.id, c.keys ? [...c.keys] : undefined);
     commands.set(c.id, c);
   }
 }
 
 export const getCommand = (id: string) => commands.get(id);
 export const allCommands = () => [...commands.values()];
+export const getDefaultKeys = (id: string) => defaultKeys.get(id);
+
+/** Updates the live binding used by shortcuts, menu accelerators, and tooltips. */
+export function setCommandKeys(id: string, keys: string[] | undefined) {
+  const command = commands.get(id);
+  if (!command) return;
+  if (keys?.length) command.keys = keys;
+  else delete command.keys;
+}
 
 export function runCommand(id: string) {
   const command = commands.get(id);
@@ -63,4 +75,5 @@ export function commandTitle(id: string, label?: string): string {
 /** Test helper. */
 export function clearCommands() {
   commands.clear();
+  defaultKeys.clear();
 }

@@ -7,6 +7,7 @@ import { useSettings } from "@/features/settings/store";
 import { cueIndexAt, select, useSubtitles } from "@/features/subtitles/store";
 import { isEditable } from "@/lib/dom";
 import { fileName, inTauri } from "@/lib/tauri";
+import { applyKeyBindings } from "./commands/bindings";
 import { installNativeMenu } from "./commands/menu";
 import { runCommand } from "./commands/registry";
 import { bindShortcuts } from "./commands/shortcuts";
@@ -26,9 +27,23 @@ export function useAppEvents() {
   }, []);
 
   // Native menu bar from the command registry, plus page-level shortcuts.
+  // Rebind when shortcut overrides change (EDT-08).
   useEffect(() => {
+    let unbind = bindShortcuts();
     void installNativeMenu().catch((err) => console.error("Could not build the menu bar", err));
-    return bindShortcuts();
+    let prev = useSettings.getState().shortcutOverrides;
+    const unsub = useSettings.subscribe((s) => {
+      if (s.shortcutOverrides === prev) return;
+      prev = s.shortcutOverrides;
+      applyKeyBindings(prev);
+      unbind();
+      unbind = bindShortcuts();
+      void installNativeMenu().catch((err) => console.error("Could not build the menu bar", err));
+    });
+    return () => {
+      unsub();
+      unbind();
+    };
   }, []);
 
   useEffect(() => {

@@ -133,6 +133,7 @@ export const useUi = create<{
   removeHiOpen: boolean;
   customTextExportOpen: boolean;
   batchConvertOpen: boolean;
+  shortcutsOpen: boolean;
 }>()(() => ({
   findOpen: false,
   recentOpen: false,
@@ -155,6 +156,7 @@ export const useUi = create<{
   removeHiOpen: false,
   customTextExportOpen: false,
   batchConvertOpen: false,
+  shortcutsOpen: false,
 }));
 
 const SUBTITLE_FILTER = { name: "Subtitles", extensions: SUBTITLE_EXTENSIONS };
@@ -573,6 +575,7 @@ export const openMediaInfo = () => {
 };
 export const openHistory = () => useUi.setState({ historyOpen: true });
 export const openCommandPalette = () => useUi.setState({ paletteOpen: true });
+export const openShortcuts = () => useUi.setState({ shortcutsOpen: true });
 /* ---------- bookmarks (NAV-02) ---------- */
 
 export function toggleBookmarkAction() {

@@ -138,7 +138,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | EDT-05 | Go to line number (⌘L) | Go to line | S | ✅ ⌘L opens a small Go to line dialog (prefilled with the current line, Enter goes, past the end clamps to the last line); selects and seeks. Edit › Go To › Line Number… (⌘G stays with find next). |
 | EDT-06 | Italic/bold toggles (⌘I) rendered in list and preview | Text editor | S | ✅ Italic toggle (⌘I); list + preview render. Bold is M2. |
 | EDT-07 | Auto-break / unbreak lines; balance two lines | Auto-break, toggle break | M | ✅ Auto-break, unbreak, balance, toggle line break. |
-| EDT-08 | Configurable shortcuts, with an "Import from Subtitle Edit" preset | Shortcuts | M | Ship **Subtitle Edit default** shortcut preset + **editable shortcuts** in settings (not a custom personal list). Unlocked — see product decisions above. |
+| EDT-08 | Configurable shortcuts, with an "Import from Subtitle Edit" preset | Shortcuts | M | ✅ SE defaults preset + editable shortcuts in Tools › Keyboard shortcuts; overrides persist in settings store; reset to Substudio defaults. |
 
 ### Timing by keyboard (from SE's command set; this is how fast subtitlers actually work)
 

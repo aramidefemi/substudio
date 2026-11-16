@@ -366,6 +366,7 @@ export const MENU: MenuGroup[] = [
     submenu: "Tools",
     items: [
       "tools.ruleProfiles",
+      "tools.shortcuts",
       "-",
       "tools.fixCommon",
       "tools.beautify",

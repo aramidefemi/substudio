@@ -1,5 +1,6 @@
 import { load } from "@tauri-apps/plugin-store";
 import { create } from "zustand";
+import { normalizeOverrides, type ShortcutOverrides } from "@/app/commands/bindings";
 import { inTauri } from "@/lib/tauri";
 import {
   DEFAULT_PREVIEW,
@@ -51,6 +52,11 @@ export interface Settings {
   lastRuleProfileId: string;
   /** User custom-text export presets (FMT-03); starters live in code. */
   customTextPresets: CustomTextPreset[];
+  /**
+   * Per-command shortcut overrides (EDT-08). Absent → Substudio default;
+   * `[]` → unbound. Applied onto the command registry via `applyKeyBindings`.
+   */
+  shortcutOverrides: ShortcutOverrides;
 }
 
 const DEFAULTS: Settings = {
@@ -70,6 +76,7 @@ const DEFAULTS: Settings = {
   ruleProfiles: [],
   lastRuleProfileId: DEFAULT_PROFILE_ID,
   customTextPresets: [],
+  shortcutOverrides: {},
 };
 
 const RECENT_LIMIT = 12;
@@ -168,6 +175,12 @@ export function deleteCustomTextPreset(id: string) {
   }));
 }
 
+export const setShortcutOverrides = (shortcutOverrides: ShortcutOverrides) =>
+  useSettings.setState({ shortcutOverrides });
+
+/** Clear all overrides → Substudio defaults. */
+export const resetShortcuts = () => setShortcutOverrides({});
+
 export const ROW_HEIGHT: Record<Density, number> = { compact: 28, comfortable: 36 };
 
 /** Loads saved settings before first paint, then saves every change. */
@@ -185,6 +198,7 @@ export async function loadSettings() {
         ruleProfiles: normalizeProfiles(saved.ruleProfiles),
         lastRuleProfileId: typeof saved.lastRuleProfileId === "string" ? saved.lastRuleProfileId : DEFAULT_PROFILE_ID,
         customTextPresets: normalizePresets(saved.customTextPresets),
+        shortcutOverrides: normalizeOverrides(saved.shortcutOverrides),
       });
     }
     useSettings.subscribe((s) => void store.set("settings", s));

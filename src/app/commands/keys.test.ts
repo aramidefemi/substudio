@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatShortcut, toAccelerator } from "./keys";
+import { bindingFromEvent, formatShortcut, toAccelerator } from "./keys";
 
 describe("toAccelerator", () => {
   it("converts tinykeys bindings to Tauri accelerators", () => {
@@ -9,6 +9,21 @@ describe("toAccelerator", () => {
     expect(toAccelerator("$mod+Alt+Enter")).toBe("CmdOrCtrl+Alt+Return");
     expect(toAccelerator("Shift+F10")).toBe("Shift+F10");
     expect(toAccelerator("$mod+Shift+ArrowLeft")).toBe("CmdOrCtrl+Shift+Left");
+  });
+});
+
+describe("bindingFromEvent", () => {
+  it("builds tinykeys bindings with $mod for Ctrl/Meta", () => {
+    const event = {
+      key: "s",
+      code: "KeyS",
+      metaKey: true,
+      ctrlKey: false,
+      altKey: false,
+      shiftKey: true,
+    } as KeyboardEvent;
+    expect(bindingFromEvent(event)).toBe("$mod+Shift+KeyS");
+    expect(bindingFromEvent({ ...event, key: "Meta", code: "MetaLeft" } as KeyboardEvent)).toBeNull();
   });
 });
 
