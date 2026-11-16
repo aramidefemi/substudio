@@ -71,7 +71,7 @@ Critical folders are expected to hold private/local samples (gitignored). As of 
 |--------|--------|
 | `h264-mov/` | Local H.264 `.mov` |
 | `h264-mp4/` | Local H.264 `.mp4` (remux of a preview) |
-| `mkv/` | Local Matroska remux |
+| `mkv/` | Local Matroska remux + real Nollywood `.webm` preview |
 | `multi-audio/` | Local dual-AAC sample |
 | `vfr-phone/` | Local VFR H.264 `.mov` (real irregular frame intervals) |
 | `long-80min/` | Still empty (soft; no ~80‑min clip on this machine) |
