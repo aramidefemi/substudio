@@ -48,10 +48,21 @@ She keeps **Google Docs for both English and Yoruba**. She translates both ways 
 
 **Current SE workflow:** manual import, then fill translation line by line; also **paste a large block** from Google — SE inserts each text where a **line break = new dialogue/cue**, then she **expands/adjusts timeframes** to fit spoken duration.
 
+**Doc / AI keep-it-simple (confirmed):** the Google Doc is usually the **delivery language** — plain copy-paste of that text into Substudio. Do **not** overcomplicate: no heavy bilingual pairing or AI assumptions beyond SCR paste → untimed cues (SCR-01/02) and later optional AI on top. Cross-ref SCR section below.
+
 **Unlocked:**
 - **SCR-01 is M1** — paste/import plain text → split on line breaks → untimed cues; then timing pass (SCR-02 / TIM tools).
 - **FIL-07** (original/script column) is more relevant for the bilingual workflow; keep as a strong M1/M2 candidate once SCR-01 exists.
 - **AI order:** source language is **per film**, not fixed EN→YO. With script text available, AI-03 (per-line suggestions) can still lead without speech-to-text; direction and source lang follow the film.
+
+## Product decisions (EDT-08 / WAV-08 / FMT / M1 handoff)
+
+Confirmed with her — unlocks shortcut + spectrogram work; parks ambiguous / niche format work.
+
+- **EDT-08 unlocked:** not a heavy shortcut customizer. Ship an **Import Subtitle Edit defaults** preset (the stock SE map she’s used to), then let her **edit shortcuts afterward** in settings. Do **not** wait on a personal custom list.
+- **WAV-08 unlocked:** yes to spectrogram, but **not always on** — a **toggle button** between waveform and spectrogram views.
+- **FMT-02 complex NLE formats:** Final Cut Pro XML, Premiere markers, and DaVinci markers stay **explicitly parked / deferred** (SBV + TTML/DFXP already shipped).
+- **M1 handoff gaps:** feedback parked / discover later — too ambiguous to action now.
 
 ---
 
@@ -102,7 +113,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | WAV-05 | Zoom and scroll: wheel/trackpad pan, ⌘+wheel time zoom, ⌥+wheel amplitude, double-click centre, ⌥+double-click reset | Waveform mouse | S | ✅ |
 | WAV-06 | Waveform right-click menu: insert / delete / split here / merge before or after | Waveform context menu | M | ✅ shadcn ContextMenu: create from marked region, insert here, split at this position, merge with previous/next, delete. Right-click selects the cue under the pointer; items run registry commands (`waveform.insertHere` / `waveform.splitHere` act on the right-clicked time). |
 | WAV-07 | Snap to speech / seek silence; guess start/end from the waveform | Seek silence, guess times | M | ✅ Uses peaks from WAV-01. Silence = ≥200 ms below 15% of local loudness (90th percentile over ±3 s, 2% floor). Seek silence back/forward (⌥[ / ⌥]); guess start / end / both from the nearest speech onset/offset within 1 s, never crossing neighbours (⌥⇧[ / ⌥⇧], Waveform menu, right-click). |
-| WAV-08 | Spectrogram view (toggle) | Spectrogram | L | Later in M1, if she uses it. ❓ |
+| WAV-08 | Spectrogram view (toggle) | Spectrogram | L | Spectrogram view + **toggle button** with waveform (not always-on). Unlocked — see product decisions above. |
 
 ### Playback
 
@@ -127,7 +138,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | EDT-05 | Go to line number (⌘L) | Go to line | S | ✅ ⌘L opens a small Go to line dialog (prefilled with the current line, Enter goes, past the end clamps to the last line); selects and seeks. Edit › Go To › Line Number… (⌘G stays with find next). |
 | EDT-06 | Italic/bold toggles (⌘I) rendered in list and preview | Text editor | S | ✅ Italic toggle (⌘I); list + preview render. Bold is M2. |
 | EDT-07 | Auto-break / unbreak lines; balance two lines | Auto-break, toggle break | M | ✅ Auto-break, unbreak, balance, toggle line break. |
-| EDT-08 | Configurable shortcuts, with an "Import from Subtitle Edit" preset | Shortcuts | M | Her muscle memory is the selling point. ❓ Get her SE shortcut list. |
+| EDT-08 | Configurable shortcuts, with an "Import from Subtitle Edit" preset | Shortcuts | M | Ship **Subtitle Edit default** shortcut preset + **editable shortcuts** in settings (not a custom personal list). Unlocked — see product decisions above. |
 
 ### Timing by keyboard (from SE's command set; this is how fast subtitlers actually work)
 
@@ -209,7 +220,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | ID | Feature | SE reference | Size |
 |---|---|---|---|
 | FMT-01 | Advanced SubStation (ASS/SSA) read/write, basic styles | ASSA | L | ✅ Rust `formats/ass.rs`; open/save `.ass`/`.ssa`; basic styles (name, font, size, primary colour, bold/italic, alignment) in session state beside cues; dialogue `\N` + `{\i}`/`{\b}` ↔ newlines/HTML. Drawing/karaoke/font collector stay P. |
-| FMT-02 | TTML/DFXP, SBV, Final Cut Pro XML, Premiere/DaVinci markers | Formats | M each | 🟡 SBV+TTML/DFXP done; Final Cut Pro XML and Premiere/DaVinci markers deferred |
+| FMT-02 | TTML/DFXP, SBV, Final Cut Pro XML, Premiere/DaVinci markers | Formats | M each | 🟡 SBV+TTML/DFXP done; **Final Cut Pro XML and Premiere/DaVinci markers explicitly parked/deferred** (she confirmed complex NLE formats can wait) |
 | FMT-03 | Custom text export (templates) | Export custom text | M | ✅ Pure-TS templates (`{number}`, `{start}`/`{end}`/`{duration}`, `{text}`, `{lineN}`, `{style}`); preview + export; starter + saved presets in settings; File › Export custom text. |
 | DLV-01 | Burn subtitles into video (ffmpeg, hardware encode) | Burn-in | L | ✅ File › Burn subtitles into video…: cues (+ ASS styles) → temp ASS → libass `subtitles` filter → new `.mp4` (save dialog, never the source; `.partial` then rename). `h264_videotoolbox` (libx264 fallback if present), audio stream-copied when MP4-safe else AAC; `-copyts` + `-fps_mode passthrough` keep source timestamps. Progress toast over a Channel with Cancel. Needs an ffmpeg with libass (`fetch-ffmpeg.sh` now enables it; dev Homebrew build lacks it → clear error, integration test skips). |
 | DLV-02 | Embed subtitles as a track (mux) | Embed subtitles | M | ✅ File › Embed subtitles into video…: cues → temp SRT → ffmpeg stream-copies video/audio and adds one text track into a new file (save dialog, never the source; `.partial` then rename). `.mp4`/`.m4v`/`.mov` → `mov_text` (audio re-encoded to AAC only if the container can't hold it; HEVC tagged `hvc1`); `.mkv` → SRT, or ASS when the project has styles. Other containers are refused with a clear error. `-copyts` keeps source timestamps. Existing subtitle tracks in the source are not carried over; no language tag set yet. Shares the progress/cancel job runner (`ffmpeg_job.rs`) with burn-in; one export at a time, one `cancel_export`. |
@@ -221,6 +232,8 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 ## M4: AI (after the manual workflow is solid, per our decision)
 
 **Order (updated after SCR-00):** controlled per-line suggestions (AI-03) come first, because she stays in charge of every line. She has script text in Google Docs for **both** EN and YO; translation direction is **per film** (EN→YO or YO→EN), not fixed. With imported/pasted source lines (SCR-01), AI-03 can run without speech-to-text — suggestions translate **from that film’s source language** into the target. AI-02 (audio→draft) remains useful when there is no script or for spotting, but it is not a prerequisite for AI-03.
+
+**Doc paste stays simple:** the Google Doc is usually already the **delivery language**; treat it as copy-paste text into SCR-01 — don’t build heavy bilingual/AI assumptions into the import path.
 
 | ID | Feature | SE reference | Size |
 |---|---|---|---|
@@ -236,5 +249,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 ## Parked (not planned; SE has them, she likely doesn't need them)
 
 Image-subtitle OCR (Blu-ray/DVD/VobSub) · Burned-in subtitle OCR · DVD import · Blu-ray/DCP image exports · EBU STL/PAC/Cavena broadcast formats · Text-to-speech, voice cloning, dubbing · Background music generation · Video cut/remux/re-encode · Chapters editor · ASSA drawing, effects, karaoke, font embedding · Plugins · RTL language tools · 380-format coverage · Command-line converter (seconv) · Proxy/network settings · UI translations.
+
+**Also parked from recent research:** M1 handoff-gap feedback (too ambiguous — discover later) · FMT-02 Final Cut Pro XML / Premiere / DaVinci markers (explicitly deferred).
 
 Revisit when selling to a wider audience (Pidgin, Nigerian English creators, TikTok/short-form).
