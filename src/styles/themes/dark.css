@@ -34,6 +34,9 @@
   --waveform-a: #22c55e;
   --waveform-b: #eab308;
   --waveform-selected: #c4b5fd;
+  --spectrogram-low: #020617;
+  --spectrogram-mid: #22c55e;
+  --spectrogram-high: #fef08a;
   --cue-region: rgb(255 255 255 / 0.06);
   --cue-region-selected: rgb(139 92 246 / 0.35);
   --cue-edge: #3a4252;

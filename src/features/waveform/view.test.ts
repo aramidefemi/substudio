@@ -12,7 +12,7 @@ import {
 } from "./view";
 
 beforeEach(() => {
-  useWaveView.setState({ start: 0, pps: DEFAULT_PPS, amp: DEFAULT_AMP });
+  useWaveView.setState({ start: 0, pps: DEFAULT_PPS, amp: DEFAULT_AMP, display: "waveform" });
 });
 
 describe("setAmplitude", () => {

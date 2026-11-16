@@ -10,6 +10,7 @@ mod mux;
 mod project;
 mod proxy;
 mod shot_changes;
+mod spectrogram;
 mod spell_engine;
 mod spellcheck;
 mod subtitles;
@@ -319,6 +320,27 @@ async fn waveform_peaks(
     Ok(tauri::ipc::Response::new(bytes))
 }
 
+/// Spectrogram columns for a media file as raw bytes (`spectrogram::Spectrogram::to_bytes`),
+/// same decode path as peaks, cached separately. Progress (0–1) over `on_progress`.
+#[tauri::command]
+async fn waveform_spectrogram(
+    app: tauri::AppHandle,
+    path: String,
+    audio_track: Option<u32>,
+    on_progress: tauri::ipc::Channel<f32>,
+) -> Result<tauri::ipc::Response, String> {
+    let cache_dir = app.path().app_cache_dir().map_err(|e| e.to_string())?;
+    let track = audio_track.unwrap_or(0);
+    let bytes = tauri::async_runtime::spawn_blocking(move || {
+        spectrogram::load_or_compute(&path, &cache_dir, track, |p| {
+            let _ = on_progress.send(p);
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
 /// Rebuilds the menu bar from the frontend command registry.
 #[tauri::command]
 fn set_menu(app: tauri::AppHandle, spec: Vec<menu::MenuSpec>) -> Result<(), String> {
@@ -455,6 +477,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             set_menu,
             waveform_peaks,
+            waveform_spectrogram,
             read_subtitles,
             read_subtitles_detect,
             read_subtitles_encoded,

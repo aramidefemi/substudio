@@ -1,10 +1,19 @@
 import { create } from "zustand";
 
+export type WaveDisplay = "waveform" | "spectrogram";
+
 /** Visible window of the timeline: start time, horizontal zoom, vertical (amplitude) zoom. */
-export const useWaveView = create<{ start: number; pps: number; amp: number }>()(() => ({
+export const useWaveView = create<{
+  start: number;
+  pps: number;
+  amp: number;
+  /** Waveform ↔ spectrogram (WAV-08); session-only, not persisted. */
+  display: WaveDisplay;
+}>()(() => ({
   start: 0,
   pps: 120,
   amp: 1,
+  display: "waveform",
 }));
 
 export const DEFAULT_PPS = 120;
@@ -14,6 +23,16 @@ export const MAX_PPS = 600;
 export const DEFAULT_AMP = 1;
 export const MIN_AMP = 0.25;
 export const MAX_AMP = 4;
+
+export function setWaveDisplay(display: WaveDisplay) {
+  useWaveView.setState({ display });
+}
+
+export function toggleWaveDisplay() {
+  useWaveView.setState((s) => ({
+    display: s.display === "waveform" ? "spectrogram" : "waveform",
+  }));
+}
 
 export function setZoom(pps: number, anchorX = 0) {
   const { start, pps: old } = useWaveView.getState();

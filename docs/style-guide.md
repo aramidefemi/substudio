@@ -27,6 +27,7 @@ Themes live in `src/styles/themes/<id>.css` and are registered in `src/features/
 | `video-bg`, `preview-text`, `preview-box`, `preview-outline` | Video area and the subtitle drawn over it (box or outline style) |
 | `timeline-bg`, `timeline-fg`, `timeline-muted` | Waveform background, cue labels, ruler |
 | `waveform-a`, `waveform-b`, `waveform-selected` | Audio outside cues / inside cues / inside the selected cue |
+| `spectrogram-low`, `spectrogram-mid`, `spectrogram-high` | Spectrogram colormap (quiet → mid → hot) |
 | `cue-region`, `cue-region-selected`, `cue-edge`, `cue-edge-selected`, `cue-error` | Cue boxes on the waveform |
 | `wave-region`, `wave-region-edge` | Marked (not yet a cue) region on the waveform |
 | `playhead` | Playhead line |
@@ -50,6 +51,7 @@ The waveform is a canvas and reads these via `src/features/waveform/tokens.ts` (
 | cell-error-bg | `#FEE2E2` |
 | timeline-bg | `#252A34` |
 | waveform-a / waveform-b | `#22C55E` / `#EAB308` |
+| spectrogram-low / mid / high | `#0F172A` / `#22C55E` / `#FEF08A` |
 
 ## Typography
 

@@ -1,6 +1,6 @@
-import { Minus, Pause, Play, Plus, Repeat, SkipBack, SquarePlay, StepBack, StepForward } from "lucide-react";
+import { AudioLines, AudioWaveform, Minus, Pause, Play, Plus, Repeat, SkipBack, SquarePlay, StepBack, StepForward } from "lucide-react";
 import { addCueAtPlayhead } from "@/app/actions";
-import { commandTitle } from "@/app/commands/registry";
+import { commandTitle, runCommand } from "@/app/commands/registry";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
@@ -46,6 +46,7 @@ export function TransportBar() {
   const rate = usePlaybackRate();
   const looping = useLooping();
   const pps = useWaveView((s) => s.pps);
+  const display = useWaveView((s) => s.display);
   const index = useSubtitles(selectSelectedIndex);
   const count = useSubtitles((s) => s.cues.length);
   const timecode = useSubtitles((s) => s.timecode);
@@ -105,6 +106,16 @@ export function TransportBar() {
         <Plus />
       </IconButton>
       <span className="w-10 text-xs tabular-nums text-muted-foreground">{Math.round((pps / DEFAULT_PPS) * 100)}%</span>
+
+      <Separator orientation="vertical" className="mx-1 h-4" />
+
+      <IconButton
+        label={commandTitle("waveform.toggleSpectrogram")}
+        onClick={() => runCommand("waveform.toggleSpectrogram")}
+        pressed={display === "spectrogram"}
+      >
+        {display === "spectrogram" ? <AudioLines /> : <AudioWaveform />}
+      </IconButton>
 
       <Separator orientation="vertical" className="mx-1 h-4" />
 

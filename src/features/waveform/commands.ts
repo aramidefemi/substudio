@@ -3,6 +3,7 @@ import { focusCueText } from "@/lib/dom";
 import { insertHere, splitHere } from "./context";
 import { clearRegion, createCueFromRegion } from "./region";
 import { guessTimesAction, seekSilenceAction } from "./speech";
+import { toggleWaveDisplay } from "./view";
 
 /** Enter outside text: a marked region becomes a cue; otherwise edit the selected cue's text. */
 export const enterOutsideText = () => createCueFromRegion() || focusCueText();
@@ -20,4 +21,11 @@ export const WAVEFORM_COMMANDS: Command[] = [
   { id: "waveform.guessStart", label: "Guess start from waveform", group: "Waveform", keys: ["Alt+Shift+BracketLeft"], scope: "outsideText", run: () => guessTimesAction("start") },
   { id: "waveform.guessEnd", label: "Guess end from waveform", group: "Waveform", keys: ["Alt+Shift+BracketRight"], scope: "outsideText", run: () => guessTimesAction("end") },
   { id: "waveform.guessTimes", label: "Guess start and end from waveform", group: "Waveform", run: () => guessTimesAction("both") },
+  {
+    id: "waveform.toggleSpectrogram",
+    label: "Toggle spectrogram",
+    group: "Waveform",
+    keys: ["$mod+Shift+KeyW"],
+    run: toggleWaveDisplay,
+  },
 ];

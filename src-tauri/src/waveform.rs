@@ -3,6 +3,9 @@
 //! Decode order: Symphonia (incl. Opus via libopus) → ffmpeg PCM fallback.
 //! Peaks are the loudest sample per 10 ms bucket, cached on disk so reopening
 //! a film is instant. Sent to the frontend as raw bytes.
+//!
+//! `for_each_mono_frame` is the shared decode entry used by peaks and the
+//! spectrogram (WAV-08).
 
 use std::fs::{self, File};
 use std::hash::{DefaultHasher, Hash, Hasher};
@@ -93,8 +96,8 @@ impl PeakBuilder {
         }
     }
 
-    fn push_frame(&mut self, loudest: f32) {
-        self.bucket_max = self.bucket_max.max(loudest);
+    fn push_frame(&mut self, sample: f32) {
+        self.bucket_max = self.bucket_max.max(sample.abs());
         self.in_bucket += 1;
         if self.in_bucket == self.per_bucket {
             self.values.push(to_u8(self.bucket_max));
@@ -118,11 +121,31 @@ impl PeakBuilder {
 /// Decodes audio track `audio_track` (0-based among audio streams).
 /// `progress` gets 0.0–1.0 at most ~100 times.
 pub fn compute(path: &Path, audio_track: u32, mut progress: impl FnMut(f32)) -> Result<Peaks, String> {
-    match compute_symphonia(path, audio_track, &mut progress) {
-        Ok(peaks) => Ok(peaks),
+    let mut builder: Option<PeakBuilder> = None;
+    for_each_mono_frame(path, audio_track, FFMPEG_RATE, &mut progress, &mut |rate, sample| {
+        builder.get_or_insert_with(|| PeakBuilder::new(rate)).push_frame(sample);
+    })?;
+    let builder = builder.ok_or_else(|| "No audio samples decoded".to_string())?;
+    if builder.is_empty() {
+        return Err("No audio samples decoded".into());
+    }
+    Ok(builder.finish())
+}
+
+/// Shared mono PCM stream: Symphonia first, then ffmpeg at `ffmpeg_rate`.
+/// `on_sample(sample_rate, mono_frame)` — signed mono (mean of channels). Peaks take abs.
+pub(crate) fn for_each_mono_frame(
+    path: &Path,
+    audio_track: u32,
+    ffmpeg_rate: u32,
+    progress: &mut dyn FnMut(f32),
+    on_sample: &mut dyn FnMut(u32, f32),
+) -> Result<(), String> {
+    match decode_symphonia(path, audio_track, progress, on_sample) {
+        Ok(()) => Ok(()),
         Err(sym_err) if needs_ffmpeg_fallback(&sym_err) => {
-            match compute_ffmpeg(path, audio_track, &mut progress) {
-                Ok(peaks) => Ok(peaks),
+            match decode_ffmpeg(path, audio_track, ffmpeg_rate, progress, on_sample) {
+                Ok(()) => Ok(()),
                 Err(ff_err) => Err(combine_errors(&sym_err, &ff_err)),
             }
         }
@@ -162,7 +185,12 @@ fn matches_audio(track: &symphonia::core::formats::Track) -> bool {
     track.track_type() == Some(TrackType::Audio)
 }
 
-fn compute_symphonia(path: &Path, audio_track: u32, progress: &mut dyn FnMut(f32)) -> Result<Peaks, String> {
+fn decode_symphonia(
+    path: &Path,
+    audio_track: u32,
+    progress: &mut dyn FnMut(f32),
+    on_sample: &mut dyn FnMut(u32, f32),
+) -> Result<(), String> {
     let file = File::open(path).map_err(|e| e.to_string())?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
     let mut hint = Hint::new();
@@ -188,7 +216,6 @@ fn compute_symphonia(path: &Path, audio_track: u32, progress: &mut dyn FnMut(f32
         .make_audio_decoder(&params, &AudioDecoderOptions::default())
         .map_err(|e| format!("Unsupported audio codec ({codec_name}): {e}"))?;
 
-    let mut builder = PeakBuilder::new(sample_rate);
     let mut samples: Vec<f32> = Vec::new();
     let mut last_pct = -1i64;
 
@@ -213,8 +240,8 @@ fn compute_symphonia(path: &Path, audio_track: u32, progress: &mut dyn FnMut(f32
         decoded.copy_to_slice_interleaved(&mut samples);
 
         for frame in samples.chunks(channels) {
-            let loudest = frame.iter().fold(0f32, |m, s| m.max(s.abs()));
-            builder.push_frame(loudest);
+            let mono = frame.iter().sum::<f32>() / channels as f32;
+            on_sample(sample_rate, mono);
         }
 
         if let Some(total) = total.filter(|t| *t > 0) {
@@ -226,15 +253,21 @@ fn compute_symphonia(path: &Path, audio_track: u32, progress: &mut dyn FnMut(f32
         }
     }
     progress(1.0);
-    Ok(builder.finish())
+    Ok(())
 }
 
 fn find_ffmpeg() -> Option<PathBuf> {
     crate::ffmpeg_bin::find_ffmpeg()
 }
 
-/// Decode via ffmpeg to mono f32 PCM and build the same peak format.
-fn compute_ffmpeg(path: &Path, audio_track: u32, progress: &mut dyn FnMut(f32)) -> Result<Peaks, String> {
+/// Decode via ffmpeg to mono f32 PCM at `ffmpeg_rate`.
+fn decode_ffmpeg(
+    path: &Path,
+    audio_track: u32,
+    ffmpeg_rate: u32,
+    progress: &mut dyn FnMut(f32),
+    on_sample: &mut dyn FnMut(u32, f32),
+) -> Result<(), String> {
     let ffmpeg = find_ffmpeg().ok_or("ffmpeg not found on PATH")?;
     let map = format!("0:a:{audio_track}");
     let mut child = Command::new(&ffmpeg)
@@ -255,7 +288,7 @@ fn compute_ffmpeg(path: &Path, audio_track: u32, progress: &mut dyn FnMut(f32)) 
             "-ac",
             "1",
             "-ar",
-            &FFMPEG_RATE.to_string(),
+            &ffmpeg_rate.to_string(),
             "-f",
             "f32le",
             "pipe:1",
@@ -267,13 +300,13 @@ fn compute_ffmpeg(path: &Path, audio_track: u32, progress: &mut dyn FnMut(f32)) 
 
     let mut stdout = child.stdout.take().ok_or("ffmpeg stdout missing")?;
     let mut stderr = child.stderr.take();
-    let mut builder = PeakBuilder::new(FFMPEG_RATE);
     let mut buf = [0u8; 8192];
     let mut leftover = Vec::<u8>::new();
     let mut samples_seen: u64 = 0;
     let mut last_pct = -1i64;
+    let mut any = false;
     // Rough progress: unknown duration → tick by decoded minutes.
-    let tick_every = FFMPEG_RATE as u64 * 30; // every ~30s of audio
+    let tick_every = ffmpeg_rate as u64 * 30; // every ~30s of audio
 
     loop {
         let n = stdout.read(&mut buf).map_err(|e| e.to_string())?;
@@ -284,7 +317,8 @@ fn compute_ffmpeg(path: &Path, audio_track: u32, progress: &mut dyn FnMut(f32)) 
         let usable = leftover.len() / 4 * 4;
         for chunk in leftover[..usable].chunks_exact(4) {
             let sample = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-            builder.push_frame(sample.abs());
+            on_sample(ffmpeg_rate, sample);
+            any = true;
             samples_seen += 1;
             if samples_seen % tick_every == 0 {
                 let pct = ((samples_seen / tick_every) % 99) as i64;
@@ -310,11 +344,11 @@ fn compute_ffmpeg(path: &Path, audio_track: u32, progress: &mut dyn FnMut(f32)) 
             detail.to_string()
         });
     }
-    if builder.is_empty() {
+    if !any {
         return Err("ffmpeg produced no audio samples".into());
     }
     progress(1.0);
-    Ok(builder.finish())
+    Ok(())
 }
 
 /// Cache file for `path` + audio track, keyed by path, size, mtime and track.
@@ -355,11 +389,11 @@ pub fn load_or_compute(
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     /// 16-bit mono PCM WAV: `silent_s` of silence, then `loud_s` of a half-scale square wave.
-    fn write_wav(path: &Path, rate: u32, silent_s: u32, loud_s: u32) {
+    pub(crate) fn write_wav(path: &Path, rate: u32, silent_s: u32, loud_s: u32) {
         let n = (rate * (silent_s + loud_s)) as usize;
         let mut pcm = Vec::with_capacity(n * 2);
         for i in 0..n {
@@ -389,7 +423,34 @@ mod tests {
         fs::write(path, wav).unwrap();
     }
 
-    fn temp_dir(name: &str) -> PathBuf {
+    /// Sine-tone WAV for spectrogram checks.
+    pub(crate) fn write_sine_wav(path: &Path, rate: u32, secs: u32, freq: f32) {
+        let n = (rate * secs) as usize;
+        let mut pcm = Vec::with_capacity(n * 2);
+        for i in 0..n {
+            let t = i as f32 / rate as f32;
+            let s = (2.0 * std::f32::consts::PI * freq * t).sin();
+            let v = (s * 16000.0) as i16;
+            pcm.extend_from_slice(&v.to_le_bytes());
+        }
+        let mut wav = Vec::new();
+        wav.extend_from_slice(b"RIFF");
+        wav.extend_from_slice(&(36 + pcm.len() as u32).to_le_bytes());
+        wav.extend_from_slice(b"WAVEfmt ");
+        wav.extend_from_slice(&16u32.to_le_bytes());
+        wav.extend_from_slice(&1u16.to_le_bytes());
+        wav.extend_from_slice(&1u16.to_le_bytes());
+        wav.extend_from_slice(&rate.to_le_bytes());
+        wav.extend_from_slice(&(rate * 2).to_le_bytes());
+        wav.extend_from_slice(&2u16.to_le_bytes());
+        wav.extend_from_slice(&16u16.to_le_bytes());
+        wav.extend_from_slice(b"data");
+        wav.extend_from_slice(&(pcm.len() as u32).to_le_bytes());
+        wav.extend_from_slice(&pcm);
+        fs::write(path, wav).unwrap();
+    }
+
+    pub(crate) fn temp_dir(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("substudio-test-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
@@ -443,11 +504,18 @@ mod tests {
             eprintln!("skipping: ffmpeg not installed");
             return;
         };
+        // Force the ffmpeg path with a codec Symphonia won't open as peaks input:
+        // use decode_ffmpeg directly via an unsupported container… wav works via symphonia,
+        // so call decode_ffmpeg through a PeakBuilder manually.
         let dir = temp_dir("ffmpeg");
         let wav = dir.join("clip.wav");
         write_wav(&wav, 8000, 1, 1);
-        // Force the ffmpeg path directly.
-        let peaks = compute_ffmpeg(&wav, 0, &mut |_| {}).unwrap();
+        let mut builder: Option<PeakBuilder> = None;
+        decode_ffmpeg(&wav, 0, FFMPEG_RATE, &mut |_| {}, &mut |rate, s| {
+            builder.get_or_insert_with(|| PeakBuilder::new(rate)).push_frame(s);
+        })
+        .unwrap();
+        let peaks = builder.unwrap().finish();
         assert!((peaks.rate - 100.0).abs() < 1e-9);
         assert_eq!(peaks.values.len(), 200);
         assert!(peaks.values[..100].iter().all(|&v| v == 0));
@@ -486,8 +554,18 @@ mod tests {
             .status()
             .expect("spawn ffmpeg");
         assert!(status.success());
-        let t0 = compute_ffmpeg(&out, 0, &mut |_| {}).unwrap();
-        let t1 = compute_ffmpeg(&out, 1, &mut |_| {}).unwrap();
+        let mut b0: Option<PeakBuilder> = None;
+        decode_ffmpeg(&out, 0, FFMPEG_RATE, &mut |_| {}, &mut |rate, s| {
+            b0.get_or_insert_with(|| PeakBuilder::new(rate)).push_frame(s);
+        })
+        .unwrap();
+        let mut b1: Option<PeakBuilder> = None;
+        decode_ffmpeg(&out, 1, FFMPEG_RATE, &mut |_| {}, &mut |rate, s| {
+            b1.get_or_insert_with(|| PeakBuilder::new(rate)).push_frame(s);
+        })
+        .unwrap();
+        let t0 = b0.unwrap().finish();
+        let t1 = b1.unwrap().finish();
         assert!(!t0.values.is_empty());
         assert!(!t1.values.is_empty());
         // Different tones → different peak patterns (not bit-identical).

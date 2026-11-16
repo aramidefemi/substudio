@@ -30,6 +30,7 @@ symphonia = { version = "0.6.1", default-features = false, features = ["aac", "a
 symphonia-adapter-libopus = "0.3"
 chardetng = "1.0.0"
 unicode-normalization = "0.1.26"
+rustfft = "6.4.1"
 
 # Keep dev builds snappy while making dependencies (decoders, later) run fast.
 [profile.dev.package."*"]

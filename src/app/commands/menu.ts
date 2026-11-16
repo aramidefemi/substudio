@@ -351,6 +351,8 @@ export const MENU: MenuGroup[] = [
   {
     submenu: "Waveform",
     items: [
+      "waveform.toggleSpectrogram",
+      "-",
       "waveform.createFromRegion",
       "waveform.clearRegion",
       "-",

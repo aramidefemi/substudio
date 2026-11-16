@@ -12,19 +12,29 @@ import { useMedia } from "@/features/media/store";
 import { loadPeaks, usePeaks } from "./peaks";
 import { attachPointer } from "./pointer";
 import { createCueFromRegion, regionContains, useRegion } from "./region";
+import { loadSpectrogram, useSpectrogram } from "./spectrogram";
 import { WaveformMenu } from "./WaveformMenu";
 import { canvasTokens, invalidateCanvasTokens } from "./tokens";
 import { centerOn, resetZoom, scrollBy, setAmplitude, setZoom, useWaveView } from "./view";
 
 function waveformMessage(
-  status: string,
-  progress: number,
-  error: string | null,
+  display: "waveform" | "spectrogram",
+  peaksStatus: string,
+  peaksProgress: number,
+  peaksError: string | null,
+  specStatus: string,
+  specProgress: number,
+  specError: string | null,
   videoPath: string | null,
 ): string | null {
   if (!videoPath) return "Open a video to see its waveform";
-  if (status === "loading") return `Reading audio… ${Math.round(progress * 100)}%`;
-  if (status === "error") return `Couldn't read the audio: ${error ?? "unknown error"}`;
+  if (display === "spectrogram") {
+    if (specStatus === "loading") return `Reading spectrogram… ${Math.round(specProgress * 100)}%`;
+    if (specStatus === "error") return `Couldn't read the spectrogram: ${specError ?? "unknown error"}`;
+    return null;
+  }
+  if (peaksStatus === "loading") return `Reading audio… ${Math.round(peaksProgress * 100)}%`;
+  if (peaksStatus === "error") return `Couldn't read the audio: ${peaksError ?? "unknown error"}`;
   return null;
 }
 
@@ -51,9 +61,10 @@ export function Waveform() {
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const { cues, selectedIds } = useSubtitles.getState();
-      const { start, pps, amp } = useWaveView.getState();
+      const { start, pps, amp, display } = useWaveView.getState();
       const hideText = useSettings.getState().privacy === "text";
-      const { peaks, status, progress, error } = usePeaks.getState();
+      const peaks = usePeaks.getState();
+      const spec = useSpectrogram.getState();
       drawWaveform(ctx, {
         width: w,
         height: h,
@@ -64,10 +75,21 @@ export function Waveform() {
         cues,
         selectedIds: new Set(selectedIds),
         hideText,
-        peaks,
+        peaks: peaks.peaks,
+        spectrogram: spec.spectrogram,
+        display,
         shotChanges: useMedia.getState().shotChanges,
         region: useRegion.getState().region,
-        message: waveformMessage(status, progress, error, useSubtitles.getState().videoPath),
+        message: waveformMessage(
+          display,
+          peaks.status,
+          peaks.progress,
+          peaks.error,
+          spec.status,
+          spec.progress,
+          spec.error,
+          useSubtitles.getState().videoPath,
+        ),
         tokens: canvasTokens(),
         rules: getRules(),
       });
@@ -98,6 +120,7 @@ export function Waveform() {
       useSettings.subscribe(schedule),
       useWaveView.subscribe(schedule),
       usePeaks.subscribe(schedule),
+      useSpectrogram.subscribe(schedule),
       useMedia.subscribe(schedule),
       useRegion.subscribe(schedule),
       onThemeChange(() => {
@@ -118,7 +141,12 @@ export function Waveform() {
   // Decode (or fetch the cached) waveform whenever the video or audio track changes.
   useEffect(() => {
     const reload = () => {
-      void loadPeaks(useSubtitles.getState().videoPath, useMedia.getState().audioTrack);
+      const path = useSubtitles.getState().videoPath;
+      const track = useMedia.getState().audioTrack;
+      void loadPeaks(path, track);
+      if (useWaveView.getState().display === "spectrogram") {
+        void loadSpectrogram(path, track);
+      }
     };
     reload();
     const unsubs = [
@@ -127,6 +155,11 @@ export function Waveform() {
       }),
       useMedia.subscribe((s, prev) => {
         if (s.audioTrack !== prev.audioTrack) reload();
+      }),
+      useWaveView.subscribe((s, prev) => {
+        if (s.display === "spectrogram" && s.display !== prev.display) {
+          void loadSpectrogram(useSubtitles.getState().videoPath, useMedia.getState().audioTrack);
+        }
       }),
     ];
     return () => unsubs.forEach((u) => u());
@@ -159,7 +192,7 @@ export function Waveform() {
               setPointerTime(t);
               setMenu({ target, hasRegion: !!useRegion.getState().region });
             }}
-            aria-label="Waveform timeline. Click to seek; ⇧-click sets the selected subtitle's start, ⌘-click its end. Drag a subtitle's edges to retime it, its middle to move it (⌥-drag an edge moves the neighbour too). Drag on empty space to mark a region; Enter or double-click inside it creates a subtitle, Escape clears it. Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom. Right-click for insert, split, merge and delete."
+            aria-label="Waveform timeline. Click to seek; ⇧-click sets the selected subtitle's start, ⌘-click its end. Drag a subtitle's edges to retime it, its middle to move it (⌥-drag an edge moves the neighbour too). Drag on empty space to mark a region; Enter or double-click inside it creates a subtitle, Escape clears it. Scroll to pan, ⌘-scroll to zoom time, ⌥-scroll to zoom amplitude. Double-click to centre; ⌥-double-click to reset zoom. Right-click for insert, split, merge and delete. Toggle spectrogram from the transport bar or Waveform menu."
             className="block size-full cursor-text touch-none outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset"
             onDoubleClick={(e) => {
               const w = e.currentTarget.clientWidth;
@@ -174,7 +207,7 @@ export function Waveform() {
               centerOn(timeAt(e.clientX), w);
             }}
             onWheel={(e) => {
-              // ⌥+wheel: amplitude; ⌘/Ctrl+wheel: time zoom; else pan.
+              // ⌥+wheel: amplitude / spectrogram contrast; ⌘/Ctrl+wheel: time zoom; else pan.
               if (e.altKey) {
                 e.preventDefault();
                 setAmplitude(useWaveView.getState().amp * (e.deltaY < 0 ? 1.15 : 1 / 1.15));

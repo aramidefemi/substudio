@@ -113,7 +113,7 @@ Must-haves, from what her recording shows her doing. **Critical path:** ARC-01 �
 | WAV-05 | Zoom and scroll: wheel/trackpad pan, ⌘+wheel time zoom, ⌥+wheel amplitude, double-click centre, ⌥+double-click reset | Waveform mouse | S | ✅ |
 | WAV-06 | Waveform right-click menu: insert / delete / split here / merge before or after | Waveform context menu | M | ✅ shadcn ContextMenu: create from marked region, insert here, split at this position, merge with previous/next, delete. Right-click selects the cue under the pointer; items run registry commands (`waveform.insertHere` / `waveform.splitHere` act on the right-clicked time). |
 | WAV-07 | Snap to speech / seek silence; guess start/end from the waveform | Seek silence, guess times | M | ✅ Uses peaks from WAV-01. Silence = ≥200 ms below 15% of local loudness (90th percentile over ±3 s, 2% floor). Seek silence back/forward (⌥[ / ⌥]); guess start / end / both from the nearest speech onset/offset within 1 s, never crossing neighbours (⌥⇧[ / ⌥⇧], Waveform menu, right-click). |
-| WAV-08 | Spectrogram view (toggle) | Spectrogram | L | Spectrogram view + **toggle button** with waveform (not always-on). Unlocked — see product decisions above. |
+| WAV-08 | Spectrogram view (toggle) | Spectrogram | L | ✅ Toggle (transport button + Waveform › Toggle spectrogram / ⌘⇧W). Same Symphonia→ffmpeg mono decode as WAV-01; STFT cached as `.sspc`. Canvas draw via tokens (`spectrogram-low/mid/high`); cue drag/seek/zoom unchanged; ⌥-scroll is contrast in spectrogram mode. Lazy-loads on first toggle. |
 
 ### Playback
 
