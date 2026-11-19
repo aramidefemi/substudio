@@ -7,6 +7,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BIN="$ROOT/src-tauri/binaries"
 TRIPLE="${1:-$(rustc --print host-tuple 2>/dev/null || echo aarch64-apple-darwin)}"
+# Pinned so release builds are reproducible. Override with FFMPEG_REF=<tag>.
+FFMPEG_REF="${FFMPEG_REF:-n8.1.3}"
+# Oldest macOS the shipped binaries run on (matches bundle.macOS.minimumSystemVersion).
+export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-11.0}"
 mkdir -p "$BIN"
 
 need() {
@@ -26,14 +30,23 @@ fi
 SCRATCH="$ROOT/scratchpad/ffmpeg-build"
 mkdir -p "$SCRATCH"
 
-build_lgpl_ffprobe() {
-  local src="$SCRATCH/ffmpeg-src"
+clone_ffmpeg() {
+  local src="$SCRATCH/ffmpeg-src-$FFMPEG_REF"
   if [[ ! -d "$src/.git" ]]; then
-    git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git "$src"
+    git clone --depth 1 --branch "$FFMPEG_REF" https://git.ffmpeg.org/ffmpeg.git "$src" >&2
   fi
+  echo "$src"
+}
+
+build_lgpl_ffprobe() {
+  local src
+  src="$(clone_ffmpeg)"
   (
     cd "$src"
+    make distclean >/dev/null 2>&1 || true
     ./configure \
+      --extra-cflags="-mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET" \
+      --extra-ldflags="-mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET" \
       --disable-gpl --disable-nonfree --disable-debug --disable-doc \
       --disable-ffplay --disable-ffmpeg --enable-ffprobe \
       --disable-network --disable-devices --disable-autodetect \
@@ -54,12 +67,14 @@ build_lgpl_ffprobe() {
 }
 
 build_lgpl_ffmpeg() {
-  local src="$SCRATCH/ffmpeg-src"
-  if [[ ! -d "$src/.git" ]]; then
-    git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git "$src"
-  fi
+  local src
+  src="$(clone_ffmpeg)"
+  # libass + freetype/fribidi/harfbuzz linked statically, so the sidecar never
+  # needs Homebrew dylibs on the user's Mac (ISC/FTL/LGPL/MIT: LGPL-compatible).
+  local deps="$SCRATCH/libass-static-$TRIPLE"
+  "$ROOT/scripts/build-libass-static.sh" "$deps"
   # MED-02: AAC + MP4 for editing proxies; on macOS also VideoToolbox H.264 (system framework, not GPL).
-  # DLV-01 burn-in needs the libass `subtitles` filter (ISC; needs `brew install libass pkg-config`).
+  # DLV-01 burn-in needs the libass `subtitles` filter (built statically by build-libass-static.sh; needs meson + ninja + pkg-config).
   # Waveform PCM fallback still uses pcm_f32le / wav / null. Dev can fall back to PATH ffmpeg.
   local encoders="pcm_f32le,aac"
   local muxers="null,wav,mp4"
@@ -68,14 +83,20 @@ build_lgpl_ffmpeg() {
     Darwin)
       encoders+=",h264_videotoolbox"
       vt_flags=(
-        --enable-hwaccel=videotoolbox
+        --enable-videotoolbox --enable-hwaccel=h264_videotoolbox,hevc_videotoolbox
         --extra-ldflags="-framework VideoToolbox -framework CoreMedia -framework CoreVideo -framework CoreFoundation"
       )
       ;;
   esac
   (
     cd "$src"
+    make distclean >/dev/null 2>&1 || true
+    PKG_CONFIG_PATH="$deps/lib/pkgconfig" PKG_CONFIG_LIBDIR="$deps/lib/pkgconfig" \
     ./configure \
+      --pkg-config-flags=--static \
+      --extra-cflags="-mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET" \
+      --extra-ldflags="-mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET" \
+      --extra-libs=-lc++ \
       --disable-gpl --disable-nonfree --disable-debug --disable-doc \
       --disable-ffplay --enable-ffmpeg --disable-ffprobe \
       --disable-network --disable-devices --disable-autodetect \

@@ -20,6 +20,7 @@ pnpm check        # typecheck + eslint + vitest + cargo test, run before calling
 pnpm test         # vitest (src/**/*.test.ts)
 pnpm test:rust    # cargo tests in src-tauri
 pnpm tauri build  # release .app/.dmg (unsigned/local)
+pnpm release x.y.z --push  # version + tag; CI builds + publishes the DMGs (docs/releasing.md)
 pnpm release:macos  # signed+notarised (needs Apple env — docs/macos-release.md)
 ```
 
@@ -42,7 +43,8 @@ src-tauri/src/
   lib.rs          commands + plugin setup
   menu.rs         builds the native menu bar from the spec the frontend sends (`set_menu`)
   subtitles.rs    SRT/VTT parse + serialize (with tests)
-docs/             style-guide.md, backlog.md (roadmap with IDs), subtitle-edit-features.md (SE5 feature reference), mockups/
+site/             landing page (plain HTML/CSS, GitHub Pages via .github/workflows/pages.yml)
+docs/             releasing.md, style-guide.md, backlog.md (roadmap with IDs), subtitle-edit-features.md (SE5 feature reference), mockups/
 test-media/      MED-04 corpus: README checklist; private clips gitignored; ./scripts/check-media-corpus.sh
 ```
 

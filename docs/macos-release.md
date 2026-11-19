@@ -1,5 +1,7 @@
 # macOS signed + notarised releases (DLV-04)
 
+> Day-to-day public releases (version tags, CI DMGs, website) are in [`releasing.md`](releasing.md). This page is only about adding Apple Developer ID signing + notarisation on top.
+
 Ship a Developer ID–signed `.app` / `.dmg` that Gatekeeper accepts. Auto-update is documented here but **not wired** until a public update endpoint and signing keys exist.
 
 ## What you need (Apple Developer)

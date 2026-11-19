@@ -19,7 +19,7 @@ Ship **LGPL** builds only (`--disable-gpl --disable-nonfree`). Generate them wit
 
 That script builds a minimal LGPL ffprobe/ffmpeg from ffmpeg.org source into this folder. Binaries are gitignored — run the script once per machine (or in CI) before `pnpm tauri build`.
 
-Burn-in checks for the `subtitles` filter at run time and says so if the build lacks it (e.g. a Homebrew ffmpeg without libass). Delete an old `ffmpeg-<triple>` and re-run the script to rebuild with libass.
+libass (and freetype, fribidi, harfbuzz) are linked **statically** (`scripts/build-libass-static.sh`), so the binaries only depend on macOS system libraries and run on Macs without Homebrew. `scripts/check-sidecars.sh` verifies that; release CI runs it. Burn-in still checks for the `subtitles` filter at run time and says so if a build lacks it. Delete an old `ffmpeg-<triple>` and re-run the script to rebuild.
 
 Verify:
 

@@ -36,6 +36,10 @@ pnpm check    # typecheck, lint, frontend + Rust tests
 
 See `CLAUDE.md` for architecture and conventions, and `docs/style-guide.md` for the design system.
 
-## Releases (macOS)
+## Download
 
-Signed/notarised builds: see [`docs/macos-release.md`](docs/macos-release.md) and `pnpm release:macos`.
+Get the latest Mac build from the [website](https://aramidefemi.github.io/substudio/) or the [releases page](https://github.com/aramidefemi/substudio/releases/latest).
+
+## Releasing
+
+`pnpm release x.y.z --push` tags a version and CI builds and publishes the DMGs. See [`docs/releasing.md`](docs/releasing.md). Signing and notarisation (not set up yet): [`docs/macos-release.md`](docs/macos-release.md).

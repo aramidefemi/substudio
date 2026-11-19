@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Substudio: a subtitle editor for whole films</title>
+    <meta
+      name="description"
+      content="A fast, keyboard-first subtitle editor for Mac, built alongside a Nollywood subtitler who translates Yoruba films into English. Private by default."
+    />
+    <meta property="og:title" content="Substudio: a subtitle editor for whole films" />
+    <meta
+      property="og:description"
+      content="Built alongside a Nollywood subtitler who translates Yoruba films into English. Fast, keyboard-first, private by default."
+    />
+    <meta name="theme-color" content="#7C3AED" />
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="wrap nav-inner">
+        <a class="brand" href="#top" aria-label="Substudio home">
+          <img src="assets/icon.svg" alt="" width="24" height="24" />
+          <span>Substudio</span>
+        </a>
+        <nav aria-label="Sections">
+          <a href="#story">Story</a>
+          <a href="#direction">Direction</a>
+          <a href="#download" class="nav-cta">Download</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero wrap">
+        <p class="eyebrow"><span class="dot" aria-hidden="true"></span> Early preview for Mac</p>
+        <h1>A subtitle editor for whole films.</h1>
+        <p class="lead">
+          Built alongside a Nollywood subtitler who translates Yoruba films into English, one
+          1,100-line film at a time. Fast, keyboard-first, and private: the film never leaves your
+          Mac.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#download">Download for Mac</a>
+          <a class="btn btn-ghost" href="#story">Why we built it</a>
+        </div>
+        <p class="meta"><span data-version>Preview</span> · macOS 11 or later · Free</p>
+
+        <figure class="editor" aria-label="Illustration of the Substudio editor: video with an English subtitle, the subtitle list, and the waveform">
+          <div class="editor-top">
+            <div class="video">
+              <div class="video-frame">
+                <p class="caption">Welcome home. Are you well?</p>
+              </div>
+              <div class="video-bar">
+                <span class="tc">00:41:12:04</span>
+                <span class="progress"><span></span></span>
+                <span class="tc muted">01:52:30:00</span>
+              </div>
+            </div>
+            <ol class="cues" aria-hidden="true">
+              <li><span class="n">612</span><span class="tc">00:41:08:15</span><span class="t">Where were you all night?</span></li>
+              <li><span class="n">613</span><span class="tc">00:41:10:02</span><span class="t">Mama, it's not what you think.</span></li>
+              <li class="sel"><span class="n">614</span><span class="tc">00:41:12:04</span><span class="t">Welcome home. Are you well?</span></li>
+              <li><span class="n">615</span><span class="tc">00:41:14:20</span><span class="t">I am well, by God's grace.</span></li>
+              <li class="err"><span class="n">616</span><span class="tc">00:41:15:06</span><span class="t">Then sit. We need to talk about your father's house before the elders arrive.</span><span class="flag" title="Reading speed above 17 characters per second">!</span></li>
+              <li><span class="n">617</span><span class="tc">00:41:19:11</span><span class="t">Now? Tonight?</span></li>
+            </ol>
+          </div>
+          <div class="wave" aria-hidden="true">
+            <svg viewBox="0 0 1000 120" preserveAspectRatio="none" class="wave-svg"></svg>
+            <div class="cue-box" style="left: 6%; width: 18%"><span>Mama, it's not what you think.</span></div>
+            <div class="cue-box sel" style="left: 27%; width: 21%"><span>Welcome home. Are you well?</span></div>
+            <div class="cue-box" style="left: 51%; width: 15%"><span>I am well, by God's grace.</span></div>
+            <div class="cue-box err" style="left: 67.5%; width: 12%"><span>Then sit. We need to…</span></div>
+            <div class="playhead" style="left: 36%"></div>
+          </div>
+        </figure>
+      </section>
+
+      <section id="story" class="story wrap narrow">
+        <p class="kicker">Why we built it</p>
+        <h2>It started by watching<br /><span class="soft">one person work.</span></h2>
+        <p>
+          Substudio began with a friend who subtitles Nollywood films for a living, mostly Yoruba
+          films translated into English. She listens to every line of dialogue, translates it, and
+          times it to the frame. A single film can run past a thousand subtitles.
+        </p>
+        <p>
+          She does it in Subtitle Edit, an excellent open-source tool with decades of work behind
+          it. But watching her screen, we saw how much of a long film is spent on the same few
+          motions: set the start, set the end, nudge, play it again, fix the line, move on. Every
+          extra click is multiplied by a thousand.
+        </p>
+        <p>
+          AI hasn't solved this either. Yoruba is rich in proverbs, humour, tone and context that
+          speech and translation models still flatten. Throwing a language model at a film doesn't
+          produce subtitles a professional would put her name to.
+        </p>
+        <blockquote>
+          So we didn't start with another AI translator. We started with the editor, because it has
+          to be genuinely good without AI.
+        </blockquote>
+        <p>
+          She shares recordings of how she works, tells us what gets in her way, and tests every
+          build. Substudio grows from that, not from guesses about what a subtitle editor should be.
+        </p>
+      </section>
+
+      <section class="principles wrap">
+        <p class="kicker">What it's for</p>
+        <h2>Not the editor with the most features.<br /><span class="soft">The best one for long films.</span></h2>
+        <div class="grid">
+          <article>
+            <h3>Built for the whole film</h3>
+            <p>
+              Two hours of audio and 1,000+ lines. The list, the waveform and the video stay fast
+              from the first line to the last.
+            </p>
+          </article>
+          <article>
+            <h3>Hands stay on the keyboard</h3>
+            <p>
+              Every action has a shortcut, with a Subtitle Edit preset so years of muscle memory
+              carry over. ⌘⇧K finds anything else.
+            </p>
+          </article>
+          <article>
+            <h3>Timed to the frame</h3>
+            <p>
+              Timecodes in frames at 25 fps by default. Stepping and snapping use the film's real
+              frame times, so timing holds on any file.
+            </p>
+          </article>
+          <article>
+            <h3>Private by default</h3>
+            <p>
+              The films are unreleased. Everything runs on your Mac and nothing is uploaded, ever,
+              without asking you first.
+            </p>
+          </article>
+          <article>
+            <h3>Yoruba is first-class</h3>
+            <p>
+              Tone marks and dotted letters (ẹ̀, ọ́, ṣ) render correctly everywhere, and spell check
+              learns your names and places.
+            </p>
+          </article>
+          <article>
+            <h3>The tools she already uses</h3>
+            <p>
+              Waveform timing, hold-to-time, script import from a Google Doc, quality checks,
+              burn-in and SRT export. The familiar workflow, with less friction.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="direction" class="direction wrap narrow">
+        <p class="kicker">Where it's going</p>
+        <h2>The editor first.<br /><span class="soft">Then help that respects the craft.</span></h2>
+        <ol class="road">
+          <li>
+            <span class="when now">Now</span>
+            <div>
+              <h3>A complete manual workflow</h3>
+              <p>
+                Everything needed to subtitle a full film without the mouse getting in the way.
+                This preview is that editor.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="when">Next</span>
+            <div>
+              <h3>A whole film, by choice</h3>
+              <p>
+                The real test: she subtitles an entire film in Substudio because she wants to, not
+                because we asked. Every rough edge she hits comes first.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="when">Later</span>
+            <div>
+              <h3>Drafts you correct, not answers you accept</h3>
+              <p>
+                Yoruba-to-English drafts and translation memory, shaped by years of real subtitling
+                work. AI proposes, the subtitler decides, and the waveform stays where the final
+                word is set.
+              </p>
+            </div>
+          </li>
+        </ol>
+        <p class="aside">
+          It starts with one Nollywood subtitler. We hope it becomes useful to subtitlers,
+          translators and filmmakers working in every language.
+        </p>
+      </section>
+
+      <section id="download" class="download wrap">
+        <p class="kicker">Download</p>
+        <h2>Try the preview.</h2>
+        <p class="sub"><span data-version>Latest preview</span> · macOS 11 or later · Free</p>
+        <div class="dl-grid">
+          <a class="dl" href="https://github.com/aramidefemi/substudio/releases/latest/download/Substudio-mac-apple-silicon.dmg">
+            <span class="dl-title">Apple Silicon</span>
+            <span class="dl-sub">M1, M2, M3, M4 Macs</span>
+            <span class="btn btn-primary">Download .dmg</span>
+          </a>
+          <a class="dl" href="https://github.com/aramidefemi/substudio/releases/latest/download/Substudio-mac-intel.dmg">
+            <span class="dl-title">Intel</span>
+            <span class="dl-sub">Older Macs with an Intel chip</span>
+            <span class="btn btn-outline">Download .dmg</span>
+          </a>
+        </div>
+        <p class="which">
+          Not sure? Open the Apple menu → <strong>About This Mac</strong>. If it says
+          <em>Chip: Apple M…</em>, choose Apple Silicon.
+        </p>
+
+        <div class="install">
+          <h3>Installing</h3>
+          <ol>
+            <li>Open the downloaded <code>.dmg</code> and drag <strong>Substudio</strong> into <strong>Applications</strong>.</li>
+            <li>
+              Open Substudio. This preview isn't notarised by Apple yet, so macOS stops it the first
+              time. Click <strong>Done</strong>.
+            </li>
+            <li>
+              Go to <strong>System Settings → Privacy &amp; Security</strong>, scroll down, and click
+              <strong>Open Anyway</strong> next to Substudio. Confirm once and you won't be asked
+              again.
+            </li>
+          </ol>
+          <details>
+            <summary>Comfortable with Terminal?</summary>
+            <p>Instead of steps 2–3, run this once after copying the app to Applications:</p>
+            <pre><code>xattr -dr com.apple.quarantine /Applications/Substudio.app</code></pre>
+          </details>
+          <p class="note">
+            No automatic updates yet: come back here for new versions. Your subtitle files and
+            projects are kept when you replace the app.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="wrap footer-inner">
+        <span>Substudio is a working name. Made with one subtitler, for subtitlers.</span>
+        <span class="links">
+          <a href="https://github.com/aramidefemi/substudio/releases">Release notes</a>
+          <a href="https://github.com/aramidefemi/substudio">Source</a>
+        </span>
+      </div>
+    </footer>
+
+    <script src="main.js" defer></script>
+  </body>
+</html>

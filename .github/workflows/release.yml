@@ -1,0 +1,136 @@
+# Build the macOS app for Apple Silicon + Intel when a version tag is pushed
+# (`pnpm release x.y.z --push`), and publish a GitHub release with stable
+# asset names so the website can link to …/releases/latest/download/<name>.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)build, e.g. v0.1.0"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+  MACOSX_DEPLOYMENT_TARGET: "11.0"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: v
+        name: Check versions + changelog match the tag
+        run: |
+          node scripts/release.mjs --check "$TAG"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/release.mjs --notes "$TAG" > notes.md
+          cat >> notes.md <<'EOF'
+
+          ---
+          **Download:** `Substudio-mac-apple-silicon.dmg` for M1/M2/M3/M4 Macs, `Substudio-mac-intel.dmg` for Intel Macs (macOS 11 or later).
+
+          **First launch:** this preview is not notarised by Apple yet. Open the app once, then go to **System Settings → Privacy & Security** and click **Open Anyway**.
+          EOF
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --notes-file notes.md
+          else
+            gh release create "$TAG" --draft --verify-tag --title "Substudio ${TAG}" --notes-file notes.md
+          fi
+
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            runner: macos-15
+            asset: Substudio-mac-apple-silicon.dmg
+          - target: x86_64-apple-darwin
+            runner: macos-15-intel
+            asset: Substudio-mac-intel.dmg
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ${{ matrix.target }}
+
+      - name: Build tools for ffmpeg
+        run: brew install meson ninja pkg-config nasm
+
+      - name: Cache ffmpeg sidecars
+        id: ffmpeg-cache
+        uses: actions/cache@v4
+        with:
+          path: src-tauri/binaries/ff*-${{ matrix.target }}
+          key: ffmpeg-${{ matrix.target }}-${{ hashFiles('scripts/fetch-ffmpeg.sh', 'scripts/build-libass-static.sh') }}
+
+      - name: Build LGPL ffmpeg + ffprobe (static libass)
+        if: steps.ffmpeg-cache.outputs.cache-hit != 'true'
+        run: ./scripts/fetch-ffmpeg.sh ${{ matrix.target }}
+
+      - name: Sidecars must only link macOS system libraries
+        run: ./scripts/check-sidecars.sh ${{ matrix.target }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Checks
+        if: matrix.target == 'aarch64-apple-darwin'
+        run: pnpm check
+
+      - name: Build app
+        run: pnpm tauri build --target ${{ matrix.target }} --bundles app,dmg
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          dmg="$(ls src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg | head -1)"
+          cp "$dmg" "${{ matrix.asset }}"
+          codesign -dv "src-tauri/target/${{ matrix.target }}/release/bundle/macos/Substudio.app" 2>&1 | grep -E 'Signature|Identifier'
+          gh release upload "$TAG" "${{ matrix.asset }}" --clobber
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
