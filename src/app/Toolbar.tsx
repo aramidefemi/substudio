@@ -1,4 +1,4 @@
-import { ChevronDown, Clapperboard, FilePlus2, FolderOpen, Redo2, Save, Search, Settings2, TriangleAlert, Undo2 } from "lucide-react";
+import { Clapperboard, FileDown, FilePlus2, FolderOpen, Redo2, Save, Search, Settings2, TriangleAlert, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -39,7 +39,6 @@ import { useActiveProfile, useRules } from "@/features/subtitles/activeRules";
 import { listIssues } from "@/features/subtitles/rules";
 import { useSubtitles } from "@/features/subtitles/store";
 import type { TimecodeMode } from "@/features/subtitles/timecode";
-import { fileName } from "@/lib/tauri";
 import { useUi } from "./actions";
 import { commandTitle, runCommand } from "./commands/registry";
 
@@ -93,8 +92,6 @@ function ErrorsButton() {
 }
 
 export function Toolbar() {
-  const filePath = useSubtitles((s) => s.filePath);
-  const dirty = useSubtitles((s) => s.dirty);
   const canUndo = useSubtitles((s) => s.past.length > 0);
   const canRedo = useSubtitles((s) => s.future.length > 0);
   const timecode = useSubtitles((s) => s.timecode);
@@ -106,7 +103,6 @@ export function Toolbar() {
   const showFormatting = useSettings((s) => s.showFormattingInGrid);
   const privacy = useSettings((s) => s.privacy);
   const preview = useSettings((s) => s.preview);
-  const hideNames = privacy === "names" || privacy === "text";
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-1 border-b bg-background px-3">
@@ -122,6 +118,28 @@ export function Toolbar() {
       <ToolButton command="file.save">
         <Save />
       </ToolButton>
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" aria-label="Export as…" className="[&_svg]:size-[18px]">
+                <FileDown />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Export as…</TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAs")}>SubRip (.srt)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsVtt")}>WebVTT (.vtt)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsAss")}>ASS (.ass)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsSsa")}>SSA (.ssa)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsSbv")}>YouTube SBV (.sbv)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsTtml")}>TTML (.ttml)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsDfxp")}>DFXP (.dfxp)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.customTextExport")}>Custom text…</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <ToolButton command="edit.find">
         <Search />
       </ToolButton>
@@ -235,29 +253,6 @@ export function Toolbar() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div className="flex-1" />
-
-      <span className="mr-3 max-w-[30vw] truncate text-sm text-muted-foreground">
-        {hideNames ? "••••" : filePath ? fileName(filePath) : "Untitled"}
-        {dirty && <span aria-label="Unsaved changes" className="ml-1.5 inline-block size-1.5 rounded-full bg-primary align-middle" />}
-      </span>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button>
-            Export <ChevronDown />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAs")}>SubRip (.srt)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAsVtt")}>WebVTT (.vtt)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAsAss")}>ASS (.ass)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAsSsa")}>SSA (.ssa)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAsSbv")}>YouTube SBV (.sbv)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAsTtml")}>TTML (.ttml)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAsDfxp")}>DFXP (.dfxp)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.customTextExport")}>Custom text…</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
     </header>
   );
 }

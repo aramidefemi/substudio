@@ -1,7 +1,9 @@
-import { Italic } from "lucide-react";
+import { Bot, Italic, Scale, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { toggleItalicAction } from "@/app/actions";
+import { commandTitle, runCommand } from "@/app/commands/registry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +15,7 @@ import { CUE_ORIGINAL_ID, CUE_TEXT_ID } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 import { useRules } from "./activeRules";
 import { hasOriginal } from "./original";
-import { cueStats } from "./rules";
+import { checkCue, cueStats } from "./rules";
 import {
   isUntimed,
   selectRelative,
@@ -64,11 +66,13 @@ interface TimeFieldProps {
   parse: (s: string) => number | null;
   step: number;
   disabled: boolean;
+  /** Problem reason; tints the field like a problem cell in the list. */
+  issue?: string;
   onCommit: (t: number) => void;
 }
 
 /** Edits a time as text; commits on Enter/blur, reverts on Escape, ↑/↓ nudge by one step. */
-function TimeField({ id, label, value, format, parse, step, disabled, onCommit }: TimeFieldProps) {
+function TimeField({ id, label, value, format, parse, step, disabled, issue, onCommit }: TimeFieldProps) {
   const [draft, setDraft] = useState<string | null>(null);
   const commit = () => {
     if (draft === null) return;
@@ -78,14 +82,19 @@ function TimeField({ id, label, value, format, parse, step, disabled, onCommit }
   };
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-xs font-medium">
+      <label htmlFor={id} className="flex items-center gap-1 text-xs font-medium">
         {label}
+        {issue && <TriangleAlert aria-label={issue} className="size-3 text-destructive" />}
       </label>
       <Input
         id={id}
         disabled={disabled}
         spellCheck={false}
-        className="h-8 font-normal tabular-nums"
+        title={issue}
+        className={cn(
+          "h-8 font-normal tabular-nums",
+          issue && "bg-cell-error text-cell-error-foreground dark:bg-cell-error",
+        )}
         value={draft ?? (disabled ? "" : format(value))}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
@@ -103,6 +112,46 @@ function TimeField({ id, label, value, format, parse, step, disabled, onCommit }
   );
 }
 
+/** A readout like "Line length: 45" that turns into a problem chip (tint + icon + reason) when over a limit. */
+function Stat({ issue, children }: { issue?: string; children: React.ReactNode }) {
+  return (
+    <span
+      title={issue}
+      className={cn(
+        "inline-flex items-center gap-1 rounded px-1 tabular-nums",
+        issue ? "bg-cell-error font-medium text-cell-error-foreground" : "text-muted-foreground",
+      )}
+    >
+      {issue && <TriangleAlert aria-label={issue} className="size-3" />}
+      {children}
+    </span>
+  );
+}
+
+/** Square icon button in the column beside the text box. */
+function SideButton({ label, disabled, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          aria-label={label}
+          disabled={disabled}
+          // Keep focus (and the selection) in the text box.
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onClick}
+          className="size-8 [&_svg]:size-4"
+        >
+          {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="left">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function CueEditor() {
   const cue = useSubtitles(selectSelectedCue);
   const cueIndex = useSubtitles((s) => (cue ? s.cues.findIndex((c) => c.id === cue.id) : -1));
@@ -111,7 +160,7 @@ export function CueEditor() {
   const hideText = useSettings((s) => s.privacy) === "text";
   const spellOn = useSpell((s) => s.enabled);
   const liveIssues = useSpell((s) => s.liveIssues);
-  const issues = useMemo(
+  const spellIssues = useMemo(
     () => (spellOn && cueIndex >= 0 ? (liveIssues[cueIndex] ?? []) : []),
     [spellOn, cueIndex, liveIssues],
   );
@@ -119,40 +168,36 @@ export function CueEditor() {
   const untimed = cue ? isUntimed(cue) : false;
   const stats = cue && !untimed ? cueStats(cue) : null;
   const rules = useRules();
+  const prev = useSubtitles((s) => (cueIndex > 0 ? s.cues[cueIndex - 1] : undefined));
+  const issues = cue ? checkCue(cue, prev, rules) : {};
+  const cpsIssue = stats && stats.cps > rules.maxCps ? `Reads too fast: ${stats.cps.toFixed(1)} chars/sec (max ${rules.maxCps})` : undefined;
+  const lineIssue =
+    stats && stats.longestLine > rules.maxLineLength
+      ? `Line too long: ${stats.longestLine} chars (max ${rules.maxLineLength})`
+      : stats && stats.lineCount > rules.maxLines
+        ? `Too many lines: ${stats.lineCount} (max ${rules.maxLines})`
+        : undefined;
   const step = nudgeStep(fmt);
   const timeLabel = (base: string) => (untimed ? `${base} (untimed)` : base);
   const originalOpen = showOriginal || (cue ? hasOriginal(cue) : false);
 
   return (
-    <div className="grid h-full grid-cols-[150px_minmax(0,1fr)] gap-4 overflow-auto rounded-xl bg-card p-3">
+    <div className="grid h-full grid-cols-[150px_minmax(0,1fr)_auto] gap-4 overflow-auto rounded-xl bg-card p-3">
       <div className="flex flex-col gap-2">
         <TimeField
           id="cue-start"
-          label={timeLabel("Start")}
+          label={timeLabel("Show")}
           value={cue?.start ?? 0}
           format={(t) => (untimed ? "—" : formatTime(t, fmt))}
           parse={(s) => parseTime(s, fmt)}
           step={step}
           disabled={disabled}
-          // Moving the start keeps the duration, like Subtitle Edit.
+          issue={issues.start}
+          // Moving the start keeps the duration, like Subtitle Edit's Show field.
           onCommit={(t) => {
             if (!cue) return;
             if (untimed) updateCue(cue.id, timesForUntimed(t, "start"));
             else updateCue(cue.id, { start: t, end: t + Math.max(cue.end - cue.start, 2) });
-          }}
-        />
-        <TimeField
-          id="cue-end"
-          label={timeLabel("End")}
-          value={cue?.end ?? 0}
-          format={(t) => (untimed ? "—" : formatTime(t, fmt))}
-          parse={(s) => parseTime(s, fmt)}
-          step={step}
-          disabled={disabled}
-          onCommit={(t) => {
-            if (!cue) return;
-            if (untimed) updateCue(cue.id, timesForUntimed(t, "end"));
-            else if (t > cue.start) updateCue(cue.id, { end: t });
           }}
         />
         <TimeField
@@ -163,6 +208,7 @@ export function CueEditor() {
           parse={(s) => parseDuration(s, fmt)}
           step={step}
           disabled={disabled}
+          issue={issues.duration}
           onCommit={(d) => {
             if (!cue || d <= 0) return;
             if (untimed) updateCue(cue.id, { start: 0, end: d });
@@ -216,14 +262,10 @@ export function CueEditor() {
               <TooltipContent>Italic (⌘I)</TooltipContent>
             </Tooltip>
           </div>
-          {stats && (
-            <span className={cn("tabular-nums text-muted-foreground", stats.cps > rules.maxCps && "font-medium text-destructive")}>
-              Chars: {stats.chars} / {stats.cps.toFixed(1)} cps
-            </span>
-          )}
+          {stats && <Stat issue={cpsIssue}>Chars/sec: {stats.cps.toFixed(1)}</Stat>}
         </div>
         <div className="relative min-h-0 flex-1">
-          {!hideText && cue && <SpellOverlay text={cue.text} issues={issues} />}
+          {!hideText && cue && <SpellOverlay text={cue.text} issues={spellIssues} />}
           <Textarea
             id={CUE_TEXT_ID}
             disabled={disabled}
@@ -243,13 +285,20 @@ export function CueEditor() {
           />
         </div>
         {stats && (
-          <div className="flex justify-between text-xs tabular-nums text-muted-foreground">
-            <span className={cn((stats.longestLine > rules.maxLineLength || stats.lineCount > rules.maxLines) && "font-medium text-destructive")}>
-              Line length: {stats.lineLengths.join(" / ")}
-            </span>
-            <span>Total chars: {stats.chars}</span>
+          <div className="flex justify-between text-xs">
+            <Stat issue={lineIssue}>Line length: {stats.lineLengths.join(" / ")}</Stat>
+            <Stat>Total chars: {stats.chars}</Stat>
           </div>
         )}
+      </div>
+
+      <div className="flex flex-col gap-1.5 pt-5">
+        <SideButton label={commandTitle("edit.autoBreak", "Auto-break selected lines")} disabled={disabled} onClick={() => runCommand("edit.autoBreak")}>
+          <Scale />
+        </SideButton>
+        <SideButton label="AI suggestion (coming soon)" disabled={disabled} onClick={() => toast("AI suggestions are coming soon.")}>
+          <Bot />
+        </SideButton>
       </div>
     </div>
   );
