@@ -1,4 +1,16 @@
-import { Clapperboard, FileDown, FilePlus2, FolderOpen, Redo2, Save, Search, Settings2, TriangleAlert, Undo2 } from "lucide-react";
+import {
+  Clapperboard,
+  FileDown,
+  FilePlus2,
+  FolderOpen,
+  Languages,
+  Redo2,
+  Save,
+  Search,
+  Settings2,
+  TriangleAlert,
+  Undo2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,9 +30,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   setDensity,
   setPreview,
-  setShowCpsColumn,
+  // setShowCpsColumn,
   setShowFormattingInGrid,
-  setShowGapColumn,
+  // setShowGapColumn,
   setShowOriginalColumn,
   setTheme,
   useSettings,
@@ -102,8 +114,8 @@ export function Toolbar() {
   const timecode = useSubtitles((s) => s.timecode);
   const theme = useSettings((s) => s.theme);
   const density = useSettings((s) => s.density);
-  const showCps = useSettings((s) => s.showCpsColumn);
-  const showGap = useSettings((s) => s.showGapColumn);
+  // const showCps = useSettings((s) => s.showCpsColumn);
+  // const showGap = useSettings((s) => s.showGapColumn);
   const showOriginal = useSettings((s) => s.showOriginalColumn);
   const showFormatting = useSettings((s) => s.showFormattingInGrid);
   const privacy = useSettings((s) => s.privacy);
@@ -157,12 +169,12 @@ export function Toolbar() {
           </DropdownMenuRadioGroup>
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Columns</DropdownMenuLabel>
-          <DropdownMenuCheckboxItem checked={showCps} onCheckedChange={(v) => setShowCpsColumn(v === true)}>
+          {/* <DropdownMenuCheckboxItem checked={showCps} onCheckedChange={(v) => setShowCpsColumn(v === true)}>
             CPS
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem checked={showGap} onCheckedChange={(v) => setShowGapColumn(v === true)}>
             Gap
-          </DropdownMenuCheckboxItem>
+          </DropdownMenuCheckboxItem> */}
           <DropdownMenuCheckboxItem
             checked={showOriginal}
             onCheckedChange={(v) => setShowOriginalColumn(v === true)}
@@ -230,6 +242,9 @@ export function Toolbar() {
         </DropdownMenuContent>
       </DropdownMenu>
 
+      <ToolButton command="translate.auto">
+        <Languages />
+      </ToolButton>
 
       <div className="flex-1" />
 
