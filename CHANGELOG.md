@@ -2,6 +2,30 @@
 
 Each `## x.y.z` section becomes the notes of that GitHub release (`pnpm release x.y.z` refuses to tag without one). Write for the person subtitling, not for developers.
 
+## 0.2.0
+
+Translation drafts are now built into the editor, with the source kept beside the result so every line can still be checked and rewritten by a subtitler.
+
+**Auto-translate**
+- Translate a whole subtitle file or only selected lines between Yoruba, English and other supported languages.
+- Use Google Translate for a quick free draft, or a Google Cloud Translation API key for a more dependable long-film workflow.
+- The first translation keeps the existing script in the Original column and writes the draft into Text instead of replacing the source.
+- Translation arrives in batches with visible progress, Stop and Try again controls, and one-step undo.
+- Machine-translated lines stay marked until they are edited or accepted. Jump between drafts, accept one and move on, or accept all.
+- Blank lines, music-only cues and already translated lines can be left untouched.
+
+**A cleaner working view**
+- Auto-translate is available directly from the top toolbar as well as the Translate menu.
+- Right-click the subtitle-list header to show or hide line number, Start, End, Duration, CPS, Gap and Original columns. The same choices remain in View settings and are remembered between sessions.
+- CPS and Gap start hidden, leaving more room for source and translated text.
+- The cue editor gives Text the available panel height, and places Show and Duration side by side for faster timing edits.
+- The toolbar is grouped more clearly, with file and view actions on the left and problems, undo/redo and export on the right.
+
+**Known limits of this preview**
+- The free Google translation service can slow down or temporarily limit long jobs. Google Cloud is available as the reliable fallback.
+- The app is not notarised by Apple yet, so macOS asks you to allow it once (see the download page).
+- No automatic updates yet: download new versions from the website.
+
 ## 0.1.0
 
 The first preview build. Substudio is an early, keyboard-first subtitle editor for feature films, built around the way a professional Nollywood subtitler works today in Subtitle Edit. Everything runs on your Mac; nothing is uploaded.
