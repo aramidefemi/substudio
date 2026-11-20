@@ -8,6 +8,7 @@ import { CueEditor } from "@/features/subtitles/CueEditor";
 import { SubtitleList } from "@/features/subtitles/SubtitleList";
 import { Waveform } from "@/features/waveform/Waveform";
 import { AdjustTimesDialog } from "./AdjustTimesDialog";
+import { AutoTranslateDialog } from "./AutoTranslateDialog";
 import { BeautifyDialog } from "./BeautifyDialog";
 import { BookmarkNoteDialog } from "./BookmarkNoteDialog";
 import { ChangeFrameRateDialog } from "./ChangeFrameRateDialog";
@@ -122,6 +123,7 @@ export default function App() {
       <MultipleReplaceDialog />
       <ToolsDialog />
       <RemoveHiDialog />
+      <AutoTranslateDialog />
       <DropOverlay />
       <Toaster position="bottom-center" />
     </TooltipProvider>

@@ -14,6 +14,7 @@ mod spectrogram;
 mod spell_engine;
 mod spellcheck;
 mod subtitles;
+mod translate;
 mod waveform;
 
 use files::BackupInfo;
@@ -353,6 +354,22 @@ fn spell_dir(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
 }
 
 /// Batch-check cue texts (QLT-03). Uses names list + user dictionary + system engine.
+/// Auto-translate one batch (TRN-01). Network: only called when the user presses Translate.
+#[tauri::command]
+async fn translate_texts(
+    engine: translate::Engine,
+    api_key: Option<String>,
+    source: String,
+    target: String,
+    texts: Vec<String>,
+) -> Result<Vec<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        translate::translate(engine, api_key.as_deref(), &source, &target, &texts)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 async fn spell_check_texts(
     app: tauri::AppHandle,
@@ -508,6 +525,7 @@ pub fn run() {
             spell_list_words,
             spell_add_word,
             spell_remove_word,
+            translate_texts,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

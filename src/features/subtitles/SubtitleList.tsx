@@ -1,9 +1,10 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Bookmark, TriangleAlert } from "lucide-react";
+import { Bookmark, Languages, TriangleAlert } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { clock } from "@/features/playback/clock";
 import { ROW_HEIGHT, useSettings } from "@/features/settings/store";
+import { commandTitle } from "@/app/commands/registry";
 import { focusCueText, SUBTITLE_LIST_ID } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 import { formatRuns, gapAfter, stripTags } from "./format";
@@ -84,6 +85,7 @@ export function SubtitleList() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const selectedSet = new Set(selectedIds);
   const gridTemplateColumns = columnTemplate(showCps, showGap, showOriginal);
+  const mtTitle = `Machine translation, not reviewed yet. Edit it, or ${commandTitle("translate.acceptNext", "accept")}.`;
   const rowClass = "grid items-center";
 
   // eslint-disable-next-line react-hooks/incompatible-library -- opted out with "use no memo"
@@ -203,6 +205,16 @@ export function SubtitleList() {
                   </Cell>
                 )}
                 <Cell issue={issues.text}>
+                  {cue.mt && (
+                    // Unreviewed machine translation (TRN-01): an icon + hover text, not colour alone.
+                    <Languages
+                      role="img"
+                      aria-label="Machine translation, not reviewed yet"
+                      className="mr-1 inline size-3 align-[-1px] text-muted-foreground"
+                    >
+                      <title>{mtTitle}</title>
+                    </Languages>
+                  )}
                   {textHidden ? "••••" : <GridText text={cue.text} showFormatting={showFormatting} />}
                 </Cell>
               </div>

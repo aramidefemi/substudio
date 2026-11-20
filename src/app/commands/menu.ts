@@ -367,6 +367,23 @@ export const MENU: MenuGroup[] = [
     ],
   },
   {
+    submenu: "Translate",
+    items: [
+      "translate.auto",
+      "translate.selectedNoPrompt",
+      "-",
+      "translate.acceptNext",
+      "translate.next",
+      "translate.previous",
+      "translate.acceptAll",
+      "-",
+      "file.openOriginal",
+      "edit.pasteOriginal",
+      "view.column.original",
+      "file.closeOriginal",
+    ],
+  },
+  {
     submenu: "Tools",
     items: [
       "tools.ruleProfiles",

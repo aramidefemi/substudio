@@ -2,6 +2,7 @@ import { Channel, invoke, isTauri } from "@tauri-apps/api/core";
 import type { BatchOutcome, BatchProgress } from "@/features/export/batch";
 import type { SpellCheckResult, SpellListKind, SpellSuggestResult } from "@/features/spellcheck/types";
 import type { AssKind, AssStyle, CueData, SubtitleFormat } from "@/features/subtitles/types";
+import type { TranslateEngine } from "@/features/translate/languages";
 
 /** False when the frontend runs in a plain browser via `pnpm dev`. */
 export const inTauri = isTauri();
@@ -66,6 +67,8 @@ export interface ProjectFile {
    * ffmpeg disk cache still speeds up Generate.
    */
   shotChanges?: number[];
+  /** Lines holding an unreviewed machine translation (TRN-01). */
+  machine?: { index: number; start: number }[];
 }
 
 /** MED-02: source vs cached/encoded editing proxy for `<video>`. */
@@ -167,6 +170,9 @@ export const commands = {
   spellListWords: (kind: SpellListKind) => invoke<string[]>("spell_list_words", { kind }),
   spellAddWord: (kind: SpellListKind, word: string) => invoke<boolean>("spell_add_word", { kind, word }),
   spellRemoveWord: (kind: SpellListKind, word: string) => invoke<boolean>("spell_remove_word", { kind, word }),
+  /** One auto-translate batch (TRN-01); returns one text per input. Sends the texts to Google. */
+  translateTexts: (engine: TranslateEngine, apiKey: string | null, source: string, target: string, texts: string[]) =>
+    invoke<string[]>("translate_texts", { engine, apiKey, source, target, texts }),
 };
 
 export const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path;

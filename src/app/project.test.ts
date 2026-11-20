@@ -97,11 +97,13 @@ describe("sidecar round trip", () => {
       bookmarks: [{ index: 9, start: 99, note: "gone" }],
       selected: null,
       originals: [{ index: 9, start: 99, text: "gone" }],
+      machine: [{ index: 9, start: 99 }],
       audioTrack: -2,
     });
     expect(back).toEqual({
       bookmarks: new Map(),
       originals: new Map(),
+      machine: new Set(),
       selectedIndex: -1,
       fps: null,
       timecode: null,
@@ -111,6 +113,21 @@ describe("sidecar round trip", () => {
       audioTrack: null,
       shotChanges: null,
     });
+  });
+
+  it("round-trips machine-translation marks (TRN-01)", () => {
+    const marked = cues.map((c, i) => (i === 1 ? { ...c, mt: true } : c));
+    const project = buildProject({
+      cues: marked,
+      selectedId: null,
+      videoPath: null,
+      originalPath: null,
+      fps: 25,
+      timecode: "frames",
+    });
+    expect(project.machine).toEqual([{ index: 1, start: marked[1]!.start }]);
+    expect(restoreProject(cues, project).machine).toEqual(new Set([1]));
+    expect(buildProject({ cues, selectedId: null, videoPath: null, originalPath: null, fps: 25, timecode: "frames" }).machine).toBeUndefined();
   });
 
   it("round-trips shot changes", () => {
