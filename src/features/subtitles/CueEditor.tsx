@@ -182,7 +182,7 @@ export function CueEditor() {
   const originalOpen = showOriginal || (cue ? hasOriginal(cue) : false);
 
   return (
-    <div className="grid h-full grid-cols-[150px_minmax(0,1fr)_auto] gap-4 overflow-auto rounded-xl bg-card p-3">
+    <div className="grid h-full grid-cols-[150px_minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)] gap-4 overflow-auto rounded-xl bg-card p-3">
       <div className="flex flex-col gap-2">
         <TimeField
           id="cue-start"
@@ -217,7 +217,7 @@ export function CueEditor() {
         />
       </div>
 
-      <div className="flex min-w-0 flex-col gap-1">
+      <div className="flex min-h-0 min-w-0 flex-col gap-1">
         {originalOpen && (
           <div className="flex min-h-0 flex-1 flex-col gap-1">
             <label htmlFor={CUE_ORIGINAL_ID} className="text-xs font-medium text-muted-foreground">
@@ -264,7 +264,7 @@ export function CueEditor() {
           </div>
           {stats && <Stat issue={cpsIssue}>Chars/sec: {stats.cps.toFixed(1)}</Stat>}
         </div>
-        <div className="relative min-h-0 flex-1">
+        <div className="relative min-h-10 flex-1">
           {!hideText && cue && <SpellOverlay text={cue.text} issues={spellIssues} />}
           <Textarea
             id={CUE_TEXT_ID}
@@ -281,7 +281,7 @@ export function CueEditor() {
                 selectRelative(1);
               }
             }}
-            className="h-full min-h-0 resize-none bg-transparent text-[15px] font-medium leading-snug"
+            className="h-full min-h-0 resize-none [field-sizing:fixed] bg-transparent text-[15px] font-medium leading-snug"
           />
         </div>
         {stats && (

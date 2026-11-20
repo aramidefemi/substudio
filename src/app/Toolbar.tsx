@@ -91,6 +91,11 @@ function ErrorsButton() {
   );
 }
 
+/** Thin rule between toolbar groups. */
+function Divider() {
+  return <div aria-hidden className="mx-1 h-5 w-px bg-border" />;
+}
+
 export function Toolbar() {
   const canUndo = useSubtitles((s) => s.past.length > 0);
   const canRedo = useSubtitles((s) => s.future.length > 0);
@@ -118,37 +123,9 @@ export function Toolbar() {
       <ToolButton command="file.save">
         <Save />
       </ToolButton>
-      <DropdownMenu>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" aria-label="Export as…" className="[&_svg]:size-[18px]">
-                <FileDown />
-              </Button>
-            </DropdownMenuTrigger>
-          </TooltipTrigger>
-          <TooltipContent>Export as…</TooltipContent>
-        </Tooltip>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAs")}>SubRip (.srt)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAsVtt")}>WebVTT (.vtt)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAsAss")}>ASS (.ass)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAsSsa")}>SSA (.ssa)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAsSbv")}>YouTube SBV (.sbv)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAsTtml")}>TTML (.ttml)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.saveAsDfxp")}>DFXP (.dfxp)</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand("file.customTextExport")}>Custom text…</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Divider />
       <ToolButton command="edit.find">
         <Search />
-      </ToolButton>
-      <ErrorsButton />
-      <ToolButton command="edit.undo" disabled={!canUndo}>
-        <Undo2 />
-      </ToolButton>
-      <ToolButton command="edit.redo" disabled={!canRedo}>
-        <Redo2 />
       </ToolButton>
 
       <DropdownMenu>
@@ -253,6 +230,40 @@ export function Toolbar() {
         </DropdownMenuContent>
       </DropdownMenu>
 
+
+      <div className="flex-1" />
+
+      <ErrorsButton />
+      <Divider />
+      <ToolButton command="edit.undo" disabled={!canUndo}>
+        <Undo2 />
+      </ToolButton>
+      <ToolButton command="edit.redo" disabled={!canRedo}>
+        <Redo2 />
+      </ToolButton>
+      <Divider />
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" aria-label="Export as…" className="[&_svg]:size-[18px]">
+                <FileDown />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Export as…</TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAs")}>SubRip (.srt)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsVtt")}>WebVTT (.vtt)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsAss")}>ASS (.ass)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsSsa")}>SSA (.ssa)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsSbv")}>YouTube SBV (.sbv)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsTtml")}>TTML (.ttml)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.saveAsDfxp")}>DFXP (.dfxp)</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runCommand("file.customTextExport")}>Custom text…</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </header>
   );
 }
