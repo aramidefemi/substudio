@@ -2,14 +2,32 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { Bookmark, Languages, TriangleAlert } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
+import {
+  ContextMenu,
+  ContextMenuCheckboxItem,
+  ContextMenuContent,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { clock } from "@/features/playback/clock";
-import { ROW_HEIGHT, useSettings } from "@/features/settings/store";
+import {
+  ROW_HEIGHT,
+  setShowCpsColumn,
+  setShowDurationColumn,
+  setShowEndColumn,
+  setShowGapColumn,
+  setShowNumberColumn,
+  setShowOriginalColumn,
+  setShowStartColumn,
+  useSettings,
+} from "@/features/settings/store";
 import { commandTitle } from "@/app/commands/registry";
 import { focusCueText, SUBTITLE_LIST_ID } from "@/lib/dom";
 import { cn } from "@/lib/utils";
-import { formatRuns, stripTags } from "./format";
+import { formatRuns, gapAfter, stripTags } from "./format";
 import { useRules } from "./activeRules";
-import { checkCue } from "./rules";
+import { checkCue, cueStats } from "./rules";
 import {
   isUntimed,
   select,
@@ -21,12 +39,25 @@ import {
 } from "./store";
 import { formatDuration, formatTime } from "./timecode";
 
-function columnTemplate(original: boolean) {
-  const parts = ["48px", "118px", "118px", "80px"];
-  // CPS and Gap are temporarily hidden from the subtitle grid.
-  // if (cps) parts.push("56px");
-  // if (gap) parts.push("72px");
-  if (original) parts.push("minmax(0,1fr)");
+interface ColumnVisibility {
+  number: boolean;
+  start: boolean;
+  end: boolean;
+  duration: boolean;
+  cps: boolean;
+  gap: boolean;
+  original: boolean;
+}
+
+function columnTemplate(columns: ColumnVisibility) {
+  const parts: string[] = [];
+  if (columns.number) parts.push("48px");
+  if (columns.start) parts.push("118px");
+  if (columns.end) parts.push("118px");
+  if (columns.duration) parts.push("80px");
+  if (columns.cps) parts.push("56px");
+  if (columns.gap) parts.push("72px");
+  if (columns.original) parts.push("minmax(0,1fr)");
   parts.push("minmax(0,1fr)");
   return parts.join(" ");
 }
@@ -77,15 +108,28 @@ export function SubtitleList() {
   const selectedIndex = useSubtitles(selectSelectedIndex);
   const fmt = useSubtitles(useShallow(selectTimeFormat));
   const rowHeight = ROW_HEIGHT[useSettings((s) => s.density)];
-  // const showCps = useSettings((s) => s.showCpsColumn);
-  // const showGap = useSettings((s) => s.showGapColumn);
+  const showNumber = useSettings((s) => s.showNumberColumn);
+  const showStart = useSettings((s) => s.showStartColumn);
+  const showEnd = useSettings((s) => s.showEndColumn);
+  const showDuration = useSettings((s) => s.showDurationColumn);
+  const showCps = useSettings((s) => s.showCpsColumn);
+  const showGap = useSettings((s) => s.showGapColumn);
   const showOriginal = useSettings((s) => s.showOriginalColumn);
   const showFormatting = useSettings((s) => s.showFormattingInGrid);
   const privacy = useSettings((s) => s.privacy);
   const rules = useRules();
   const scrollRef = useRef<HTMLDivElement>(null);
   const selectedSet = new Set(selectedIds);
-  const gridTemplateColumns = columnTemplate(showOriginal);
+  const columns = {
+    number: showNumber,
+    start: showStart,
+    end: showEnd,
+    duration: showDuration,
+    cps: showCps,
+    gap: showGap,
+    original: showOriginal,
+  };
+  const gridTemplateColumns = columnTemplate(columns);
   const mtTitle = `Machine translation, not reviewed yet. Edit it, or ${commandTitle("translate.acceptNext", "accept")}.`;
   const rowClass = "grid items-center";
 
@@ -104,20 +148,82 @@ export function SubtitleList() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl bg-card">
-      <div
-        role="row"
-        style={{ gridTemplateColumns }}
-        className={cn(rowClass, "h-9 shrink-0 border-b text-xs font-medium text-muted-foreground")}
-      >
-        <span className="px-3">#</span>
-        <span className="px-3">Start</span>
-        <span className="px-3">End</span>
-        <span className="px-3">Duration</span>
-        {/* {showCps && <span className="px-3">CPS</span>} */}
-        {/* {showGap && <span className="px-3">Gap</span>} */}
-        {showOriginal && <span className="px-3">Original</span>}
-        <span className="px-3">Text</span>
-      </div>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div
+            role="row"
+            title="Right-click to choose columns"
+            style={{ gridTemplateColumns }}
+            className={cn(rowClass, "h-9 shrink-0 border-b text-xs font-medium text-muted-foreground")}
+          >
+            {showNumber && <span className="px-3">#</span>}
+            {showStart && <span className="px-3">Start</span>}
+            {showEnd && <span className="px-3">End</span>}
+            {showDuration && <span className="px-3">Duration</span>}
+            {showCps && <span className="px-3">CPS</span>}
+            {showGap && <span className="px-3">Gap</span>}
+            {showOriginal && <span className="px-3">Original</span>}
+            <span className="px-3">Text</span>
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-64" onCloseAutoFocus={(e) => e.preventDefault()}>
+          <ContextMenuLabel>Show columns</ContextMenuLabel>
+          <ContextMenuSeparator />
+          <ContextMenuCheckboxItem
+            checked={showNumber}
+            onCheckedChange={(v) => setShowNumberColumn(v === true)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            Line number (#)
+          </ContextMenuCheckboxItem>
+          <ContextMenuCheckboxItem
+            checked={showStart}
+            onCheckedChange={(v) => setShowStartColumn(v === true)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            Start
+          </ContextMenuCheckboxItem>
+          <ContextMenuCheckboxItem
+            checked={showEnd}
+            onCheckedChange={(v) => setShowEndColumn(v === true)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            End
+          </ContextMenuCheckboxItem>
+          <ContextMenuCheckboxItem
+            checked={showDuration}
+            onCheckedChange={(v) => setShowDurationColumn(v === true)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            Duration
+          </ContextMenuCheckboxItem>
+          <ContextMenuCheckboxItem
+            checked={showCps}
+            onCheckedChange={(v) => setShowCpsColumn(v === true)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            Characters per second (CPS)
+          </ContextMenuCheckboxItem>
+          <ContextMenuCheckboxItem
+            checked={showGap}
+            onCheckedChange={(v) => setShowGapColumn(v === true)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            Gap
+          </ContextMenuCheckboxItem>
+          <ContextMenuCheckboxItem
+            checked={showOriginal}
+            onCheckedChange={(v) => setShowOriginalColumn(v === true)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            Original
+          </ContextMenuCheckboxItem>
+          <ContextMenuSeparator />
+          <ContextMenuCheckboxItem checked disabled>
+            Text (always shown)
+          </ContextMenuCheckboxItem>
+        </ContextMenuContent>
+      </ContextMenu>
 
       <div
         ref={scrollRef}
@@ -138,8 +244,8 @@ export function SubtitleList() {
             const prev = cues[row.index - 1];
             const issues = checkCue(cue, prev, rules);
             const selected = selectedSet.has(cue.id);
-            // const stats = cueStats(cue);
-            // const gap = gapAfter(prev, cue);
+            const stats = cueStats(cue);
+            const gap = gapAfter(prev, cue);
             const textHidden = privacy === "text";
             return (
               <div
@@ -162,8 +268,8 @@ export function SubtitleList() {
                   selected ? "bg-row-selected" : "hover:bg-row-hover",
                 )}
               >
-                <Cell className="text-muted-foreground">{row.index + 1}</Cell>
-                {cue.bookmark !== undefined && (
+                {showNumber && <Cell className="text-muted-foreground">{row.index + 1}</Cell>}
+                {showNumber && cue.bookmark !== undefined && (
                   // Sits in the # cell's left padding so long line numbers never truncate it.
                   <Bookmark
                     role="img"
@@ -173,33 +279,38 @@ export function SubtitleList() {
                     <title>{cue.bookmark ? `Bookmark: ${cue.bookmark}` : "Bookmarked"}</title>
                   </Bookmark>
                 )}
-                {isUntimed(cue) ? (
-                  <>
+                {showStart &&
+                  (isUntimed(cue) ? (
                     <Cell className="text-muted-foreground">
                       <span title="Untimed — set start/end when you time this line">—</span>
                     </Cell>
+                  ) : (
+                    <Cell issue={issues.start}>{formatTime(cue.start, fmt)}</Cell>
+                  ))}
+                {showEnd &&
+                  (isUntimed(cue) ? (
                     <Cell className="text-muted-foreground">—</Cell>
+                  ) : (
+                    <Cell>{formatTime(cue.end, fmt)}</Cell>
+                  ))}
+                {showDuration &&
+                  (isUntimed(cue) ? (
                     <Cell className="text-muted-foreground">
                       <span title="Untimed">Untimed</span>
                     </Cell>
-                  </>
-                ) : (
-                  <>
-                    <Cell issue={issues.start}>{formatTime(cue.start, fmt)}</Cell>
-                    <Cell>{formatTime(cue.end, fmt)}</Cell>
+                  ) : (
                     <Cell issue={issues.duration}>{formatDuration(cue.end - cue.start, fmt)}</Cell>
-                  </>
-                )}
-                {/* {showCps && (
+                  ))}
+                {showCps && (
                   <Cell issue={issues.text?.includes("chars/sec") ? issues.text : undefined}>
                     {isUntimed(cue) || !stats.chars ? "—" : stats.cps.toFixed(1)}
                   </Cell>
-                )} */}
-                {/* {showGap && (
+                )}
+                {showGap && (
                   <Cell>
                     {isUntimed(cue) || gap === null ? "—" : formatDuration(Math.max(0, gap), fmt)}
                   </Cell>
-                )} */}
+                )}
                 {showOriginal && (
                   <Cell className="text-muted-foreground">
                     {textHidden ? "••••" : <GridText text={cue.original ?? ""} showFormatting={showFormatting} />}

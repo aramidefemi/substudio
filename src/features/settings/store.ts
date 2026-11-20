@@ -36,6 +36,12 @@ export interface Settings {
   autoBackupIntervalSec: number;
   /** Max auto-backup files to keep. */
   autoBackupKeep: number;
+  /** Versioned so new column defaults can be migrated once. */
+  subtitleColumnsVersion: 1;
+  showNumberColumn: boolean;
+  showStartColumn: boolean;
+  showEndColumn: boolean;
+  showDurationColumn: boolean;
   showCpsColumn: boolean;
   showGapColumn: boolean;
   /** Original/script column beside translation text (FIL-07). */
@@ -106,8 +112,13 @@ const DEFAULTS: Settings = {
   recentVideos: [],
   autoBackupIntervalSec: 60,
   autoBackupKeep: 30,
-  showCpsColumn: true,
-  showGapColumn: true,
+  subtitleColumnsVersion: 1,
+  showNumberColumn: true,
+  showStartColumn: true,
+  showEndColumn: true,
+  showDurationColumn: true,
+  showCpsColumn: false,
+  showGapColumn: false,
   showOriginalColumn: false,
   showFormattingInGrid: true,
   privacy: "off",
@@ -126,6 +137,10 @@ export const useSettings = create<Settings>()(() => DEFAULTS);
 
 export const setTheme = (theme: ThemePreference) => useSettings.setState({ theme });
 export const setDensity = (density: Density) => useSettings.setState({ density });
+export const setShowNumberColumn = (showNumberColumn: boolean) => useSettings.setState({ showNumberColumn });
+export const setShowStartColumn = (showStartColumn: boolean) => useSettings.setState({ showStartColumn });
+export const setShowEndColumn = (showEndColumn: boolean) => useSettings.setState({ showEndColumn });
+export const setShowDurationColumn = (showDurationColumn: boolean) => useSettings.setState({ showDurationColumn });
 export const setShowCpsColumn = (showCpsColumn: boolean) => useSettings.setState({ showCpsColumn });
 export const setShowGapColumn = (showGapColumn: boolean) => useSettings.setState({ showGapColumn });
 export const setShowOriginalColumn = (showOriginalColumn: boolean) =>
@@ -231,9 +246,14 @@ export async function loadSettings() {
     const store = await load("settings.json", { defaults: {}, autoSave: 200 });
     const saved = await store.get<Partial<Settings>>("settings");
     if (saved) {
+      const hasCurrentColumns = saved.subtitleColumnsVersion === 1;
       useSettings.setState({
         ...DEFAULTS,
         ...saved,
+        subtitleColumnsVersion: 1,
+        // CPS and Gap used to default on. Hide them once when adopting the column chooser.
+        showCpsColumn: hasCurrentColumns ? (saved.showCpsColumn ?? DEFAULTS.showCpsColumn) : false,
+        showGapColumn: hasCurrentColumns ? (saved.showGapColumn ?? DEFAULTS.showGapColumn) : false,
         preview: normalizePreview(saved.preview),
         multipleReplaceSets: saved.multipleReplaceSets ?? [],
         ruleProfiles: normalizeProfiles(saved.ruleProfiles),

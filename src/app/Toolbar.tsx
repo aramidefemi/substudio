@@ -30,10 +30,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   setDensity,
   setPreview,
-  // setShowCpsColumn,
+  setShowCpsColumn,
+  setShowDurationColumn,
+  setShowEndColumn,
   setShowFormattingInGrid,
-  // setShowGapColumn,
+  setShowGapColumn,
+  setShowNumberColumn,
   setShowOriginalColumn,
+  setShowStartColumn,
   setTheme,
   useSettings,
   type Density,
@@ -114,8 +118,12 @@ export function Toolbar() {
   const timecode = useSubtitles((s) => s.timecode);
   const theme = useSettings((s) => s.theme);
   const density = useSettings((s) => s.density);
-  // const showCps = useSettings((s) => s.showCpsColumn);
-  // const showGap = useSettings((s) => s.showGapColumn);
+  const showNumber = useSettings((s) => s.showNumberColumn);
+  const showStart = useSettings((s) => s.showStartColumn);
+  const showEnd = useSettings((s) => s.showEndColumn);
+  const showDuration = useSettings((s) => s.showDurationColumn);
+  const showCps = useSettings((s) => s.showCpsColumn);
+  const showGap = useSettings((s) => s.showGapColumn);
   const showOriginal = useSettings((s) => s.showOriginalColumn);
   const showFormatting = useSettings((s) => s.showFormattingInGrid);
   const privacy = useSettings((s) => s.privacy);
@@ -169,17 +177,35 @@ export function Toolbar() {
           </DropdownMenuRadioGroup>
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Columns</DropdownMenuLabel>
-          {/* <DropdownMenuCheckboxItem checked={showCps} onCheckedChange={(v) => setShowCpsColumn(v === true)}>
+          <DropdownMenuCheckboxItem checked={showNumber} onCheckedChange={(v) => setShowNumberColumn(v === true)}>
+            Line number (#)
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem checked={showStart} onCheckedChange={(v) => setShowStartColumn(v === true)}>
+            Start
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem checked={showEnd} onCheckedChange={(v) => setShowEndColumn(v === true)}>
+            End
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem
+            checked={showDuration}
+            onCheckedChange={(v) => setShowDurationColumn(v === true)}
+          >
+            Duration
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem checked={showCps} onCheckedChange={(v) => setShowCpsColumn(v === true)}>
             CPS
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem checked={showGap} onCheckedChange={(v) => setShowGapColumn(v === true)}>
             Gap
-          </DropdownMenuCheckboxItem> */}
+          </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
             checked={showOriginal}
             onCheckedChange={(v) => setShowOriginalColumn(v === true)}
           >
             Original
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem checked disabled>
+            Text (always shown)
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
             checked={showFormatting}

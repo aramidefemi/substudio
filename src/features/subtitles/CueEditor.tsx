@@ -181,8 +181,8 @@ export function CueEditor() {
   const originalOpen = showOriginal || (cue ? hasOriginal(cue) : false);
 
   return (
-    <div className="grid h-full grid-cols-[150px_minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)] gap-4 overflow-auto rounded-xl bg-card p-3">
-      <div className="flex flex-col gap-2">
+    <div className="grid h-full grid-cols-[260px_minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)] gap-4 overflow-auto rounded-xl bg-card p-3">
+      <div className="grid grid-cols-2 content-start gap-2">
         <TimeField
           id="cue-start"
           label={timeLabel("Show")}
