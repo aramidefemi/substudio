@@ -31,6 +31,8 @@ symphonia-adapter-libopus = "0.3"
 chardetng = "1.0.0"
 unicode-normalization = "0.1.26"
 rustfft = "6.4.1"
+# Auto-translate (TRN-01): small blocking HTTPS client (rustls), run off the UI thread.
+ureq = { version = "3", features = ["json"] }
 
 # Keep dev builds snappy while making dependencies (decoders, later) run fast.
 [profile.dev.package."*"]

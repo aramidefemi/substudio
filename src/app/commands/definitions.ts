@@ -25,6 +25,7 @@ import { openGoToLine } from "../goToLine";
 import { openRuleProfiles } from "../ruleProfiles";
 import { openAdjustTimes, openChangeFrameRate, openChangeSpeed } from "../retimeUi";
 import { openVisualSync } from "../syncUi";
+import * as tr from "../autoTranslate";
 import { defineCommands, type Command } from "./registry";
 
 type Dir = 1 | -1;
@@ -165,6 +166,15 @@ export const COMMANDS: Command[] = [
   { id: "tools.multipleReplace", label: "Multiple replace…", group: "Tools", run: a.openMultipleReplace },
   { id: "tools.textTools", label: "Change casing / merge…", group: "Tools", run: a.openTextTools },
   { id: "tools.removeHi", label: "Remove text for hearing impaired…", group: "Tools", run: a.openRemoveHi },
+
+  /* ---------- Translate (TRN-01) ---------- */
+  { id: "translate.auto", label: "Auto-translate…", group: "Translate", run: tr.openAutoTranslate },
+  { id: "translate.selectedNoPrompt", label: "Auto-translate selected lines (last settings)", group: "Translate", run: tr.translateSelectedNoPrompt },
+  // Global: in the text box ⌘↩ has always meant "next line"; on a machine translation it now also accepts it.
+  { id: "translate.acceptNext", label: "Accept translation and go to next line", group: "Translate", keys: ["$mod+Enter"], run: tr.acceptAndNext },
+  { id: "translate.next", label: "Next machine translation", group: "Translate", run: () => tr.goToMachineTranslation(1) },
+  { id: "translate.previous", label: "Previous machine translation", group: "Translate", run: () => tr.goToMachineTranslation(-1) },
+  { id: "translate.acceptAll", label: "Accept all machine translations", group: "Translate", run: tr.acceptAllMachineTranslations },
 
   /* ---------- Edit ---------- */
   { id: "edit.undo", label: "Undo", group: "Edit", keys: ["$mod+KeyZ"], run: a.undoAction },

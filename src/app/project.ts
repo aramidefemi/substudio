@@ -56,6 +56,7 @@ export function buildProject(s: ProjectSource): ProjectFile {
   const originals = s.cues.flatMap((c, index) =>
     hasOriginal(c) ? [{ index, start: c.start, text: c.original ?? "" }] : [],
   );
+  const machine = s.cues.flatMap((c, index) => (c.mt ? [{ index, start: c.start }] : []));
   const selectedIndex = s.cues.findIndex((c) => c.id === s.selectedId);
   const audioTrack =
     typeof s.audioTrack === "number" && Number.isFinite(s.audioTrack) && s.audioTrack >= 0
@@ -74,12 +75,15 @@ export function buildProject(s: ProjectSource): ProjectFile {
     ...(s.ruleProfile ? { ruleProfile: snapshotOf(s.ruleProfile) } : {}),
     audioTrack,
     ...(shotChanges ? { shotChanges } : {}),
+    ...(machine.length ? { machine } : {}),
   };
 }
 
 export interface RestoredProject {
   bookmarks: Map<number, string>;
   originals: Map<number, string>;
+  /** Cue indexes holding an unreviewed machine translation (TRN-01). */
+  machine: Set<number>;
   selectedIndex: number;
   fps: number | null;
   timecode: TimecodeMode | null;
@@ -104,9 +108,15 @@ export function restoreProject(cues: readonly CueData[], p: ProjectFile): Restor
     const i = matchCueRef(cues, o);
     if (i >= 0) originals.set(i, typeof o.text === "string" ? o.text : "");
   }
+  const machine = new Set<number>();
+  for (const m of Array.isArray(p.machine) ? p.machine : []) {
+    const i = matchCueRef(cues, m);
+    if (i >= 0) machine.add(i);
+  }
   return {
     bookmarks,
     originals,
+    machine,
     selectedIndex: p.selected ? matchCueRef(cues, p.selected) : -1,
     fps: typeof p.fps === "number" && p.fps > 0 ? p.fps : null,
     timecode: p.timecode === "frames" || p.timecode === "ms" ? p.timecode : null,

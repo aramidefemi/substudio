@@ -1,4 +1,4 @@
-import { Bot, Italic, Scale, TriangleAlert } from "lucide-react";
+import { Bot, Check, Italic, Languages, Scale, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
@@ -18,7 +18,6 @@ import { hasOriginal } from "./original";
 import { checkCue, cueStats } from "./rules";
 import {
   isUntimed,
-  selectRelative,
   selectSelectedCue,
   selectTimeFormat,
   updateCue,
@@ -261,6 +260,29 @@ export function CueEditor() {
               </TooltipTrigger>
               <TooltipContent>Italic (⌘I)</TooltipContent>
             </Tooltip>
+            {cue?.mt && (
+              // Machine translation not reviewed yet (TRN-01): typing or accepting clears it.
+              <span className="ml-1 inline-flex items-center gap-1 rounded-md border border-border py-px pr-0.5 pl-1.5 text-[11px] text-muted-foreground">
+                <Languages aria-hidden className="size-3" />
+                Machine translation
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      aria-label={commandTitle("translate.acceptNext")}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => runCommand("translate.acceptNext")}
+                      className="size-5"
+                    >
+                      <Check className="size-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{commandTitle("translate.acceptNext")}</TooltipContent>
+                </Tooltip>
+              </span>
+            )}
           </div>
           {stats && <Stat issue={cpsIssue}>Chars/sec: {stats.cps.toFixed(1)}</Stat>}
         </div>
@@ -275,11 +297,7 @@ export function CueEditor() {
             onChange={(e) => cue && !hideText && updateCue(cue.id, { text: e.target.value }, `text:${cue.id}`)}
             onKeyDown={(e) => {
               if (e.key === "Escape") e.currentTarget.blur();
-              // ⌘↩ next line; ⌘⇧↩ is the "go to next line and play" command.
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
-                e.preventDefault();
-                selectRelative(1);
-              }
+              // ⌘↩ (accept + next line) and ⌘⇧↩ (next line and play) are global commands.
             }}
             className="h-full min-h-0 resize-none bg-transparent text-[15px] font-medium leading-snug"
           />

@@ -63,6 +63,7 @@ import {
   removeCues,
   replaceWithPlainText,
   restoreBookmarks,
+  restoreMachineMarks,
   restoreOriginals,
   rippleDeleteSelected,
   select,
@@ -245,6 +246,7 @@ async function applySidecar(path: string) {
   applyProjectProfile(p.ruleProfile);
   restoreBookmarks(p.bookmarks);
   restoreOriginals(p.originals, p.originalPath);
+  restoreMachineMarks(p.machine);
   if (p.originals.size) setShowOriginalColumn(true);
   if (p.fps || p.timecode) {
     useSubtitles.setState({ ...(p.fps ? { fps: p.fps } : {}), ...(p.timecode ? { timecode: p.timecode } : {}) });

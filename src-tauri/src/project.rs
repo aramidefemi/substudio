@@ -69,6 +69,9 @@ pub struct Project {
     /// Shot-change timestamps in seconds (SYN-04). Empty when never generated.
     #[serde(default)]
     pub shot_changes: Vec<f64>,
+    /// Lines holding an unreviewed machine translation (TRN-01).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub machine: Vec<CueRef>,
 }
 
 impl Default for Project {
@@ -86,6 +89,7 @@ impl Default for Project {
             rule_profile: None,
             audio_track: None,
             shot_changes: Vec::new(),
+            machine: Vec::new(),
         }
     }
 }
@@ -217,6 +221,20 @@ mod tests {
         assert!(back.shot_changes.is_empty());
         assert_eq!(fs::read_to_string(&srt).unwrap(), "1\n00:00:01,000 --> 00:00:02,000\nHi\n");
         assert!(!dir.join("film.substudio.json.tmp").exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn persists_machine_translation_marks() {
+        let dir = temp_dir("machine");
+        let srt = dir.join("film.srt");
+        fs::write(&srt, "1\n00:00:01,000 --> 00:00:02,000\nHi\n").unwrap();
+        let project = Project {
+            machine: vec![CueRef { index: 2, start: 4.5 }],
+            ..Project::default()
+        };
+        write(&srt, &project).unwrap();
+        assert_eq!(read(&srt).unwrap().machine, vec![CueRef { index: 2, start: 4.5 }]);
         let _ = fs::remove_dir_all(&dir);
     }
 

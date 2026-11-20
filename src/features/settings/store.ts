@@ -13,6 +13,7 @@ import {
 import type { ReplaceSet } from "@/features/subtitles/multipleReplace";
 import { normalizePresets, type CustomTextPreset } from "@/features/export/customText";
 import type { ThemePreference } from "./themes";
+import { isKnownLanguage, type TranslateEngine } from "@/features/translate/languages";
 import { DEFAULT_PROFILE_ID, normalizeProfiles, type RuleProfile } from "@/features/subtitles/ruleProfiles";
 
 export type Density = "compact" | "comfortable";
@@ -57,7 +58,46 @@ export interface Settings {
    * `[]` → unbound. Applied onto the command registry via `applyKeyBindings`.
    */
   shortcutOverrides: ShortcutOverrides;
+  /** Auto-translate (TRN-01): last engine, language pair and API key. */
+  translate: TranslatePrefs;
 }
+
+export interface TranslatePrefs {
+  engine: TranslateEngine;
+  /** Google code, or "auto" to detect. */
+  source: string;
+  target: string;
+  /** Google Cloud Translation API key; stays in the local settings file. */
+  apiKey: string;
+  skipTranslated: boolean;
+  /** Set after the first run, so "translate selected (no prompt)" may skip the dialog. */
+  used: boolean;
+}
+
+export const DEFAULT_TRANSLATE: TranslatePrefs = {
+  engine: "google-free",
+  source: "yo",
+  target: "en",
+  apiKey: "",
+  skipTranslated: true,
+  used: false,
+};
+
+function normalizeTranslate(v: unknown): TranslatePrefs {
+  const t = (v && typeof v === "object" ? v : {}) as Partial<TranslatePrefs>;
+  return {
+    engine: t.engine === "google-cloud" ? "google-cloud" : "google-free",
+    source: typeof t.source === "string" && isKnownLanguage(t.source) ? t.source : DEFAULT_TRANSLATE.source,
+    target:
+      typeof t.target === "string" && t.target !== "auto" && isKnownLanguage(t.target) ? t.target : DEFAULT_TRANSLATE.target,
+    apiKey: typeof t.apiKey === "string" ? t.apiKey : "",
+    skipTranslated: typeof t.skipTranslated === "boolean" ? t.skipTranslated : true,
+    used: t.used === true,
+  };
+}
+
+export const setTranslatePrefs = (patch: Partial<TranslatePrefs>) =>
+  useSettings.setState((s) => ({ translate: { ...s.translate, ...patch } }));
 
 const DEFAULTS: Settings = {
   theme: "system",
@@ -77,6 +117,7 @@ const DEFAULTS: Settings = {
   lastRuleProfileId: DEFAULT_PROFILE_ID,
   customTextPresets: [],
   shortcutOverrides: {},
+  translate: DEFAULT_TRANSLATE,
 };
 
 const RECENT_LIMIT = 12;
@@ -199,6 +240,7 @@ export async function loadSettings() {
         lastRuleProfileId: typeof saved.lastRuleProfileId === "string" ? saved.lastRuleProfileId : DEFAULT_PROFILE_ID,
         customTextPresets: normalizePresets(saved.customTextPresets),
         shortcutOverrides: normalizeOverrides(saved.shortcutOverrides),
+        translate: normalizeTranslate(saved.translate),
       });
     }
     useSettings.subscribe((s) => void store.set("settings", s));

@@ -383,6 +383,8 @@ export function updateCue(id: string, patch: Partial<CueData>, key?: string) {
   edit((doc) => {
     const cue = doc.cues.find((c) => c.id === id);
     if (!cue) return;
+    // Typing into a machine translation means she has reviewed it (TRN-01).
+    if (patch.text !== undefined && patch.text !== cue.text) delete cue.mt;
     Object.assign(cue, patch);
     if (patch.start !== undefined || patch.end !== undefined) {
       delete cue.untimed;
@@ -1201,4 +1203,43 @@ export function restoreOriginals(texts: ReadonlyMap<number, string>, path: strin
     originalPath: path,
     cues: s.cues.map((c, i) => (texts.has(i) ? { ...c, original: texts.get(i)! } : c)),
   }));
+}
+
+/* ---------- machine translation (TRN-01) ---------- */
+
+/**
+ * Before the first auto-translate: copy every line's text into the original
+ * column so the source stays beside the draft. Pass the run's undo `key`.
+ */
+export function seedOriginalsFromText(key?: string) {
+  edit((doc) => {
+    for (const c of doc.cues) if (!hasOriginal(c)) c.original = c.text;
+  }, key);
+}
+
+/** Write machine translations by cue id and mark them unreviewed. Pass the run's undo `key`. */
+export function applyMachineTranslations(texts: ReadonlyMap<string, string>, key?: string) {
+  if (!texts.size) return;
+  edit((doc) => {
+    for (const c of doc.cues) {
+      const text = texts.get(c.id);
+      if (text === undefined) continue;
+      c.text = text;
+      c.mt = true;
+    }
+  }, key);
+}
+
+/** Mark machine translations as reviewed (keeps the text). One undo step. */
+export function acceptMachineTranslations(ids: readonly string[]) {
+  const wanted = new Set(ids);
+  edit((doc) => {
+    for (const c of doc.cues) if (wanted.has(c.id) && c.mt) delete c.mt;
+  });
+}
+
+/** Restores machine-translation marks by cue index from the sidecar without an undo step. */
+export function restoreMachineMarks(indexes: ReadonlySet<number>) {
+  if (!indexes.size) return;
+  set((s) => ({ cues: s.cues.map((c, i) => (indexes.has(i) ? { ...c, mt: true } : c)) }));
 }

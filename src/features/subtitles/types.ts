@@ -22,6 +22,11 @@ export interface Cue extends CueData {
    * while an original is open. Saved in the project sidecar, not the SRT.
    */
   original?: string;
+  /**
+   * Text is an unreviewed machine translation (TRN-01). Cleared when she types
+   * in the line or accepts it. Saved in the project sidecar, not the SRT.
+   */
+  mt?: boolean;
 }
 
 export type SubtitleFormat = "srt" | "vtt" | "ass" | "ssa" | "sbv" | "ttml" | "dfxp";
