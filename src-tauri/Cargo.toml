@@ -1,6 +1,6 @@
 [package]
 name = "substudio"
-version = "0.1.0"
+version = "0.2.0"
 description = "Substudio — a fast, keyboard-first subtitle editor"
 authors = ["Substudio"]
 edition = "2024"
