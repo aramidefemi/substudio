@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#7c3aed" />
+    <meta name="description" content="Guides and reference documentation for Substudio." />
+    <title>Substudio Docs</title>
+    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="docs.css" />
+    <script>
+      (() => {
+        const saved = localStorage.getItem("substudio-docs-theme");
+        if (saved) document.documentElement.dataset.theme = saved;
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+
+    <header class="docs-header">
+      <button
+        class="icon-button menu-button"
+        id="menu-toggle"
+        type="button"
+        aria-label="Show documentation navigation"
+        aria-expanded="false"
+        aria-controls="sidebar"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+      </button>
+      <a class="docs-brand" href="../index.html">
+        <img src="../assets/icon.svg" alt="" width="28" height="28" />
+        <span>Substudio</span>
+        <span class="docs-badge">Docs</span>
+      </a>
+
+      <div class="docs-search" role="search">
+        <label class="sr-only" for="search-input">Search the documentation</label>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-4-4" />
+        </svg>
+        <input
+          id="search-input"
+          type="search"
+          placeholder="Search the docs"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <kbd aria-hidden="true">⌘ K</kbd>
+        <div class="search-panel" id="search-panel" hidden>
+          <p class="search-status" id="search-status" role="status"></p>
+          <ul id="search-results"></ul>
+        </div>
+      </div>
+
+      <nav class="header-links" aria-label="Site">
+        <a href="../index.html#download">Download</a>
+        <a href="https://github.com/aramidefemi/substudio">GitHub</a>
+        <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch colour theme">
+          <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path
+              d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"
+            />
+          </svg>
+        </button>
+      </nav>
+    </header>
+
+    <div class="docs-layout">
+      <nav class="sidebar" id="sidebar" aria-label="Documentation"></nav>
+      <main class="doc-main" id="content" tabindex="-1">
+        <nav class="breadcrumb" id="breadcrumb" aria-label="Breadcrumb"></nav>
+        <article class="prose" id="article"></article>
+        <nav class="page-nav" id="page-nav" aria-label="Previous and next pages"></nav>
+        <footer class="doc-footer">
+          <p>Substudio is an early preview. These docs describe the current app, not a future roadmap.</p>
+          <a href="https://github.com/aramidefemi/substudio/issues">Report a documentation issue</a>
+        </footer>
+      </main>
+      <aside class="toc" aria-label="On this page">
+        <p>On this page</p>
+        <nav id="toc"></nav>
+      </aside>
+    </div>
+    <button class="sidebar-scrim" id="sidebar-scrim" type="button" aria-label="Close navigation"></button>
+
+    <script src="content.js"></script>
+    <script src="docs.js"></script>
+  </body>
+</html>
